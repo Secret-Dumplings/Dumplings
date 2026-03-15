@@ -1,6 +1,6 @@
-# Dumplings - 多智能体协作框架
+# Dumplings
 
-> 基于 LLM 的轻量级多智能体协作系统框架
+> Dumplings开创AI新架构
 
 ## 目录
 
