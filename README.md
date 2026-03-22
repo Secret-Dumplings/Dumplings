@@ -42,7 +42,7 @@ Dumplings 是一个轻量级的多智能体协作框架，支持：
 
 ```bash
 cd Dumplings
-uv install
+uv add git+https://github.com/Secret-Dumplings/Dumplings.git
 ```
 
 ### 使用 pip

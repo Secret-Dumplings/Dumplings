@@ -74,7 +74,7 @@ class Agent():
 
 
         prompt = self.prompt + tools_prompt + ", 你的uuid " + str(self.uuid)
-        logger.info("prompt:"+str(prompt))
+        logger.debug(f"Agent {self.name} 初始化，系统提示词长度：{len(prompt)}")
         # print(prompt)
         if new_load:
             self.history = [{"role": "system", "content": prompt}]
@@ -234,7 +234,7 @@ class Agent():
         if self.stream:
             # 流式响应处理
             for line in rsp.iter_lines(decode_unicode=True):
-                logger.debug(line)
+                logger.trace(line)
                 if not line or not line.startswith('data: '):
                     continue
                 data = line[6:]
@@ -286,7 +286,7 @@ class Agent():
             self.stream_run = False
             try:
                 response_json = rsp.json()
-                logger.debug(response_json)
+                logger.trace(response_json)
                 message = response_json['choices'][0]['message']
                 full_content = message.get('content', '')
 
@@ -306,11 +306,11 @@ class Agent():
                 logger.error(f"非流式响应处理错误: {e}")
                 full_content = rsp.text
 
-        logger.debug(full_content)
+        logger.trace(f"AI 回复内容长度：{len(full_content)}")
 
         # Function Calling: 执行工具调用
         if self.fc_model and tool_calls_list:
-            logger.info(f"发现 Function Calling 工具调用: {tool_calls_list}")
+            logger.debug(f"发现 Function Calling 工具调用: {tool_calls_list}")
 
             # 添加 assistant message with tool_calls
             self.history.append({
@@ -349,7 +349,7 @@ class Agent():
                 # 调用工具（解析 arguments 为 dict）
                 try:
                     args = json.loads(tool_call['function']['arguments'])
-                    logger.info(f"调用工具 {tool_name}，参数: {args}")
+                    logger.debug(f"调用工具 {tool_name}，参数: {args}")
                     self.pack(tool_name=tool_name, tool_parameter=args)
                     result = tool_func(**args)
                     tool_results.append({
@@ -376,7 +376,7 @@ class Agent():
                 })
 
             # 继续对话
-            logger.info("工具执行完成，继续对话")
+            logger.debug("工具执行完成，继续对话")
             return self.conversation_with_tool(tool=True)
 
         # XML 模式：提取并执行工具
@@ -388,7 +388,7 @@ class Agent():
         tool_results = []
         tool_names = []
         for block in xml_blocks:
-            logger.info("\n发现工具块:" + str(block))
+            logger.debug(f"发现工具块：{block[:50]}...")
             soup = BeautifulSoup(block, "xml")
             root = soup.find()
             if root is None:
@@ -425,7 +425,7 @@ class Agent():
                 logger.warning(f"工具 {tool_name} 未找到，可用工具: {available_tools}")
                 continue
 
-            logger.info(f"从 {tool_source} 找到工具 {tool_name}")
+            logger.debug(f"从 {tool_source} 找到工具 {tool_name}")
             print(block)
 
             # 解析 XML 参数，与 Function Calling 模式统一
@@ -470,7 +470,7 @@ class Agent():
 
         # 3. 若工具产生结果，继续对话
         if tool_results:
-            logger.info("成功执行" + str(tool_results))
+            logger.debug(f"工具执行成功，结果数：{len(tool_results)}")
             n = 0
             for i in tool_results:
                 try:
@@ -478,12 +478,10 @@ class Agent():
                     n+=1
                 except:
                     break
-            logger.info("history:"+str(self.history))
+            logger.debug(f"对话历史长度：{len(self.history)}")
             return self.conversation_with_tool(tool=True)
         if tool:
-            logger.info(
-                str(self.history)
-            )
+            logger.debug(f"返回对话历史最后一条，长度：{len(self.history[-1].get('content')) if self.history[-1].get('content') else 0}")
             return self.history[-1].get("content")
         return full_content
 
