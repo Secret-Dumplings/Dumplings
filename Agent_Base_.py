@@ -884,6 +884,96 @@ class Agent():
         self.__init__(new_load=False)
         return "successfully reloaded"
 
+    # ---------------- 模板池工具（register_template / activate_template / deactivate_template / list_templates）----------------
+
+    @builtin_tool(
+        description="把一个 Agent 类（cls）注册进 agent_template_pool，**不实例化**。",
+        params={
+            "name": "模板名（池内唯一标识）",
+            "description": "可选：模板描述",
+        },
+    )
+    def register_template(self, name: str, description: str = "") -> str:
+        """占位说明：工具调用只能传 JSON，Python 类对象无法经由工具参数传入，
+        因此模板注册必须在 Python 代码侧完成。本工具不修改 agent_template_pool。"""
+        from .Agent_list import list_templates as _list_templates
+        items = _list_templates()
+        if not items:
+            return (
+                "模板注册请在 Python 代码侧完成："
+                "from dumplingsAI.Agent_list import register_template;"
+                "register_template(MyAgent, name='my_agent'。"
+                "当前 agent_template_pool 为空。"
+            )
+        names = "、".join(it["name"] for it in items)
+        return (
+            "模板注册请在 Python 代码侧完成："
+            "from dumplingsAI.Agent_list import register_template;"
+            "register_template(MyAgent, name='my_agent'。"
+            f"当前 agent_template_pool 内的模板：{names}。"
+        )
+
+    @builtin_tool(
+        description="把 agent_template_pool 中的某个模板实例化并写入 agent_list。",
+        params={"name": "模板名"},
+    )
+    def activate_template(self, name: str) -> str:
+        """显式激活模板：把模板池中的类实例化，写入 agent_list。"""
+        from .Agent_list import activate_template
+        try:
+            activate_template(name)
+        except KeyError as e:
+            return f"激活失败：{e}"
+        return (
+            f"已激活模板 {name!r}：实例已写入 agent_list。"
+            f"可通过 agent_list[{name!r}] 或其 uuid 访问。"
+        )
+
+    @builtin_tool(
+        description="把 agent_list 中的某个模板实例移除（模板仍保留在池中）。",
+        params={"name": "模板名"},
+    )
+    def deactivate_template(self, name: str) -> str:
+        """从 agent_list 移除实例，模板仍保留在 agent_template_pool。"""
+        from .Agent_list import deactivate_template
+        ok = deactivate_template(name)
+        return f"已反激活 {name!r}" if ok else f"模板 {name!r} 不在池中"
+
+    @builtin_tool(
+        description="查询 agent_template_pool 中的模板清单（只读，不会实例化）。",
+        params={
+            "name": "可选：模板名；为空则列出全部",
+        },
+    )
+    def list_templates(self, name: str = "") -> str:
+        """查看模板池 + 激活状态。可选 name 过滤单个模板。"""
+        from .Agent_list import (
+            agent_list,
+            get_template,
+        )
+        from .Agent_list import (
+            list_templates as _list_templates,
+        )
+        if name:
+            tpl = get_template(name)
+            if tpl is None:
+                return f"模板 {name!r} 不在 agent_template_pool 中"
+            return (
+                f"模板 {name!r}: uuid={tpl.get('uuid')!r}, "
+                f"description={tpl.get('description')!r}, "
+                f"active={name in agent_list}"
+            )
+        items = _list_templates()
+        if not items:
+            return "agent_template_pool：（暂无）"
+        lines = []
+        for it in items:
+            lines.append(
+                f"- {it['name']} (uuid={it['uuid']}) "
+                f"active={it['active']} description={it.get('description')!r}"
+            )
+        return "agent_template_pool：\n" + "\n".join(lines)
+
     def get_all_available_tools(self) -> list:
         tools: list[Any] = []
         tools_info = tool_registry.get_all_tools_info(self.uuid)

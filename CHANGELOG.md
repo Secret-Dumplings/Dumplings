@@ -7,6 +7,38 @@ dumplingsAI 的所有显著变更记录。
 
 ## [Unreleased]
 
+### Added
+- **Agent 模板池（`agent_template_pool`）**
+  - 新的"模板池"概念：用户注册的 Agent 类**只入池、不实例化、不写入 `agent_list`**
+  - 与旧版 `@register_agent`（装饰时立刻实例化 + 写入 `agent_list`）的语义彻底分开
+  - 模板的实例化时机由 `activate_template(name)` 显式控制
+  - API：
+    - `register_template(cls, name, uuid, description, overwrite)` —— 函数式入池
+    - `@template_agent(name, uuid, description, overwrite)` —— 装饰器式入池（仅入池，不实例化）
+    - `activate_template(name)` —— 把池中 `cls` 实例化并按 `uuid`+`name` 双键写入 `agent_list`
+    - `deactivate_template(name)` —— 从 `agent_list` 移除实例，模板仍保留在池中
+    - `remove_template(name)` —— 彻底从池中删除（连带从 `agent_list` 移除）
+    - `list_templates()` / `get_template(name)` / `is_active(name)` —— 查询
+- **`BaseAgent` 新增 4 个 builtin_tool**（让 LLM 在对话中自助管理模板池）
+  - `list_templates(name="")` —— 列出/查询模板池
+  - `activate_template(name)` —— 显式激活指定模板
+  - `deactivate_template(name)` —— 反激活指定模板
+  - `register_template(name, description="")` —— 占位说明，提示 LLM "注册 cls 必须在 Python 代码侧完成"
+  - 与 `ask_for_help` / `list_agents` / `attempt_completion` / `reload` 一致走 `@builtin_tool` 装饰器，schema 自动从签名推导
+
+### Changed
+- **`@register_agent` 标记为弃用**
+  - 仍然可用（向后兼容），但调用时通过库内 `logger.warning(...)` 输出迁移提示
+  - 推荐迁移路径：`@template_agent(name)` + `activate_template(name)`
+
+### Fixed
+- **`Agent_list._ensure_meta` 缺省 `uuid` 不生效** —— 改为 `if not tpl.get("uuid"): tpl["uuid"] = tpl["name"]`，确保从类入参时也能正确补全
+- **`BaseAgent.list_templates` 闭包漏 import `agent_list`** —— `NameError`，已在方法体内 `from .Agent_list import agent_list, ...`
+
+### Tests
+- **新增 `tests/test_template_pool.py`（33 项）** 覆盖完整模板池 API、装饰器、BaseAgent 4 个 builtin_tool
+- 完整 `pytest tests/` 套件 74/74 通过，无回归
+
 ## [0.2.2] - 2026-07-21
 
 ### Added
