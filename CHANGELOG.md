@@ -7,6 +7,49 @@ dumplingsAI 的所有显著变更记录。
 
 ## [Unreleased]
 
+### Fixed
+- **`AnthropicAgent.conversation_with_tool(stream=False)` 丢字**
+  - v0.3.0 bug：non-stream 模式下 LLM 返回的文本只累积到 `full_text`，但没进 `assistant_blocks`，
+    最终 `return "".join(b.get("text", "") for b in last if b.get("type") == "text")` 永远空串
+  - 修复：non-stream 分支在 `if llm_rsp.text:` 里同步 `assistant_blocks.append({"type": "text", "text": llm_rsp.text})`
+  - 异步版 `aconversation_with_tool` 同样修复
+- **`BaseAgent.conversation_with_tool` 同步多轮工具调用吞掉 LLM 最终回复**
+  - v0.3.0 bug：tool=True 递归到末尾时 `if tool: return work_history[-1].get("content")` 把上轮 tool_result 当最终答案
+  - 修复：递归到末尾应返回当前轮 LLM 的 `full_content`（FC 模式递归场景下 LLM 已经回过 LLM 那一句才是答案）
+
+### Added
+- **`AnthropicAgent` 补齐 4 个模板管理 builtin_tool**（v0.3.0 仅 `BaseAgent` 暴露，v0.3.1 补齐 `AnthropicAgent`）
+  - `list_templates(name="")` / `activate_template(name)` / `deactivate_template(name)` / `register_template(name, description="")`
+  - 与 BaseAgent 完全对称 —— 两协议公开 API 集合一致
+- **`AnthropicAgent` 新增 `pack` 方法**（与 `BaseAgent.pack` 同款）
+  - 把事件打包成带 `ai_uuid` / `ai_name` / `task_id` / `timestamp` 的 content dict 再调 `out`
+  - 同步 / 异步两个 `conversation_with_tool` 内部从 `self.out({...})` 全部切到 `self.pack(...)`
+  - 想接管输出行为请覆写 `out`，不要覆写 `pack`（与 BaseAgent 同样的约定）
+- **`AnthropicAgent` 新增 `get_all_available_tools` 方法**（与 `BaseAgent` 同款）
+
+### Changed
+- **`BaseAgent` / `AnthropicAgent` 公开方法补全类型注解**
+  - `out(content: dict) -> None` / `pack(...) -> None` / `conversation_with_tool(messages, tool: bool, images)`
+  - `_generate_task_id() -> str` / `_get_timestamp() -> int`
+
+### Tests
+- **新增 `tests/_llm_mock.py`（共享 mock 基础设施）** 同时支持 OpenAI Chat Completions 与 Anthropic Messages API
+  - 非流式 JSON / 流式 SSE 自动分派（按请求 body `stream` 字段）
+  - 响应队列 + 请求日志：可断言"调了几次 / 每次发了什么"
+  - `_connectivity` 探测请求短路（不消耗队列）
+- **新增 `tests/test_anthropic_agent.py`（17 项）**
+  - 覆盖 non-stream bug 修复（纯文本 / text+tool_use 混响 / 纯 tool_use）
+  - 覆盖 stream 回归（纯文本 / text+tool_use 混响）
+  - async 路径完整覆盖
+  - 公开 API 对齐：pack / get_all_available_tools / 4 个模板管理 builtin_tool
+- **新增 `tests/test_base_agent_parity.py`（6 项）**
+  - 验证 BaseAgent 同样跑通 mock（非流式 + 流式 + 工具调用）
+  - 验证 BaseAgent 的 4 个模板管理 builtin_tool
+  - 验证 BaseAgent 与 AnthropicAgent 公开 API 集合一致
+- **完整 `pytest tests/` 套件 97/97 通过，无回归**（74 旧 + 23 新）
+
+## [0.3.0] - 2026-07-28
+
 ### Added
 - **Agent 模板池（`agent_template_pool`）**
   - 新的"模板池"概念：用户注册的 Agent 类**只入池、不实例化、不写入 `agent_list`**

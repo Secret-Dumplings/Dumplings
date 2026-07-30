@@ -23,7 +23,7 @@ import platform
 import threading
 import time
 import uuid as _uuid
-from typing import List, Optional
+from typing import Any, List, Optional
 
 try:
     from .agent_tool import _builtin_promote_overrides, builtin_tool, tool_registry
@@ -331,7 +331,7 @@ class AnthropicAgent:
             logger.error(f"{self.name} Anthropic 连接异常：{e}")
 
     # ---------------- 输出回调（默认实现，可被重写） ----------------
-    def out(self, content: dict):
+    def out(self, content: dict) -> None:
         """默认打印；通过重写可劫持输出"""
         if content.get("tool_name"):
             print(
@@ -343,6 +343,76 @@ class AnthropicAgent:
             return
         if content.get("message") is not None:
             print(content.get("message"), end="")
+
+    def pack(
+        self,
+        message: Optional[str] = None,
+        tool_model: bool = False,
+        tool_name: Optional[str] = None,
+        tool_parameter: Optional[dict] = None,
+        finish_task: bool = False,
+        other: bool = False,
+        tool_result: Any = None,
+    ) -> None:
+        """
+        打包输出事件，附带 AI uuid / name / task_id / timestamp，
+        最终转发给 ``self.out(content)``。
+
+        与 :py:meth:`BaseAgent.pack` 行为一致 —— 想接管输出请覆写 ``out``，
+        不要覆写 ``pack``（与 BaseAgent 同样的约定）。
+
+        Args:
+            message: 普通消息内容
+            tool_model: 是否是工具调用事件
+            tool_name: 工具名
+            tool_parameter: 工具入参
+            finish_task: 是否任务完成
+            other: 其他标记
+            tool_result: 工具返回值（``None`` 视为不附带）
+        """
+        content: dict = {}
+        task_id = self.current_task_id or self._generate_task_id()
+        timestamp = self._get_timestamp()
+
+        if finish_task:
+            content = {
+                "task": True,
+                "task_id": task_id,
+                "timestamp": timestamp,
+                "ai_uuid": self.uuid,
+                "ai_name": self.name,
+            }
+        elif tool_model:
+            content = {
+                "tool_name": tool_name,
+                "tool_parameter": tool_parameter,
+                "ai_uuid": self.uuid,
+                "ai_name": self.name,
+                "task_id": task_id,
+                "timestamp": timestamp,
+                "task": False,
+            }
+        elif tool_result is not None:
+            content = {
+                "tool_result": tool_result,
+                "tool_name": tool_name,
+                "ai_uuid": self.uuid,
+                "ai_name": self.name,
+                "task_id": task_id,
+                "timestamp": timestamp,
+                "task": False,
+            }
+        else:
+            content = {
+                "message": message,
+                "ai_uuid": self.uuid,
+                "ai_name": self.name,
+                "other": other,
+                "task_id": task_id,
+                "timestamp": timestamp,
+                "task": False,
+            }
+        self.out(content)
 
     # ---------------- 主对话入口 ----------------
     def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
@@ -396,7 +466,7 @@ class AnthropicAgent:
                     for evt in transport.chat_stream(req):
                         if evt.type == "text":
                             assistant_blocks.append({"type": "text", "text": evt.text})
-                            self.out({"message": evt.text})
+                            self.pack(evt.text, finish_task=False)
                         elif evt.type == "tool_call" and evt.tool_call is not None:
                             # 必须把 tool_use 块追加到 assistant_blocks，
                             # 否则下一轮的 tool_result 找不到对应的 tool_use_id，
@@ -433,8 +503,11 @@ class AnthropicAgent:
                             "input": tc.arguments,
                         })
                     if llm_rsp.text:
+                        # 非流式：text 只挂在 llm_rsp.text，不会经过 per-event 分支，
+                        # 必须显式补一个 text 块，否则最后按 type=="text" 过滤 return 时丢字。
                         full_text += llm_rsp.text
-                        self.out({"message": llm_rsp.text})
+                        assistant_blocks.append({"type": "text", "text": llm_rsp.text})
+                        self.pack(llm_rsp.text, finish_task=False)
                     if llm_rsp.usage is not None:
                         logger.debug(
                             f"{self.name} usage: in={llm_rsp.usage.prompt_tokens} out={llm_rsp.usage.completion_tokens}"
@@ -456,7 +529,11 @@ class AnthropicAgent:
             for tu in tool_uses:
                 self.current_task_id = self._generate_task_id()
                 self._execute_hooks("before", tu["name"], tu["input"])
-                self.out({"tool_name": tu["name"], "tool_parameter": tu["input"]})
+                self.pack(
+                    tool_model=True,
+                    tool_name=tu["name"],
+                    tool_parameter=tu["input"],
+                )
                 try:
                     result, async_id = self._dispatch_tool(tu["name"], tu["input"])
                 except Exception as e:
@@ -464,7 +541,7 @@ class AnthropicAgent:
                     self._execute_hooks("error", tu["name"], tu["input"], result)
                 else:
                     self._execute_hooks("after", tu["name"], tu["input"], result)
-                    self.out({"tool_result": result, "tool_name": tu["name"]})
+                    self.pack(tool_result=result, tool_name=tu["name"])
 
                 # 超时 → 转后台
                 if async_id is not None:
@@ -532,7 +609,7 @@ class AnthropicAgent:
                     async for evt in transport.achat_stream(req):
                         if evt.type == "text":
                             assistant_blocks.append({"type": "text", "text": evt.text})
-                            self.out({"message": evt.text})
+                            self.pack(evt.text, finish_task=False)
                         elif evt.type == "tool_call" and evt.tool_call is not None:
                             # 必须把 tool_use 块追加到 assistant_blocks，
                             # 否则下一轮的 tool_result 找不到对应的 tool_use_id，
@@ -565,8 +642,11 @@ class AnthropicAgent:
                             "input": tc.arguments,
                         })
                     if llm_rsp.text:
+                        # 非流式：text 只挂在 llm_rsp.text，不会经过 per-event 分支，
+                        # 必须显式补一个 text 块，否则最后按 type=="text" 过滤 return 时丢字。
                         full_text += llm_rsp.text
-                        self.out({"message": llm_rsp.text})
+                        assistant_blocks.append({"type": "text", "text": llm_rsp.text})
+                        self.pack(llm_rsp.text, finish_task=False)
             except Exception as e:
                 logger.error(f"{self.name} Anthropic 异步调用失败：{e}")
                 raise
@@ -579,7 +659,11 @@ class AnthropicAgent:
             for tu in tool_uses:
                 self.current_task_id = self._generate_task_id()
                 self._execute_hooks("before", tu["name"], tu["input"])
-                self.out({"tool_name": tu["name"], "tool_parameter": tu["input"]})
+                self.pack(
+                    tool_model=True,
+                    tool_name=tu["name"],
+                    tool_parameter=tu["input"],
+                )
                 try:
                     result, async_id = self._dispatch_tool(tu["name"], tu["input"])
                 except Exception as e:
@@ -587,7 +671,7 @@ class AnthropicAgent:
                     self._execute_hooks("error", tu["name"], tu["input"], result)
                 else:
                     self._execute_hooks("after", tu["name"], tu["input"], result)
-                    self.out({"tool_result": result, "tool_name": tu["name"]})
+                    self.pack(tool_result=result, tool_name=tu["name"])
 
                 if async_id is not None:
                     result = (
@@ -794,3 +878,99 @@ class AnthropicAgent:
         self.history = []
         logger.info(f"{self.name} 已 reload")
         return "reloaded"
+
+    # ---------------- 模板池管理（与 BaseAgent 对齐） ----------------
+
+    def get_all_available_tools(self) -> List[str]:
+        """列出当前 Agent 可用的所有工具名（注册工具 + builtin_tool 方法）"""
+        tools: List[str] = []
+        tools_info = tool_registry.get_all_tools_info(self.uuid)
+        if tools_info:
+            tools.extend(tools_info.keys())
+        for s in tool_registry.collect_builtin_tools(self):
+            tools.append(s["function"]["name"])
+        return tools
+
+    @builtin_tool(
+        description="占位说明：模板注册必须在 Python 代码侧完成（工具调用只能传 JSON，无法注入 Python 类）。",
+    )
+    def register_template(self, name: str = "", description: str = "") -> str:
+        """占位说明：工具调用只能传 JSON，Python 类对象无法经由工具参数传入，
+        因此模板注册必须在 Python 代码侧完成。本工具不修改 agent_template_pool。"""
+        from .Agent_list import list_templates as _list_templates
+        items = _list_templates()
+        if not items:
+            return (
+                "模板注册请在 Python 代码侧完成："
+                "from dumplingsAI.Agent_list import register_template;"
+                "register_template(MyAgent, name='my_agent'。"
+                "当前 agent_template_pool 为空。"
+            )
+        names = "、".join(it["name"] for it in items)
+        return (
+            "模板注册请在 Python 代码侧完成："
+            "from dumplingsAI.Agent_list import register_template;"
+            "register_template(MyAgent, name='my_agent'。"
+            f"当前 agent_template_pool 内的模板：{names}。"
+        )
+
+    @builtin_tool(
+        description="把 agent_template_pool 中的某个模板实例化并写入 agent_list。",
+        params={"name": "模板名"},
+    )
+    def activate_template(self, name: str) -> str:
+        """显式激活模板：把模板池中的类实例化，写入 agent_list。"""
+        from .Agent_list import activate_template as _activate
+        try:
+            _activate(name)
+        except KeyError as e:
+            return f"激活失败：{e}"
+        return (
+            f"已激活模板 {name!r}：实例已写入 agent_list。"
+            f"可通过 agent_list[{name!r}] 或其 uuid 访问。"
+        )
+
+    @builtin_tool(
+        description="把 agent_list 中的某个模板实例移除（模板仍保留在池中）。",
+        params={"name": "模板名"},
+    )
+    def deactivate_template(self, name: str) -> str:
+        """从 agent_list 移除实例，模板仍保留在 agent_template_pool。"""
+        from .Agent_list import deactivate_template as _deactivate
+        ok = _deactivate(name)
+        return f"已反激活 {name!r}" if ok else f"模板 {name!r} 不在池中"
+
+    @builtin_tool(
+        description="查询 agent_template_pool 中的模板清单（只读，不会实例化）。",
+        params={
+            "name": "可选：模板名；为空则列出全部",
+        },
+    )
+    def list_templates(self, name: str = "") -> str:
+        """查看模板池 + 激活状态。可选 name 过滤单个模板。"""
+        from .Agent_list import (
+            agent_list,
+            get_template,
+        )
+        from .Agent_list import (
+            list_templates as _list_templates,
+        )
+        if name:
+            tpl = get_template(name)
+            if tpl is None:
+                return f"模板 {name!r} 不在 agent_template_pool 中"
+            return (
+                f"模板 {name!r}: uuid={tpl.get('uuid')!r}, "
+                f"description={tpl.get('description')!r}, "
+                f"active={name in agent_list}"
+            )
+        items = _list_templates()
+        if not items:
+            return "agent_template_pool：（暂无）"
+        lines = []
+        for it in items:
+            lines.append(
+                f"- {it['name']} (uuid={it['uuid']}) "
+                f"active={it['active']} description={it.get('description')!r}"
+            )
+        return "agent_template_pool：\n" + "\n".join(lines)

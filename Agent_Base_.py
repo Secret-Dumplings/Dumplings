@@ -128,11 +128,11 @@ class Agent():
         threading.Thread(target=self.Connectivity, daemon=True).start()
 
     # ---------------- 辅助方法 ----------------
-    def _generate_task_id(self):
+    def _generate_task_id(self) -> str:
         """生成唯一任务 ID"""
         return str(uuid.uuid4())
 
-    def _get_timestamp(self):
+    def _get_timestamp(self) -> int:
         """获取当前时间戳（毫秒级）"""
         return int(time.time() * 1000)
 
@@ -194,7 +194,7 @@ class Agent():
         return ok
 
     # ---------------- 主对话函数 ----------------
-    def conversation_with_tool(self, messages=None, tool=False, images=None):
+    def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
         """
         进行对话，支持多模态输入（文本 + 图片）
 
@@ -531,12 +531,13 @@ class Agent():
                     break
             logger.debug(f"对话历史长度：{len(self.history)}")
             return self.conversation_with_tool(tool=True)
-        if tool:
-            logger.debug(f"返回对话历史最后一条，长度：{len(work_history[-1].get('content')) if work_history[-1].get('content') else 0}")
-            return work_history[-1].get("content")
+        # 递归到这（tool=True 路径）：本轮 LLM 已回应过，无新工具触发，
+        # LLM 的回复 full_content 就是最终答案；不是 work_history[-1]（那是上轮 tool_result）。
+        # v0.3.1 之前这里错把 work_history[-1] 当答案返回，导致多轮工具调用后
+        # 同步路径直接吐出 tool_result，丢 LLM 的最终文本。
         return full_content
 
-    async def aconversation_with_tool(self, messages=None, tool=False, images=None):
+    async def aconversation_with_tool(self, messages=None, tool: bool = False, images=None):
         """
         异步版 conversation_with_tool（基于 transport.achat_stream）。
 
@@ -720,7 +721,7 @@ class Agent():
         return tool_func
 
     def pack(self, message=None, tool_model=False, tool_name=None, tool_parameter=None,
-             finish_task=False, other=False, tool_result=None):
+             finish_task=False, other=False, tool_result=None) -> None:
         """
         打包输出内容，包含 AI UUID、任务戳和时间戳
 
@@ -784,7 +785,7 @@ class Agent():
             }
         self.out(content)
 
-    def out(self, content):
+    def out(self, content: dict) -> None:
         if content.get("tool_name"):
             print("调用工具:", content.get("tool_name"), "参数", content.get("tool_parameter"))
             return

@@ -12,13 +12,15 @@
 ## 特性一览
 
 - **多协议 Agent**：`BaseAgent`（OpenAI-compatible Chat Completions）+ `AnthropicAgent`（Anthropic Messages API），同一份 `agent_list` 共用
-- **声明式注册**：`@register_agent` + `@tool_registry.register_tool`，单行注册
+- **声明式注册**：`@register_agent`（已弃用）/ `@template_agent` + `activate_template` / `@tool_registry.register_tool`，单行注册
 - **统一内置 schema**：`@builtin_tool` 装饰器从签名+类型注解自动推导，零硬编码
 - **跨 Agent 协作**：`ask_for_help` / `list_agents` / `attempt_completion` / `reload` 四个内建工具
+- **模板池管理**（v0.3.0+）：`list_templates` / `activate_template` / `deactivate_template` / `register_template` —— `BaseAgent` / `AnthropicAgent` 双协议对齐
 - **MCP 协议桥接**：标准 stdio MCP 服务器自动接入
 - **Skill 开放标准**：兼容 `.claude/skills/` 目录，热加载
 - **细粒度权限 ACL**：每个工具可指定允许使用的 Agent 列表
 - **钩子系统**：`register_tool_hook(event_type, ...)` 监听工具调用前/后/错误
+- **`pack` 输出事件总线**（v0.3.1+）：`BaseAgent` / `AnthropicAgent` 同步+异步两条对话路径都走 `self.pack(...)` → `self.out(content)`，双协议输出接口完全对称
 
 ---
 
@@ -104,19 +106,36 @@ reviewer.conversation_with_tool(
 
 ### Agent 注册
 
-`@register_agent(uuid, name, description=None)` 是双键装饰器：UUID 用于程序化访问，名称用于人类可读。
+两种写法：v0.3.0+ 推荐 `@template_agent` + `activate_template` 模板池模式；旧的 `@register_agent` 已弃用但仍兼容。
 
 ```python
+# 写法 1：模板池（v0.3.0+ 推荐）—— 类只入池，运行时再 activate
+from dumplingsAI import template_agent
+from dumplingsAI.Agent_list import activate_template
+
+@template_agent("my_agent", uuid="my-uuid", description="一句话说明 Agent 用途")
+class MyAgent(dumplingsAI.BaseAgent):
+    prompt    = "..."
+    api_provider = "..."
+    model_name   = "..."
+    api_key      = "..."
+
+# 显式激活（也可以在 LLM 工具调用时由 agent 自己 activate）
+activate_template("my_agent")
+```
+
+```python
+# 写法 2：立即注册（v0.3.0 起已弃用，import 时 logger.warning 提示迁移）
 @dumplingsAI.register_agent("my-uuid", "my_agent", "一句话说明 Agent 用途")
 class MyAgent(dumplingsAI.BaseAgent):
-    prompt = "..."                # 系统提示词
-    api_provider = "..."          # API 端点
-    model_name = "..."            # 模型名
-    api_key = "..."               # 鉴权
-    fc_model = True               # 是否启用 Function Calling
-    stream = True                 # 是否流式响应
-    timeout = 60                  # 单请求超时（Phase 1+）
-    max_retries = 2               # 最大重试次数（Phase 1+）
+    prompt       = "..."   # 系统提示词
+    api_provider = "..."   # API 端点
+    model_name   = "..."   # 模型名
+    api_key      = "..."   # 鉴权
+    fc_model     = True    # 是否启用 Function Calling
+    stream       = True    # 是否流式响应
+    timeout      = 60      # 单请求超时
+    max_retries  = 2       # 最大重试次数
 ```
 
 ### 工具注册
@@ -156,7 +175,7 @@ def add(self, a: float, b: float) -> float:
 
 ### Agent 间的协作
 
-每个 Agent 自带 4 个内建工具：
+每个 Agent 自带 8 个内建工具（v0.3.0+ 4 个协作工具 + v0.3.0+ 4 个模板管理工具，`BaseAgent` / `AnthropicAgent` 双协议一致）：
 
 | 工具 | 用途 |
 |------|------|
@@ -164,8 +183,15 @@ def add(self, a: float, b: float) -> float:
 | `list_agents()` | 列出所有可协作的 Agent |
 | `attempt_completion(report_content)` | 标记任务完成 |
 | `reload()` | 重新拉取工具/技能列表 |
+| `list_templates(name="")` | 查询模板池（v0.3.0+） |
+| `activate_template(name)` | 把池中模板实例化并写入 `agent_list`（v0.3.0+） |
+| `deactivate_template(name)` | 从 `agent_list` 移除实例（保留在池中）（v0.3.0+） |
+| `register_template(name, description="")` | 占位说明：注册 cls 必须在 Python 代码侧完成（v0.3.0+） |
 
 无需手写 prompt 教 LLM 怎么调——框架已把工具描述注入到 system prompt 里。
+
+> **注意**：`allowed_agents` 必须传 agent **name** 而不是 uuid。`tool_registry.check_permission` 内部
+> 会先做 uuid→name 翻译再比对。详见 `agent_tool.check_permission`。
 
 ### 钩子
 
@@ -223,6 +249,8 @@ from dumplingsAI import (
 - `examples/multi_agent/ask_for_help_example.py` — 多 Agent 协作
 - `examples/anthropic_agent/agent_example.py` — Anthropic 协议示例
 - `tests/test_placeholder.py` — 冒烟测试（验证包能 import、装饰器工作）
+- `tests/test_template_pool.py` — 模板池 API 单测（v0.3.0+）
+- `tests/test_anthropic_agent.py` / `tests/test_base_agent_parity.py` — 走 `_llm_mock` 的协议层端到端单测（v0.3.1+）
 
 运行：
 
@@ -233,19 +261,6 @@ uv sync
 uv run python examples/basic_agent/agent_example.py
 ```
 
----
-
-## 路线图
-
-- ✅ Phase 0 — 注册式多 Agent 框架、工具 ACL、MCP 桥接、Skill 集成
-- ✅ Phase 0.5 — `@builtin_tool` 装饰器统一 schema 来源
-- ✅ Phase 0.6 — `AnthropicAgent` 与 OpenAI 协议共享 `agent_list`
-- ✅ Phase 1 — `http_utils`（retry/timeout）+ 错误类型体系 + `tiktoken` 计数
-- ✅ Phase 2 — Pydantic 结构化输出（`params_model`）
-- ✅ Phase 3 — `httpx` 异步支持（`aconversation_with_tool`）
-- ✅ Phase 4 — 全面 Pydantic 模型化
-
-具体计划见 `docs/PROJECT.md` 附录 B。
 
 ---
 
@@ -260,6 +275,17 @@ uv run ruff check Dumplings/
 ```
 
 CI 在 `python-package.yml`，自动跑 ruff + pytest on Python 3.10 / 3.11 / 3.12。
+
+### Mock 基础设施（v0.3.1+）
+
+`Dumplings/tests/_llm_mock.py` 提供 OpenAI Chat Completions + Anthropic Messages API 双协议 mock，让 Agent 走完整 wire 协议（构造 payload → 序列化 → 解析回来）做端到端单测，无需开真实 LLM：
+
+- 按请求 body 的 `stream` 字段自动分派 JSON / SSE
+- 多轮：每条请求消耗队列里一个响应工厂
+- `_connectivity` 探测请求短路（不消耗队列）
+- 请求日志：可断言"调了几次 / 每次发了什么"
+
+完整用法见 `tests/test_anthropic_agent.py`（17 项）和 `tests/test_base_agent_parity.py`（6 项）。
 
 ---
 
