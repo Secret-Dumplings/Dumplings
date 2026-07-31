@@ -48,3 +48,11 @@ nul
 # OS
 .DS_Store
 Thumbs.db
+
+# Persistence backends (v0.4.0+)
+.dumplingsAI_sessions/
+.dumplingsAI_sessions.db
+*.duas
+*.duas.gz
+b.db
+old.db

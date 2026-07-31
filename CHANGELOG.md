@@ -7,6 +7,54 @@ dumplingsAI 的所有显著变更记录。
 
 ## [Unreleased]
 
+### Added
+- **Agent 状态持久化（v0.4.0+）—— 可插拔后端架构**
+  - 自定义 `.duas` 文件格式（INI 头 `[META]/[CONFIG]/[STATE]` + JSONL 体 `[HISTORY]`）
+    - 人类可读 / git diff 友好 / 可手编
+    - `schema_version` 自动从 `dumplingsAI.__version__` 读，pyproject bump 自动同步
+    - `api_key` 不存明文，只存 `api_key_env`（env var 名），加载时 `os.getenv` 重新解析
+  - 顶层 API：
+    - `save_state(agent, key, *, backend=None)` / `load_state(key, *, backend=None)` /
+      `delete_state(key, *, backend=None)` / `list_states(*, backend=None)`
+    - `export_state_string(agent)` / `load_state_string(s)` —— 字符串 API（不落盘）
+    - `agent.save_state(key)` / `Agent.load_state(key)` —— 实例方法 wrapper
+  - 内置后端：
+    - `FileBackend`（默认、成熟）：每个 key 一个 `.duas` 文件
+    - `SQLiteBackend`（**实验性**）：sqlite3 单表 `sessions`，v0.4.0 初次实现未压测
+  - 插件协议 `PersistenceBackend`（4 方法：save/load/delete/list_keys）
+    - `register_backend(name, backend, set_as_default=False)` 注册自定义后端
+    - 可接入 Redis / Postgres / S3 / 任何 KV 存储
+- **实时自动保存（v0.4.0+）**
+  - import 时读取环境变量配置（默认关闭）：
+    - `DUMPLINGS_PERSISTENCE=on|off`
+    - `DUMPLINGS_PERSISTENCE_BACKEND=file|sqlite`
+    - `DUMPLINGS_PERSISTENCE_DIR=./sessions` （file 后端）
+    - `DUMPLINGS_PERSISTENCE_DB=./sessions.db` （sqlite 后端）
+    - `DUMPLINGS_PERSISTENCE_KEY=uuid|name`
+  - 编程配置：`dumplingsAI.configure(enabled=, backend=, base_dir=, db_path=, key_strategy=)`
+  - `@_auto_save` / `@_auto_save_async` 装饰器包了 `BaseAgent` / `AnthropicAgent`
+    的 `conversation_with_tool` / `aconversation_with_tool`；用 `_conv_depth` 计数器
+    保证最外层调用退出时保存一次，FC 模式递归不重复保存
+  - 默认 key 策略 = `uuid`（每个 agent 一份"当前状态"），可切到 `name`
+
+### Changed
+- **`Agent_Base_.py` 加 `from __future__ import annotations`**：启用 PEP 563
+  注解惰性求值，解决前向引用
+
+### Tests
+- **新增 `tests/test_persistence.py`（37 项）**
+  - 导出格式 / 多行 prompt 转义 / `schema_version` 自动读取
+  - FileBackend：roundtrip / delete / list / 路径穿越保护
+  - SQLiteBackend：roundtrip / delete / list
+  - 插件注册 / 重复注册 / 未知 backend
+  - 类身份解析：成功 / 降级到 agent_list / 失败抛 `AgentNotFoundError`
+  - 自动保存：默认关闭 / configure 启用 / env var 启用 / 异步路径
+  - 装饰器：conversation_with_tool 退出时保存 / async / FC 递归不重复保存
+  - key_strategy 切换 / 持久化失败不阻塞对话
+- **完整 `pytest tests/` 套件 148/148 通过，无回归**（112 旧 + 36 新）
+
+## [0.3.1] - 2026-07-30
+
 ### Fixed
 - **`AnthropicAgent.conversation_with_tool(stream=False)` 丢字**
   - v0.3.0 bug：non-stream 模式下 LLM 返回的文本只累积到 `full_text`，但没进 `assistant_blocks`，

@@ -21,6 +21,7 @@
 - **细粒度权限 ACL**：每个工具可指定允许使用的 Agent 列表
 - **钩子系统**：`register_tool_hook(event_type, ...)` 监听工具调用前/后/错误
 - **`pack` 输出事件总线**（v0.3.1+）：`BaseAgent` / `AnthropicAgent` 同步+异步两条对话路径都走 `self.pack(...)` → `self.out(content)`，双协议输出接口完全对称
+- **Agent 状态持久化**（v0.4.0+）：`.duas` 文件格式（人类可读 / git diff 友好）+ 可插拔后端（FileBackend 默认 / SQLiteBackend 实验）+ 实时自动保存（env var 或 `configure()` API）
 
 ---
 

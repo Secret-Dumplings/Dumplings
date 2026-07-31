@@ -15,6 +15,7 @@ dumplingsAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像
 | [protocols.md](protocols.md) | OpenAI 协议 vs Anthropic 协议、`Agent` 工厂基类、双协议对称性 |
 | [output-and-hooks.md](output-and-hooks.md) | `pack` / `out` 输出事件总线、工具调用钩子 |
 | [mcp-skills.md](mcp-skills.md) | MCP 协议桥接、Skill 开放标准（**测试功能**） |
+| [persistence.md](persistence.md) | Agent 状态持久化：`.duas` 文件格式 / 插件后端 / 实时自动保存 |
 | [testing.md](testing.md) | Mock 基础设施（`_llm_mock.py`）、端到端单测写法 |
 | [TODO.md](TODO.md) | 待办：单测覆盖 / 边界处理 / 生产就绪检查清单 |
 

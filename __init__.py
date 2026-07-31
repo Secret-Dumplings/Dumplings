@@ -210,10 +210,52 @@ __all__ = [
     "Skill",
     "register_skill_as_tool",
     "unregister_skill_from_tool",
+    # 持久化（v0.3.2+）
+    "save_state",
+    "load_state",
+    "delete_state",
+    "list_states",
+    "export_state_string",
+    "load_state_string",
+    "register_backend",
+    "set_default_backend",
+    "configure",         # 程序化配置自动持久化
+    "is_enabled",        # 当前是否启用了自动持久化
+    "disable",           # 关闭自动持久化
+    "auto_save",         # 手动触发一次自动保存
+    "FileBackend",       # 内置 file 后端（默认）
+    "SQLiteBackend",     # 内置 sqlite 后端（实验性）
+    "AgentNotFoundError",  # load_state 找不到类时抛
+    "FormatError",       # 状态文件格式错误时抛
     # 元信息
     "__version__",
     "__author__",
 ]
+
+
+# 持久化 API 顶层导出（v0.3.2+）
+# 在 import 时读取环境变量配置自动持久化
+from .persistence import (  # noqa: E402
+    AgentNotFoundError,
+    FileBackend,
+    FormatError,
+    SQLiteBackend,
+    _read_env_config,  # noqa: E402
+    auto_save,
+    configure,
+    delete_state,
+    disable,
+    export_state_string,
+    is_enabled,
+    list_states,
+    load_state,
+    load_state_string,
+    register_backend,
+    save_state,
+    set_default_backend,
+)
+
+_read_env_config()
 
 
 def help():

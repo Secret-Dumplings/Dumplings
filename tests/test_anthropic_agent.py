@@ -365,14 +365,15 @@ def test_base_agent_out_and_pack_have_annotations():
     """v0.3.1 给 BaseAgent 补的注解到位"""
     import inspect
     out_sig = inspect.signature(BaseAgent.out)
-    assert out_sig.parameters["content"].annotation is dict
-    assert out_sig.return_annotation is None
+    # ``from __future__ import annotations`` 把注解变成字符串（PEP 563），比较时用 'dict'
+    assert out_sig.parameters["content"].annotation == "dict"
+    assert out_sig.return_annotation == "None"
 
     pack_sig = inspect.signature(BaseAgent.pack)
-    assert pack_sig.return_annotation is None
+    assert pack_sig.return_annotation == "None"
 
     cw_sig = inspect.signature(BaseAgent.conversation_with_tool)
-    assert cw_sig.parameters["tool"].annotation is bool
+    assert cw_sig.parameters["tool"].annotation == "bool"
 
     acw_sig = inspect.signature(BaseAgent.aconversation_with_tool)
-    assert acw_sig.parameters["tool"].annotation is bool
+    assert acw_sig.parameters["tool"].annotation == "bool"

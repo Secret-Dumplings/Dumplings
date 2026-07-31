@@ -33,6 +33,7 @@ try:
         LLMResponse,
     )
     from .logging_config import logger
+    from .persistence import _auto_save, _auto_save_async  # v0.3.2+ 自动持久化装饰器
 except ImportError:
     raise ImportError("不可单独执行，不可单独 import")
 
@@ -288,6 +289,26 @@ class AnthropicAgent:
         """
         self.tool_call_hooks.append(hook_func)
 
+    # ---------------- 持久化（v0.3.2+）----------------
+    def save_state(self, key: str, backend: Optional[str] = None) -> None:
+        """把当前 agent 状态保存到指定后端。
+
+        Wrapper around :func:`dumplingsAI.save_state`. 详见
+        ``dumplingsAI/persistence.py`` 顶部的格式说明。
+        """
+        from .persistence import save_state as _save_state
+        _save_state(self, key, backend=backend)
+
+    @classmethod
+    def load_state(cls, key: str, backend: Optional[str] = None) -> "AnthropicAgent":
+        """从指定后端加载 key 对应的 agent 状态，返回新实例。
+
+        类路径解析失败时会回退到 ``agent_list[uuid]``；都找不到时
+        抛 :class:`AgentNotFoundError`。
+        """
+        from .persistence import load_state as _load_state
+        return _load_state(key, backend=backend)
+
     def _execute_hooks(self, event_type, tool_name, tool_args, tool_result=None):
         for hook in self.tool_call_hooks:
             try:
@@ -415,6 +436,7 @@ class AnthropicAgent:
         self.out(content)
 
     # ---------------- 主对话入口 ----------------
+    @_auto_save
     def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
         """
         发起一次对话；遇到 tool_use 时自动执行并继续迭代，
@@ -564,6 +586,7 @@ class AnthropicAgent:
         last = work_history[-1].get("content", []) if work_history else []
         return "".join(b.get("text", "") for b in last if b.get("type") == "text")
 
+    @_auto_save_async
     async def aconversation_with_tool(self, messages=None, tool: bool = False, images=None):
         """
         异步版 conversation_with_tool（基于 transport.achat_stream）。

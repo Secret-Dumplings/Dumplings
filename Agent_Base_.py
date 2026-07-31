@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import annotations  # 启用 PEP 563：所有注解默认惰性求值，解决前向引用
+
 import json
 import os
 import platform
@@ -5,7 +8,7 @@ import re
 import threading
 import time
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 from bs4 import BeautifulSoup
 
@@ -17,6 +20,7 @@ try:
         LLMResponse,
     )
     from .logging_config import logger  # 配置日志
+    from .persistence import _auto_save, _auto_save_async  # v0.3.2+ 自动持久化装饰器
 except Exception:
     raise ImportError("不可单独执行")
 
@@ -144,6 +148,26 @@ class Agent():
         """
         self.tool_call_hooks.append(hook_func)
 
+    # ---------------- 持久化（v0.3.2+）----------------
+    def save_state(self, key: str, backend: Optional[str] = None) -> None:
+        """把当前 agent 状态保存到指定后端。
+
+        Wrapper around :func:`dumplingsAI.save_state`. 详见
+        ``dumplingsAI/persistence.py`` 顶部的格式说明。
+        """
+        from .persistence import save_state as _save_state
+        _save_state(self, key, backend=backend)
+
+    @classmethod
+    def load_state(cls, key: str, backend: Optional[str] = None) -> "Agent":
+        """从指定后端加载 key 对应的 agent 状态，返回新实例。
+
+        类路径解析失败时（如原类已被删除）会回退到 ``agent_list[uuid]``；
+        都找不到时抛 :class:`AgentNotFoundError`。
+        """
+        from .persistence import load_state as _load_state
+        return _load_state(key, backend=backend)
+
     def _execute_hooks(self, event_type, tool_name, tool_args, tool_result=None):
         """执行所有注册的钩子"""
         for hook in self.tool_call_hooks:
@@ -194,6 +218,7 @@ class Agent():
         return ok
 
     # ---------------- 主对话函数 ----------------
+    @_auto_save
     def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
         """
         进行对话，支持多模态输入（文本 + 图片）
@@ -537,6 +562,7 @@ class Agent():
         # 同步路径直接吐出 tool_result，丢 LLM 的最终文本。
         return full_content
 
+    @_auto_save_async
     async def aconversation_with_tool(self, messages=None, tool: bool = False, images=None):
         """
         异步版 conversation_with_tool（基于 transport.achat_stream）。
