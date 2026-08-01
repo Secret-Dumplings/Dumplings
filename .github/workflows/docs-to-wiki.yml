@@ -6,128 +6,59 @@ on:
     paths:
       - "docs/**"
       - ".github/workflows/docs-to-wiki.yml"
+  workflow_dispatch:
 
 permissions:
-  contents: write  # push wiki repo
-  issues: write    # 用 API 操作 wiki
+  contents: write
 
 jobs:
   sync-wiki:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Python（只用于可选的 markdown 处理）
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: List docs files
-        id: list
+      # Wiki 是独立 git 仓库（``<repo>.wiki.git``）。clone → 覆盖 md → commit → push。
+      # 这种方式比 GitHub Wiki API 稳得多：避免 slug 计算 / sha 传递 / 首次创建限制。
+      - name: Clone wiki repo
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "## Files to sync ##"
-          ls -1 docs/*.md
-          echo "files<<EOF" >> $GITHUB_OUTPUT
-          echo "$(ls -1 docs/*.md)" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          set -e
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.wiki.git" wiki
 
-      - name: Configure git
+      - name: Copy docs to wiki
         run: |
+          cd wiki
+          # 先清掉旧 md（避免遗留）
+          rm -f *.md
+          # 复制 docs/*.md → wiki/（index.md 重命名为 Home.md）
+          for f in ../docs/*.md; do
+            [ -f "$f" ] || continue
+            name=$(basename "$f" .md)
+            if [ "$name" = "index" ]; then
+              cp "$f" "Home.md"
+            else
+              cp "$f" "${name}.md"
+            fi
+          done
+          echo "## Synced files ##"
+          ls -la *.md
+
+      - name: Commit and push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd wiki
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      # 用 actions/github-script 直接调 GitHub Wiki API
-      # Wiki 不是 git checkout 的一部分——每个 wiki page 是一条独立 API 资源
-      - name: Sync each .md → wiki page
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const docsDir = 'docs';
-            const files = fs.readdirSync(docsDir).filter(f => f.endsWith('.md'));
-            const order = [
-              'index.md',           // 主页
-              'getting-started.md',
-              'agent-registration.md',
-              'protocols.md',
-              'tools.md',
-              'builtin-tools.md',
-              'output-and-hooks.md',
-              'mcp-skills.md',
-              'persistence.md',
-              'testing.md',
-              'TODO.md',
-            ];
-
-            // 处理每个 md 文件
-            for (const file of files) {
-              const content = fs.readFileSync(path.join(docsDir, file), 'utf8');
-              // wiki page title: 去掉 .md 后缀
-              const title = file.replace(/\.md$/, '');
-
-              // 检查 page 是否已存在
-              let page;
-              try {
-                const { data } = await github.rest.repos.getContent({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  path: `docs/${file}`,
-                });
-                page = { sha: data.sha };
-                console.log(`Found existing wiki page: ${title}`);
-              } catch (e) {
-                // 不存在就创建
-                page = null;
-                console.log(`Creating new wiki page: ${title}`);
-              }
-
-              // 调用 wiki API 写 page
-              // 注意：wiki page 在 GitHub API 中通过 /repos/{owner}/{repo}/wiki
-              if (page) {
-                await github.request(
-                  'PUT /repos/{owner}/{repo}/wiki/{title}',
-                  {
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    title: title,
-                    body: content,
-                    // sha: page.sha,  // wiki API 不需要 sha
-                  }
-                );
-              } else {
-                await github.request(
-                  'POST /repos/{owner}/{repo}/wiki',
-                  {
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    title: title,
-                    body: content,
-                  }
-                );
-              }
-              console.log(`✓ Synced: ${title} (${content.length} bytes)`);
-            }
-
-            // 设置 Home 为 index.md（如果存在）
-            // GitHub Wiki 允许设置 Home 页面
-            try {
-              const content = fs.readFileSync(path.join(docsDir, 'index.md'), 'utf8');
-              await github.request(
-                'PUT /repos/{owner}/{repo}/wiki/_Sidebar',
-                {
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: '_Sidebar',
-                  body: order
-                    .filter(f => f !== 'index.md' && files.includes(f))
-                    .map(f => `  - [${f.replace('.md', '')}](${f.replace('.md', '')})`)
-                    .join('\n'),
-                }
-              );
-            } catch (e) {
-              console.log('Sidebar 设置跳过：' + e.message);
-            }
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit (docs unchanged)."
+            exit 0
+          fi
+          git commit -m "docs: sync from main ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
+          # 第一次 push wiki 已有 Home.md 但其他 page 还没有 → 正常 push
+          git push
