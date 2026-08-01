@@ -1,3 +1,5 @@
+from typing import Optional
+
 # 1. 已"激活"的 Agent 实例池（与 dumplingsAI.agent_list 兼容）
 #    语义：只有调用 activate_template() 之后，模板才会作为实例进入这里。
 agent_list = {}          # {key1: instance, key2: instance}
@@ -132,10 +134,16 @@ def template_agent(name=None, *, uuid=None, description=None, overwrite: bool = 
     def _decorator(cls):
         # 缺省 name 时的兜底：类属性 name -> 类名
         effective_name = name or getattr(cls, "name", None) or cls.__name__
+        # 把 uuid / name / description 写回类属性，__init__ 内部 self.__class__.uuid
+        # / self.__class__.name 才能拿到；这与旧版 @register_agent 行为一致
+        # （v0.3.0 之前依赖 @register_agent 隐式设置；template_agent 也要做）。
+        cls.uuid = uuid if uuid is not None else effective_name
+        cls.name = effective_name
+        cls.description = description
         register_template(
             cls,
             name=effective_name,
-            uuid=uuid,
+            uuid=cls.uuid,
             description=description,
             overwrite=overwrite,
         )
@@ -146,16 +154,26 @@ def template_agent(name=None, *, uuid=None, description=None, overwrite: bool = 
 # ---------------------------------------------------------------------------
 # 激活：模板 -> 实例 -> agent_list
 # ---------------------------------------------------------------------------
-def activate_template(name: str):
+def activate_template(name: str, *, uuid: Optional[str] = None):
     """
     把模板从池中"激活"到 ``agent_list``。
 
     步骤：
         1. 从 ``agent_template_pool`` 取出模板 dict（含 cls）
         2. 实例化（``cls()``）
-        3. 按 ``uuid`` 和 ``name`` 两个 key 写入 ``agent_list``
+        3. 按 ``uuid`` 和（首次时）``name`` 两个 key 写入 ``agent_list``
 
-    重复激活同名模板是安全的：会替换旧实例。
+    Args:
+        name: 模板名
+        uuid: 可选；强制覆盖默认 uuid。多次激活同名模板时**必须传不同的 uuid**，
+              否则抛 ``ValueError``（避免静默覆盖已有实例）。
+
+    Raises:
+        KeyError: 模板不在池中
+        ValueError: agent_list 中已有同名 uuid 的实例
+
+    Returns:
+        新实例化的 Agent。
     """
     tpl = agent_template_pool.get(name)
     if tpl is None:
@@ -164,9 +182,18 @@ def activate_template(name: str):
     cls = tpl["cls"]
     inst = cls()  # **唯一实例化点**
 
-    uid = tpl.get("uuid") or name
-    agent_list[uid] = inst
-    agent_list[name] = inst
+    effective_uuid = uuid if uuid is not None else (tpl.get("uuid") or name)
+    if effective_uuid in agent_list:
+        raise ValueError(
+            f"agent_list 已有 uuid={effective_uuid!r}。"
+            f"多次激活同名模板请传不同 uuid，或先 deactivate_template。"
+        )
+
+    agent_list[effective_uuid] = inst
+    # 第一次激活时才用 name 做 key；后续同名 name 不覆盖（避免冲掉）
+    if name not in agent_list:
+        agent_list[name] = inst
+
     return inst
 
 

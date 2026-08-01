@@ -268,6 +268,7 @@ class tool:
         description: str = "",
         name: Optional[str] = None,
         parameters: Optional[dict] = None,
+        overwrite: bool = False,
     ):
         """
         工具注册装饰器（带日志）
@@ -311,6 +312,11 @@ class tool:
             }
 
             # 真正注册
+            if tool_name in self._tools and not overwrite:
+                raise ValueError(
+                    f"工具 {tool_name!r} 已经注册，"
+                    f"如要替换请显式传 overwrite=True"
+                )
             self._tools[tool_name] = {
                 "function": func,
                 "allowed_agents": permitted,

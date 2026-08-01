@@ -40,6 +40,16 @@ Homepage = "https://github.com/Secret-Dumplings/dumplingsAI"
 Repository = "https://github.com/Secret-Dumplings/dumplingsAI.git"
 Issues = "https://github.com/Secret-Dumplings/dumplingsAI/issues"
 
+[project.optional-dependencies]
+docs = [
+    "flet>=0.86.4",
+    "flet-desktop>=0.86.4",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+default = true
+
 [tool.setuptools]
 packages = ["dumplingsAI"]
 package-dir = {"dumplingsAI" = "."}
@@ -57,10 +67,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-ra"
 asyncio_mode = "auto"
-
-[[tool.uv.index]]
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-default = true
 
 [tool.ruff]
 line-length = 120

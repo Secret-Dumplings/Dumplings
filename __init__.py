@@ -58,7 +58,19 @@ Anthropic 协议用法::
 """
 
 from .Agent_Base_ import Agent as BaseAgent
-from .Agent_list import agent_list, register_agent
+from .Agent_list import (
+    activate_template,
+    agent_list,
+    agent_template_pool,
+    deactivate_template,
+    get_template,
+    is_active,
+    list_templates,
+    register_agent,
+    register_template,
+    remove_template,
+    template_agent,
+)
 from .agent_tool import builtin_tool, tool_registry  # noqa: F401  (re-exported)
 
 # 从 mcp_bridge 导入 MCP 相关功能
@@ -190,6 +202,15 @@ class Agent(metaclass=_ProtocolMeta):
 __all__ = [
     # 核心组件
     "register_agent",
+    "template_agent",       # 模板池装饰器（v0.3.0+ 推荐）
+    "activate_template",    # 模板池激活（v0.3.0+）
+    "deactivate_template",  # 模板池反激活（v0.3.0+）
+    "register_template",    # 函数式入池（v0.3.0+）
+    "remove_template",      # 彻底从池中删除
+    "list_templates",       # 列出全部模板
+    "get_template",         # 查单个模板
+    "is_active",            # 模板是否已激活
+    "agent_template_pool",  # 模板池 dict
     "tool_registry",
     "Agent",          # 协议无关的工厂基类（推荐）
     "BaseAgent",      # OpenAI 协议基类（直接继承时用）

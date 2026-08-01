@@ -5,10 +5,17 @@ Pydantic structured output 单测
 from typing import Optional
 
 import pytest
+from dumplingsAI import (
+    activate_template,
+    agent_list,
+    template_agent,
+    tool_registry,
+)
 from dumplingsAI.agent_tool import (
     _validate_tool_args_for,
     builtin_tool,
 )
+from dumplingsAI.anthropic_agent import AnthropicAgent
 from pydantic import BaseModel, Field
 
 
@@ -132,3 +139,88 @@ def test_validate_tool_without_params_model_passthrough():
     inst = Agent()
     out = _validate_tool_args_for(inst, "no_model", {"x": 5})
     assert out == {"x": 5}
+
+
+# ===========================================================================
+# 端到端：LLM 给错参数 → 框架捕获 → 喂回 LLM
+# ===========================================================================
+
+def test_end_to_end_llm_bad_args_gets_validation_error_back():
+    """场景：用户让 agent 算 1 + 2，LLM 把参数传错（字符串而非 int）→
+    Pydantic 校验失败 → 框架捕获 → 喂回 LLM → LLM 道歉。
+    """
+    import uuid as _uuid
+
+    from dumplingsAI.tool_runner import ToolRunner
+
+    Agent_cls = _make_agent_cls()  # 已经有 add(a:int, b:int) builtin_tool
+    uuid_str = _uuid.uuid4().hex
+
+    @template_agent("pyd-err-e2e", uuid=uuid_str, description="test")
+    class _BadAgent(AnthropicAgent):
+        protocol = "anthropic"
+        prompt = "x"
+        model_name = "m"
+        api_key = "k"
+        api_provider = "http://127.0.0.1:1"
+        # 把 add 绑到 instance 上
+        add = Agent_cls.__dict__["add"]
+        op = Agent_cls.__dict__["op"]
+        fn = Agent_cls.__dict__["fn"]
+        no_model = Agent_cls.__dict__["no_model"]
+
+    activate_template("pyd-err-e2e")
+    inst = agent_list["pyd-err-e2e"]
+    inst._connectivity = lambda: None  # noqa: SLF001
+
+    # 没有 mock server，直接调 _dispatch_tool 验证错误传播
+    inst._tool_runner = ToolRunner(timeout=5.0)  # noqa: SLF001
+
+    # 错误：x="not an int"，Pydantic 应抛 ValueError
+    result, async_id = inst._dispatch_tool("fn", {"x": "not an int"})
+    assert async_id is None
+    assert "params validation failed" in result or "validation" in result.lower()
+
+
+def test_register_tool_overwrite_default_false_raises():
+    """register_tool 同名 + overwrite=False → 抛 ValueError"""
+    @tool_registry.register_tool(
+        name="dup-tool",
+        description="first",
+        parameters={"type": "object", "properties": {}},
+    )
+    def first() -> str:
+        return "1"
+
+    with pytest.raises(ValueError, match=r"dup-tool.*(已?注[册册]|already)"):
+        @tool_registry.register_tool(
+            name="dup-tool",
+            description="second",
+            parameters={"type": "object", "properties": {}},
+        )
+        def second() -> str:
+            return "2"
+
+
+def test_register_tool_overwrite_true_replaces():
+    """register_tool 同名 + overwrite=True → 替换"""
+    @tool_registry.register_tool(
+        name="replaceable",
+        description="v1",
+        parameters={"type": "object", "properties": {}},
+    )
+    def v1() -> str:
+        return "v1"
+
+    @tool_registry.register_tool(
+        name="replaceable",
+        description="v2",
+        overwrite=True,
+        parameters={"type": "object", "properties": {}},
+    )
+    def v2() -> str:
+        return "v2"
+
+    info = tool_registry.get_tool_info("replaceable")
+    assert info["description"] == "v2"
+    assert info["function"]() == "v2"

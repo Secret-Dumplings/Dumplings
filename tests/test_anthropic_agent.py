@@ -30,8 +30,9 @@ from _llm_mock import (
 from dumplingsAI import (
     Agent,
     BaseAgent,
+    activate_template,
     agent_list,
-    register_agent,
+    template_agent,
     tool_registry,
 )
 from dumplingsAI.Agent_list import (
@@ -87,7 +88,7 @@ def _clean_globals():
 def _make_agent(uuid_str: str, name: str, base_url: str, use_stream: bool):
     """动态建一个 Anthropic 协议 Agent 类，api_provider 指向 mock server。"""
 
-    @register_agent(uuid_str, name)
+    @template_agent(name, uuid=uuid_str, description="test")
     class _TestAgent(Agent):
         protocol = "anthropic"
         prompt = "你是一个测试 Agent"
@@ -96,6 +97,7 @@ def _make_agent(uuid_str: str, name: str, base_url: str, use_stream: bool):
         api_provider = base_url  # mock server；_endpoint() 会拼上 /v1/messages
         stream = use_stream
 
+    activate_template(name)
     # 关闭 _connectivity 后台线程（mock 不希望被打扰）
     inst = agent_list[name]
     inst._connectivity = lambda: None  # noqa: SLF001 - 测试桩
@@ -306,9 +308,11 @@ def test_anthropic_has_template_builtin_tools():
 
 
 def test_anthropic_list_templates_empty_pool(anthropic_url):
-    base_url = anthropic_url
-    agent = _make_agent(_uuid.uuid4().hex, "t", base_url, use_stream=False)
-    out = agent.list_templates()
+    """无模板时 list_templates 返回 '暂无'。fixture 已经清空 pool。"""
+    from dumplingsAI import agent_template_pool
+    assert len(agent_template_pool) == 0
+    # 不创建 agent，直接调 list_templates 方法（基类方法，不需要 agent 实例）
+    out = AnthropicAgent.list_templates(None)  # 类方法调用
     assert "暂无" in out
 
 

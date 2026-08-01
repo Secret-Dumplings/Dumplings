@@ -48,9 +48,12 @@ class Agent():
         super().__init_subclass__(**kwargs)
         _builtin_promote_overrides(cls)
         # 一次性检测：子类覆写 pack() 但没有覆写 out() 时打 warning。
-        # 在 __init_subclass__ 中做静态检测，确保无论子类 pack 是否调 super() 都能命中。
-        # AnthropicAgent 这种中间层（有自己的 out）不会误报：cls.out != Agent.out 时不警告。
-        if cls.pack is not Agent.pack and cls.out is Agent.out:
+        # 用 cls.__dict__ 检测"本类自己定义"，避免在多级继承下误判祖先类
+        # （如 AnthropicAgent 继承 Agent.BaseAgent 的 __init_subclass__ 时，
+        #  `Agent` 名字在不同上下文里指向不同类，``cls.out is Agent.out`` 不可靠）。
+        has_own_pack = "pack" in cls.__dict__
+        has_own_out = "out" in cls.__dict__
+        if has_own_pack and not has_own_out:
             logger.warning(
                 "[dumplingsAI] 检测到子类 {} 覆写了 pack() 但没有覆写 out()。"
                 "如果你想自定义输出行为（流式 / UI / 自定义 logger 等），"
@@ -694,6 +697,7 @@ class Agent():
                     self.current_task_id = self._generate_task_id()
                     self._execute_hooks("before", tool_name, args)
                     self.pack(tool_name=tool_name, tool_parameter=args)
+                    async_id = None
                     result, async_id = self._tool_runner.submit(
                         tool_func=self._resolve_tool(tool_name),
                         tool_name=tool_name,

@@ -25,8 +25,9 @@ from _llm_mock import (
 from dumplingsAI import (
     Agent,
     BaseAgent,
+    activate_template,
     agent_list,
-    register_agent,
+    template_agent,
     tool_registry,
 )
 from dumplingsAI.Agent_list import (
@@ -68,7 +69,7 @@ def _clean_globals():
 def _make_openai_agent(uuid_str: str, name: str, base_url: str, use_stream: bool):
     """建一个 OpenAI 协议 Agent，api_provider 指向 mock。"""
 
-    @register_agent(uuid_str, name)
+    @template_agent(name, uuid=uuid_str, description="test")
     class _OA(Agent):
         protocol = "openai"  # 显式选 OpenAI
         prompt = "you are a test agent"
@@ -77,6 +78,7 @@ def _make_openai_agent(uuid_str: str, name: str, base_url: str, use_stream: bool
         api_provider = base_url + "/v1/chat/completions"
         stream = use_stream
 
+    activate_template(name)
     inst = agent_list[name]
     inst._connectivity = lambda: None  # noqa: SLF001
     return inst

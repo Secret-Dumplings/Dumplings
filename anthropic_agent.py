@@ -556,6 +556,7 @@ class AnthropicAgent:
                     tool_name=tu["name"],
                     tool_parameter=tu["input"],
                 )
+                async_id = None  # 提前初始化，防止 except 分支跳过赋值后 UnboundLocalError
                 try:
                     result, async_id = self._dispatch_tool(tu["name"], tu["input"])
                 except Exception as e:
@@ -687,6 +688,7 @@ class AnthropicAgent:
                     tool_name=tu["name"],
                     tool_parameter=tu["input"],
                 )
+                async_id = None
                 try:
                     result, async_id = self._dispatch_tool(tu["name"], tu["input"])
                 except Exception as e:
@@ -793,9 +795,12 @@ class AnthropicAgent:
 
         入参先经 Pydantic 校验（如果 @builtin_tool 提供了 params_model）。
         """
-        # Pydantic 校验
+        # Pydantic 校验（错误返回给 LLM，不抛）
         from .agent_tool import _validate_tool_args_for
-        arguments = _validate_tool_args_for(self, name, arguments)
+        try:
+            arguments = _validate_tool_args_for(self, name, arguments)
+        except Exception as e:
+            return (f"工具参数校验失败：{e}", None)
 
         # 1) 内置工具
         builtin_names = {s["function"]["name"] for s in tool_registry.collect_builtin_tools(self)}
