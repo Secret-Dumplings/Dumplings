@@ -1,3 +1,10 @@
+---
+slug: agent-registration
+title: Agent 注册
+order: 3
+icon: EDIT_NOTE_OUTLINED
+---
+
 # Agent 注册
 
 > 两种写法：v0.3.0+ 模板池（推荐）vs `@register_agent`（已弃用但兼容）。

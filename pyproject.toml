@@ -40,12 +40,6 @@ Homepage = "https://github.com/Secret-Dumplings/dumplingsAI"
 Repository = "https://github.com/Secret-Dumplings/dumplingsAI.git"
 Issues = "https://github.com/Secret-Dumplings/dumplingsAI/issues"
 
-[project.optional-dependencies]
-docs = [
-    "flet>=0.86.4",
-    "flet-desktop>=0.86.4",
-]
-
 [[tool.uv.index]]
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 default = true
@@ -54,6 +48,11 @@ default = true
 packages = ["dumplingsAI"]
 package-dir = {"dumplingsAI" = "."}
 include-package-data = true
+
+# docs-site/（VitePress 文档站 + FastAPI 后端）绝不进 wheel / sdist ——
+# 它只是本仓库的文档工具，不是 Python 包；排除避免污染用户安装。
+[tool.setuptools.exclude-package-data]
+"*" = ["docs-site/**/*", "docs-site/*"]
 
 [dependency-groups]
 dev = [
@@ -65,7 +64,11 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "-ra"
+# 默认跑：单测（跳过 benchmark）。跑 benchmark 用 ``pytest -m benchmark`` 显式跑。
+addopts = "-ra -m 'not benchmark'"
+markers = [
+    "benchmark: 性能基准测试（默认跳过；用 -m benchmark 显式跑）",
+]
 asyncio_mode = "auto"
 
 [tool.ruff]

@@ -1,3 +1,10 @@
+---
+slug: tools
+title: 工具
+order: 4
+icon: BUILD_OUTLINED
+---
+
 # 工具
 
 > 工具注册：`@tool_registry.register_tool`（传统 JSON Schema）vs `@builtin_tool`（从签名自动推导 schema）。

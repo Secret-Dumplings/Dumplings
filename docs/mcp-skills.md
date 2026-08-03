@@ -1,3 +1,10 @@
+---
+slug: mcp-skills
+title: MCP 与 Skill
+order: 8
+icon: PUBLIC_OUTLINED
+---
+
 # MCP 与 Skill
 
 > ⚠️ **测试功能（Test Feature）—— v0.3.1 尚未达到生产就绪**

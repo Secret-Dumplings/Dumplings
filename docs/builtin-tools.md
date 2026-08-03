@@ -1,3 +1,10 @@
+---
+slug: builtin-tools
+title: 内建工具
+order: 5
+icon: INVENTORY_2_OUTLINED
+---
+
 # 内建工具
 
 > 每个 Agent 都自带 8 个内建工具（v0.3.0+ 4 个协作工具 + v0.3.0+ 4 个模板管理工具）。

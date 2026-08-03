@@ -1,3 +1,10 @@
+---
+slug: persistence
+title: 持久化
+order: 9
+icon: SAVE_OUTLINED
+---
+
 # Agent 状态持久化
 
 > v0.4.0+ 新增。可插拔后端架构 + 实时自动保存。

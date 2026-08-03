@@ -1,3 +1,10 @@
+---
+slug: protocols
+title: 通信协议
+order: 6
+icon: SWAP_HORIZ_OUTLINED
+---
+
 # 协议
 
 > OpenAI 兼容 Chat Completions vs Anthropic Messages API；通过 `Agent` 工厂基类 + `protocol` 字段统一选择。

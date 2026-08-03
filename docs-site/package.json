@@ -1,0 +1,20 @@
+{
+  "name": "dumplingsai-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev . --port 5173",
+    "build": "vitepress build .",
+    "preview": "vitepress preview . --port 4173",
+    "api": "uv run uvicorn api.main:app --reload --port 8001"
+  },
+  "devDependencies": {
+    "@vue/devtools-api": "^8.2.1",
+    "@vueuse/core": "^14.4.0",
+    "@vueuse/integrations": "^14.4.0",
+    "mark.js": "^8.11.1",
+    "minisearch": "^7.2.0",
+    "vitepress": "^1.5.0"
+  }
+}

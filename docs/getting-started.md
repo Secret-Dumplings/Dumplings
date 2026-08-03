@@ -1,3 +1,10 @@
+---
+slug: getting-started
+title: 快速开始
+order: 2
+icon: ROCKET_LAUNCH_OUTLINED
+---
+
 # Getting Started
 
 > 5 分钟跑通第一个 Agent。

@@ -52,6 +52,20 @@ jobs:
       - name: Build sdist + wheel
         run: uv run --with build --with twine python -m build
 
+      # 保险：docs-site/（VitePress 文档站 + FastAPI 后端）绝不能进 wheel。
+      # 打包配置已排除（MANIFEST.in + exclude-package-data），这里再校验一次。
+      - name: Verify wheel excludes docs-site
+        run: |
+          set -euo pipefail
+          for w in dist/*.whl; do
+            if unzip -l "$w" | grep -q 'docs-site'; then
+              echo "::error:: $w 包含 docs-site/（应被排除），请检查打包配置"
+              unzip -l "$w" | grep 'docs-site' || true
+              exit 1
+            fi
+          done
+          echo "OK: wheel 不包含 docs-site/"
+
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:

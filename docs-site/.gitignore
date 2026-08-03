@@ -1,0 +1,13 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# VitePress 临时/构建产物
+.vitepress/cache/
+.vitepress/dist/
+*.local
+
+# Python（fastapi 后端）
+__pycache__/
+*.pyc
+.venv/

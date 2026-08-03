@@ -1,3 +1,10 @@
+---
+slug: output-and-hooks
+title: 输出与钩子
+order: 7
+icon: EXTENSION_OUTLINED
+---
+
 # 输出与钩子
 
 > `pack` / `out` 输出事件总线（v0.3.1+ 双协议对齐）；`register_tool_hook` 工具调用钩子。

@@ -1,3 +1,10 @@
+---
+slug: index
+title: 首页
+order: 1
+icon: HOME_OUTLINED
+---
+
 # dumplingsAI 文档
 
 dumplingsAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像"公司团队"一样分工完成任务。
