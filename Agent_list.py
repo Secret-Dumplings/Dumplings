@@ -239,44 +239,21 @@ def is_active(name: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# 兼容：旧版类装饰器（已弃用 —— 装饰时立刻实例化并写入 agent_list）
+# 注册表 API 包装（v0.4.2+）—— 替代直接 mutate agent_list dict
 # ---------------------------------------------------------------------------
-def register_agent(uuid, name, description=None):
+
+def register_agent(name: str, instance) -> None:
+    """把 instance 注册到 agent_list（用 name 作 key）。
+
+    不像 ``@register_agent`` 装饰器（已弃用），这是手动注册 API。
+    多次注册同名会覆盖。
     """
-    .. deprecated::
-        本装饰器已弃用，请改用 ``register_template`` + ``activate_template``。
+    agent_list[name] = instance
 
-        原因：旧实现会在 import 阶段就实例化 Agent 并写入 ``agent_list``，
-        对于"按需加载 / 延迟激活"的场景不再合适。
 
-    等价迁移::
-
-        # 旧写法（立即实例化、立即进入 agent_list）
-        @register_agent("foo-uuid", "foo")
-        class Foo(Agent):
-            ...
-
-        # 新写法（先入池，运行时再激活）
-        class Foo(Agent):
-            ...
-        register_template(Foo, uuid="foo-uuid", name="foo")
-        # 之后由代码或 builtin_tool 触发：
-        activate_template("foo")
-    """
-    logger.warning(
-        "register_agent 已弃用，请改用 register_template + activate_template。"
-        " 详见 Dumplings/Agent_list.py 顶部说明。"
-    )
-
-    def _decorator(cls):
-        cls.uuid = uuid
-        cls.name = name
-        cls.description = description
-        cls_instantiation = cls()
-        agent_list[uuid] = cls_instantiation
-        agent_list[name] = cls_instantiation
-        return cls              # 原样返回，不影响类本身
-    return _decorator
+def unregister_agent(name: str) -> bool:
+    """从 agent_list 注销。name 不存在不抛，返回是否真的删了。"""
+    return agent_list.pop(name, None) is not None
 
 
 # ---------------------------------------------------------------------------

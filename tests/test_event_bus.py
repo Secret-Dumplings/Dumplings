@@ -137,11 +137,31 @@ def test_user_builds_chatbot_with_custom_out_logger():
 
 
 def test_user_binds_out_directly_on_instance():
-    """场景：用户不想继承类，直接给 instance 绑 out（最常见的 monkey-patch 用法）"""
+    """场景：用户不想继承类，直接给 instance 绑 out（最常见的 monkey-patch 用法）
+
+    新设计：``enable_connectivity = False`` 类属性可以直接关 _connectivity 后台线程，
+    不需要 monkey-patch。"""
     state, base_url, server = _start_mock()
     try:
-        agent = _make_agent("inst-out", base_url)
+        # v0.4.2+：用 enable_connectivity 类属性关后台线程（无需 monkey-patch）
+        @template_agent("inst-out", uuid=_uuid.uuid4().hex, description="test")
+        class _A(Agent):
+            protocol = "anthropic"
+            prompt = "x"
+            model_name = "m"
+            api_key = "k"
+            api_provider = base_url
+            enable_connectivity = False  # 关后台线程
+
+        activate_template("inst-out")
+        agent = agent_list["inst-out"]
+
         captured: List[dict] = []
+
+        def _my_out(content):
+            captured.append(content)
+
+        agent.out = _my_out
 
         @tool_registry.register_tool(
             allowed_agents=["inst-out"],
@@ -151,11 +171,6 @@ def test_user_binds_out_directly_on_instance():
         )
         def ping() -> str:
             return "pong"
-
-        def _my_out(content):
-            captured.append(content)
-
-        agent.out = _my_out
 
         state.queue(lambda _b: anthropic_text_then_tool_response("pinging", "t1", "ping", {}))
         state.queue(lambda _b: anthropic_text_response("done"))
@@ -282,3 +297,39 @@ def test_user_hook_error_event_fires_when_tool_raises():
         server.shutdown()
         server.server_close()
         _AnthropicMockHandler.state = None
+
+
+# ===========================================================================
+# Agent 启动时的 _connectivity 后台线程（v0.4.2+ enable_connectivity 切换）
+# ===========================================================================
+
+def test_enable_connectivity_false_disables_background_ping():
+    """enable_connectivity = False 时，__init__ 不应启动 _connectivity 后台线程。
+
+    实际场景：19 个 agent 实例化 = 19 个 ping 后台 HTTP 请求会污染日志 + 拖慢冷启动。
+    用户应能关。
+    """
+    @template_agent("conn-off", uuid=_uuid.uuid4().hex, description="t")
+    class _A(Agent):
+        protocol = "anthropic"
+        prompt = "x"
+        model_name = "m"
+        api_key = "k"
+        api_provider = "http://127.0.0.1:1"
+        enable_connectivity = False  # v0.4.2+ 显式关
+
+    assert _A.enable_connectivity is False, "类属性 enable_connectivity 未生效"
+
+
+def test_enable_connectivity_true_default_still_pings():
+    """默认 enable_connectivity=True（向后兼容）→ 后台线程启动。"""
+    assert _A_default.enable_connectivity is True
+
+
+@template_agent("conn-default", uuid=_uuid.uuid4().hex, description="t")
+class _A_default(Agent):
+    protocol = "anthropic"
+    prompt = "x"
+    model_name = "m"
+    api_key = "k"
+    api_provider = "http://127.0.0.1:1"

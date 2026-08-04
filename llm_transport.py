@@ -363,6 +363,263 @@ class HttpxOpenAITransport(LLMTransport):
 
 
 # ============================================================================
+# HttpxOpenAIResponsesTransport — OpenAI Responses API（v0.4.2+）
+# ============================================================================
+#
+# 兼容 OpenAI 新接口 https://platform.openai.com/docs/api-reference/responses
+# 区别于 Chat Completions：
+#   - endpoint: /v1/responses
+#   - 请求体：input（typed items）替代 messages，instructions 替代 system，
+#             max_output_tokens 替代 max_tokens，tools.parameters 替代 tools.function.parameters
+#   - 响应体：output 数组（每项 type: "message" | "function_call" | …）替代 choices
+#   - 流事件：response.created / response.output_item.added / response.output_text.delta / …
+#
+# 用法：register_protocol("openai-responses", _OpenAIResponsesBase)，
+# 用户的 Agent class 写 protocol = "openai-responses"。
+
+class HttpxOpenAIResponsesTransport(LLMTransport):
+    """OpenAI Responses API 兼容 transport（v0.4.2+）。"""
+
+    def __init__(
+        self,
+        endpoint: str,
+        api_key: str,
+        *,
+        client: Optional[HTTPClient] = None,
+        default_timeout: float = 60.0,
+    ):
+        self.endpoint = endpoint
+        self.headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        self._client = client or HTTPClient(default_timeout=default_timeout)
+
+    def _build_payload(self, req: ChatRequest) -> Dict[str, Any]:
+        """把中性 ChatRequest 转成 Responses API 请求体。"""
+        # messages → input（typed items）
+        input_items: List[Dict[str, Any]] = []
+        for m in req.messages:
+            role = m.get("role")
+            content = m.get("content")
+            if isinstance(content, list):
+                # 多模态 / 复杂 content：直接展开
+                input_items.append({"role": role, "content": content})
+            else:
+                input_items.append({"role": role, "content": content or ""})
+
+        payload: Dict[str, Any] = {
+            "model": req.model,
+            "input": input_items,
+            "stream": req.stream,
+        }
+        if req.system:
+            payload["instructions"] = req.system
+        if req.tools:
+            # Chat Completions schema: {type:"function", function:{name,description,parameters}}
+            # → Responses schema: {type:"function", name, description, parameters}
+            converted = []
+            for t in req.tools:
+                if t.get("type") == "function" and "function" in t:
+                    fn = t["function"]
+                    converted.append({
+                        "type": "function",
+                        "name": fn.get("name"),
+                        "description": fn.get("description", ""),
+                        "parameters": fn.get("parameters", {"type": "object", "properties": {}}),
+                    })
+                else:
+                    converted.append(t)
+            payload["tools"] = converted
+            payload["tool_choice"] = "auto"
+        if req.temperature is not None:
+            payload["temperature"] = req.temperature
+        if req.max_tokens is not None:
+            payload["max_output_tokens"] = req.max_tokens  # Responses API 用这个名字
+        payload.update(req.extra)
+        return payload
+
+    def _parse_usage(self, raw: Optional[Dict[str, Any]]) -> Optional[UsageInfo]:
+        if not isinstance(raw, dict):
+            return None
+        u = raw.get("usage") or {}
+        if not isinstance(u, dict):
+            return None
+        # Responses API: input_tokens / output_tokens / total_tokens
+        prompt = int(u.get("input_tokens", u.get("prompt_tokens", 0)))
+        completion = int(u.get("output_tokens", u.get("completion_tokens", 0)))
+        total = int(u.get("total_tokens", prompt + completion))
+        return UsageInfo(
+            prompt_tokens=prompt,
+            completion_tokens=completion,
+            total_tokens=total,
+            raw=u,
+        )
+
+    def _output_to_text_and_tools(self, output: List[Dict[str, Any]]):
+        """Responses API output[] → (text, tool_calls, stop_reason)。"""
+        text_parts: List[str] = []
+        tool_calls: List[ToolCall] = []
+        stop_reason: Optional[str] = None
+        for item in output or []:
+            t = item.get("type")
+            if t == "message":
+                # content 通常是 [{type:"output_text", text:"..."}]
+                for c in item.get("content", []) or []:
+                    if c.get("type") == "output_text":
+                        text_parts.append(c.get("text", ""))
+            elif t == "function_call":
+                args_raw = item.get("arguments", "")
+                if isinstance(args_raw, str):
+                    try:
+                        args = json.loads(args_raw) if args_raw else {}
+                    except json.JSONDecodeError:
+                        args = {"_raw": args_raw}
+                else:
+                    args = args_raw
+                if not isinstance(args, dict):
+                    args = {}
+                tool_calls.append(ToolCall(
+                    id=item.get("call_id", item.get("id", str(_uuid.uuid4()))),
+                    name=item.get("name", ""),
+                    arguments=args,
+                ))
+            elif t == "reasoning":
+                # 推理 token：忽略文本
+                pass
+        return "".join(text_parts), tool_calls, stop_reason
+
+    def _response_to_llm(self, data: Dict[str, Any]) -> LLMResponse:
+        text, tool_calls, _ = self._output_to_text_and_tools(data.get("output", []))
+        return LLMResponse(
+            text=text,
+            tool_calls=tool_calls,
+            stop_reason=data.get("status"),
+            usage=self._parse_usage(data),
+            raw=data,
+        )
+
+    def chat(self, req: ChatRequest) -> LLMResponse:
+        payload = self._build_payload(req)
+        rsp = self._client.post(
+            self.endpoint,
+            headers=self.headers,
+            json=payload,
+            stream=False,
+        )
+        return self._response_to_llm(rsp.json())
+
+    async def achat(self, req: ChatRequest) -> LLMResponse:
+        from .http_utils import AsyncHTTPClient
+        async with AsyncHTTPClient(default_timeout=60.0) as c:
+            payload = self._build_payload(req)
+            rsp = await c.apost(self.endpoint, headers=self.headers, json=payload)
+            return self._response_to_llm(rsp.json())
+
+    def chat_stream(self, req: ChatRequest) -> Iterator[LLMEvent]:
+        payload = self._build_payload(req)
+        rsp = self._client.post(
+            self.endpoint,
+            headers={**self.headers, "Accept": "text/event-stream"},
+            json=payload,
+            stream=True,
+        )
+        state = _ResponsesSSEState(self._parse_usage)
+        for line in rsp.iter_lines():
+            yield from _process_responses_sse_line(line, state)
+
+    async def achat_stream(self, req: ChatRequest) -> "AsyncIterator[LLMEvent]":
+        from .http_utils import AsyncHTTPClient
+        async with AsyncHTTPClient(default_timeout=60.0) as c:
+            payload = self._build_payload(req)
+            rsp = await c.apost(
+                self.endpoint,
+                headers={**self.headers, "Accept": "text/event-stream"},
+                json=payload,
+                stream=True,
+            )
+            state = _ResponsesSSEState(self._parse_usage)
+            async for line in rsp.aiter_lines():
+                for evt in _process_responses_sse_line(line, state):
+                    yield evt
+
+
+# ============================================================================
+# Responses API SSE 共享状态机（chat_stream / achat_stream 共用）
+# ============================================================================
+
+class _ResponsesSSEState:
+    """Responses API SSE 解析状态（同步 / 异步两条流共用）。"""
+
+    def __init__(self, parse_usage):
+        self.parse_usage = parse_usage
+        self.text_chunks: List[str] = []
+        self.tool_call: Dict[str, Any] = {"id": "", "name": "", "arguments": ""}
+        self.final_usage: Optional[UsageInfo] = None
+        self.final_stop_reason: Optional[str] = None
+
+
+def _process_responses_sse_line(line, state) -> List[LLMEvent]:
+    """处理一行 Responses SSE，返回要 yield 的 LLMEvent 列表。
+
+    Responses API 事件：
+      response.created / response.output_item.added /
+      response.content_part.added / response.output_text.delta / .done /
+      response.function_call_arguments.delta / .done /
+      response.output_item.done / response.completed
+    """
+    out: List[LLMEvent] = []
+    if not line or not line.startswith(b"data: "):
+        return out
+    payload_bytes = line[len(b"data: "):]
+    if payload_bytes == b"[DONE]":
+        return out
+    try:
+        evt = json.loads(payload_bytes)
+    except json.JSONDecodeError:
+        return out
+
+    etype = evt.get("type", "")
+    if etype == "response.output_text.delta":
+        delta = evt.get("delta", "")
+        if delta:
+            state.text_chunks.append(delta)
+            out.append(LLMEvent(type="text", text=delta, raw=evt))
+    elif etype == "response.function_call_arguments.delta":
+        state.tool_call["arguments"] += evt.get("delta", "")
+    elif etype == "response.function_call_arguments.done":
+        args_raw = state.tool_call["arguments"]
+        try:
+            args = json.loads(args_raw) if args_raw else {}
+        except json.JSONDecodeError:
+            args = {"_raw": args_raw}
+        if not isinstance(args, dict):
+            args = {}
+        out.append(LLMEvent(
+            type="tool_call",
+            tool_call=ToolCall(
+                id=state.tool_call["id"] or str(_uuid.uuid4()),
+                name=state.tool_call["name"],
+                arguments=args,
+            ),
+            raw=evt,
+        ))
+        state.tool_call = {"id": "", "name": "", "arguments": ""}
+    elif etype == "response.output_item.added":
+        item = evt.get("item", {})
+        if item.get("type") == "function_call":
+            state.tool_call["id"] = item.get("call_id", item.get("id", ""))
+            state.tool_call["name"] = item.get("name", "")
+    elif etype == "response.completed":
+        resp = evt.get("response", {})
+        state.final_usage = state.parse_usage(resp)
+        state.final_stop_reason = resp.get("status")
+    elif etype == "error":
+        out.append(LLMEvent(type="error", text=evt.get("message", ""), raw=evt))
+    return out
+
+
+# ============================================================================
 # HttpxAnthropicTransport — Anthropic Messages API
 # ============================================================================
 

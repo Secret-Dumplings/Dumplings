@@ -56,3 +56,12 @@ Thumbs.db
 *.duas.gz
 b.db
 old.db
+
+# Deploy 部署脚本（不进 git / 不进 wheel，运维独立分发）
+docs-site/deploy/
+
+# AI 协作文件（不进 git）
+.claude/
+CLAUDE.md
+AGENTS.md
+.cursorrules

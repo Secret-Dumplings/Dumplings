@@ -30,6 +30,7 @@ dependencies = [
     "lxml>=6.0.2",
     "mcp>=1.14.1",
     "pydantic>=2.6",
+    "python-dotenv>=1.0",  # mcp 间接依赖（pydantic_settings 需要）
     "pyyaml>=6.0",
     "tiktoken>=0.7",
     "watchdog>=3.0",
