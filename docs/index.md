@@ -23,8 +23,9 @@ dumplingsAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像
 | [output-and-hooks.md](output-and-hooks.md) | `pack` / `out` 输出事件总线、工具调用钩子 |
 | [mcp-skills.md](mcp-skills.md) | MCP 协议桥接、Skill 开放标准（**测试功能**） |
 | [persistence.md](persistence.md) | Agent 状态持久化：`.duas` 文件格式 / 插件后端 / 实时自动保存 |
-| [testing.md](testing.md) | Mock 基础设施（`_llm_mock.py`）、端到端单测写法 |
 | [TODO.md](TODO.md) | 待办：单测覆盖 / 边界处理 / 生产就绪检查清单 |
+
+> 本套文档就是本仓库自己搭的文档站：**https://docs.dumplingsai.secret-dumplings.xin**（Cloudflare Pages 构建，push 自动更新，见 [docs-site/README.md](../docs-site/README.md)）。
 
 ## 仓库结构
 
@@ -38,10 +39,20 @@ Dumplings/                       # 主包：dumplingsAI（PyPI）
 ├── llm_transport.py             # HTTP transport 抽象 + OpenAI / Anthropic 实现
 ├── tool_runner.py               # 工具执行 ThreadPool + 超时转后台
 ├── http_utils.py                # 退避重试 HTTP 客户端
-├── anthropic_agent.py           # Anthropic 协议 Agent
 ├── skill.py / skill_bridge.py   # Skill 注册 + 热加载
 ├── mcp_bridge.py                # stdio MCP 桥接
 ├── cli.py                       # `dumplings` CLI
+├── docs/                        # 文档源（frontmatter 驱动，本套文档的 markdown 源）
+│   ├── index.md                 # 本页（slug: index, order: 1）
+│   ├── getting-started.md
+│   └── ...                      # 每篇 .md 顶部有 YAML frontmatter（slug/title/order/icon）
+├── docs-site/                   # 文档站（VitePress + Pages Functions，不入 PyPI 包）
+│   ├── .vitepress/              # 配置 + BBDDFF 浅蓝主题
+│   ├── scripts/                 # sync-docs / generate-api-data（构建前）
+│   ├── functions/api/           # Cloudflare Pages Functions（/api/*）
+│   ├── api/                     # FastAPI 后端（本地 dev 演示）
+│   ├── public/_redirects        # SPA 回退
+│   └── README.md                # 文档站启动 / 部署说明
 └── tests/
     ├── _llm_mock.py             # OpenAI + Anthropic 协议 mock（v0.3.1+）
     ├── test_anthropic_agent.py  # Anthropic 协议层端到端单测

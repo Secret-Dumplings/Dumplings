@@ -31,12 +31,17 @@
 pip install dumplingsAI
 ```
 
-需要 Python 3.10+。可选功能：
+需要 Python 3.10+。
 
-```bash
-pip install dumplingsAI[anthropic]  # Anthropic Agent 需要的 requests 已内置，无需额外
-pip install dumplingsAI[async]      # Phase 3 上线后启用
-```
+---
+
+## 文档站
+
+在线文档：**https://docs.dumplingsai.secret-dumplings.xin**（Cloudflare Pages，push 自动构建）
+
+- 文档源在 `docs/`（YAML frontmatter 驱动，新增文档只需加带 frontmatter 的 .md）
+- 文档站代码在 `docs-site/`（VitePress + BBDDFF 浅蓝主题，**不入 PyPI 包**）
+- 本地跑文档站：`cd docs-site && pnpm install && pnpm dev`
 
 ---
 
