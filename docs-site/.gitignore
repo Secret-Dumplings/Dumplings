@@ -5,6 +5,10 @@ node_modules/
 # VitePress 临时/构建产物
 .vitepress/cache/
 .vitepress/dist/
+# 构建前由 scripts/sync-docs.mjs 从 ../docs 同步生成
+docs-build/
+# 构建前由 scripts/generate-api-data.mjs 生成（Pages Functions 数据源）
+api-data.json
 *.local
 
 # Python（fastapi 后端）

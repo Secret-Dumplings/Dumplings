@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vitepress dev . --port 5173",
-    "build": "vitepress build .",
+    "dev": "node scripts/sync-docs.mjs && node scripts/generate-api-data.mjs && vitepress dev . --port 5173",
+    "build": "node scripts/sync-docs.mjs && node scripts/generate-api-data.mjs && vitepress build .",
     "preview": "vitepress preview . --port 4173",
     "api": "uv run uvicorn api.main:app --reload --port 8001"
   },

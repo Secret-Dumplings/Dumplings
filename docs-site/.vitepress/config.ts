@@ -4,8 +4,10 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-// markdown 源目录：Dumplings/docs/（.vitepress → docs-site → Dumplings → docs）
-const DOCS_DIR = resolve(__dirname, '../../docs')
+// markdown 源目录：docs-site/docs-build/（构建前由 scripts/sync-docs.mjs 从 ../docs 同步）
+// 必须放在 docs-site/ 内（与 node_modules 同层），否则 pnpm 依赖隔离下
+// docs/*.md 里的 vue 依赖解析不到，干净环境（Cloudflare Pages / CI）构建会挂。
+const DOCS_DIR = resolve(__dirname, '../docs-build')
 
 interface DocMeta {
   file: string
@@ -58,8 +60,12 @@ export default defineConfig({
   title: 'dumplingsAI',
   description: '轻量、模块化的多智能体协作框架',
 
-  // 直接读 Dumplings/docs/ 下的 markdown（零复制）
+  // srcDir 指向构建目录 docs-build/（构建前由 scripts/sync-docs.mjs 从 ../docs 同步），
+  // 必须放在 docs-site/ 内（与 node_modules 同层），否则 pnpm 依赖隔离下
+  // docs/*.md 里的 vue 依赖解析不到，干净环境（Cloudflare Pages / CI）构建会挂。
   srcDir: DOCS_DIR,
+  // public/（如 _redirects）相对 docs-site/ 根，显式指定避免受 srcDir 影响
+  publicDir: resolve(__dirname, '../public'),
   cleanUrls: true,
   lastUpdated: true,
   ignoreDeadLinks: true,
