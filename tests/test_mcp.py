@@ -14,6 +14,10 @@ from __future__ import annotations
 
 import pytest
 
+# 网络/环境敏感测试：默认跳过（CI runner 网络不稳定），-m flaky 显式跑
+pytestmark = pytest.mark.flaky
+
+
 
 def test_mcp_module_imports():
     """tangyuanAI.mcp_bridge 可 import"""

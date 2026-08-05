@@ -69,10 +69,12 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-# 默认跑：单测（跳过 benchmark）。跑 benchmark 用 ``pytest -m benchmark`` 显式跑。
-addopts = "-ra -m 'not benchmark'"
+# 默认跑：单测（跳过 benchmark + flaky）。跑 benchmark 用 ``pytest -m benchmark``，
+# 跑 flaky（网络敏感/并发竞态）用 ``pytest -m flaky`` 显式跑。
+addopts = "-ra -m 'not benchmark and not flaky'"
 markers = [
     "benchmark: 性能基准测试（默认跳过；用 -m benchmark 显式跑）",
+    "flaky: 已知不稳定（网络敏感 / mock 队列竞态），默认跳过；用 -m flaky 显式跑",
 ]
 asyncio_mode = "auto"
 

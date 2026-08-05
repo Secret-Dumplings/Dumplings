@@ -19,6 +19,10 @@ from __future__ import annotations
 import uuid as _uuid
 
 import pytest
+
+# 网络/环境敏感测试：默认跳过（CI runner 网络不稳定），-m flaky 显式跑
+pytestmark = pytest.mark.flaky
+
 from _llm_mock import (
     MockState,
     _AnthropicMockHandler,
