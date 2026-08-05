@@ -68,6 +68,5 @@ CLAUDE.md
 AGENTS.md
 .cursorrules
 # 构建 / 调试产物（不入库）
-uv.lock
 bundle.json
 .tangyuanAI_sessions.db

@@ -177,7 +177,9 @@ def test_user_binds_out_directly_on_instance():
 
         agent.conversation_with_tool("ping")
         assert any(e.get("tool_result") == "pong" for e in captured)
-        assert any(e.get("message") == "pinging" for e in captured)
+        # mock 按字符拆分流式文本（p/i/n/g/i/n/g），断言拼接后的完整消息
+        joined = "".join(str(e.get("message", "")) for e in captured)
+        assert "pinging" in joined
     finally:
         server.shutdown()
         server.server_close()
