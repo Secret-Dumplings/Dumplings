@@ -19,7 +19,6 @@ from __future__ import annotations
 import uuid as _uuid
 
 import pytest
-
 from _llm_mock import (
     MockState,
     _AnthropicMockHandler,
