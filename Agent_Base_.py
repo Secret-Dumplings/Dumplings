@@ -1,22 +1,25 @@
 # -*- coding: utf-8 -*-
-"""⚠️ v0.4.2+ 兼容壳 / DEPRECATED：本文件的实现已合并到 ``dumplingsAI.agent``。
+"""⚠️ v0.4.2+ DEPRECATED：本模块旧实现仍保留兼容，但 bug 修复 / 瘦身只发生在 ``dumplingsAI.agent``。
 
-OpenAI 协议 Agent 基类（兼容旧 import 路径 ``dumplingsAI.Agent_Base_.Agent``）。
-逻辑、bug 修复、瘦身现在只发生在 ``dumplingsAI.agent._OpenAIBase``
-（对外别名 :class:`dumplingsAI.BaseAgent`）。
+OpenAI 协议 Agent 基类的兼容路径（``dumplingsAI.Agent_Base_.Agent``）。
+逻辑、bug 修复、瘦身现在只在 ``dumplingsAI.agent._OpenAIBase``
+（对外别名 :class:`dumplingsAI.BaseAgent`）里维护。
 
 新代码请直接用::
 
     from dumplingsAI import BaseAgent               # 推荐
     class MyAgent(BaseAgent): ...
 
-import 本文件时打印一次 ``DeprecationWarning``；类本身保留（不删除旧路径），
-以保持依赖 ``from dumplingsAI.Agent_Base_ import Agent`` 的旧代码继续可用。
+import 本模块时打印一次 ``DeprecationWarning``；旧 :class:`Agent` 类保留以保持
+``from dumplingsAI.Agent_Base_ import Agent`` 的旧 import 路径继续可用（本路径
+将在 v0.6.0 删除）。
 """
 from __future__ import annotations
 
 import warnings as _warnings
 
+# 模块加载即打 deprecation warning —— 任何 `from dumplingsAI.Agent_Base_ import ...`
+# 都会经过 module 求值，触发一次告警。
 _warnings.warn(
     "dumplingsAI.Agent_Base_ 已弃用；新代码请用 dumplingsAI.BaseAgent "
     "（实现在 dumplingsAI.agent._OpenAIBase）。本路径将在 v0.6.0 删除。",
@@ -24,18 +27,16 @@ _warnings.warn(
     stacklevel=2,
 )
 
-from .agent import BaseAgent as Agent  # noqa: E402, F401  (legacy alias)
+import json  # noqa: E402  (排在 _warnings.warn 之后是故意的：让 deprecation 先发出)
+import os  # noqa: E402
+import platform  # noqa: E402
+import re  # noqa: E402
+import threading  # noqa: E402
+import time  # noqa: E402
+import uuid  # noqa: E402
+from typing import Any, Optional  # noqa: E402
 
-import json
-import os
-import platform
-import re
-import threading
-import time
-import uuid
-from typing import Any, Optional
-
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # noqa: E402
 
 try:
     from .agent_tool import _builtin_promote_overrides, builtin_tool, tool_registry

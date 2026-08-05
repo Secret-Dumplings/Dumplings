@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
-"""⚠️ v0.4.2+ 兼容壳 / DEPRECATED：本文件的实现已合并到 ``dumplingsAI.agent``。
+"""⚠️ v0.4.2+ DEPRECATED：本模块旧实现仍保留兼容，但 bug 修复 / 瘦身只发生在 ``dumplingsAI.agent``。
 
 Anthropic 协议 Agent 基类（兼容旧 import 路径 ``dumplingsAI.anthropic_agent.AnthropicAgent``）。
-逻辑、bug 修复、瘦身现在只发生在 ``dumplingsAI.agent._AnthropicBase``
-（对外别名 :class:`dumplingsAI.AnthropicAgent`）。
+逻辑、bug 修复、瘦身现在只在 ``dumplingsAI.agent._AnthropicBase``
+（对外别名 :class:`dumplingsAI.AnthropicAgent`）里维护。
 
 新代码请直接用::
 
     from dumplingsAI import AnthropicAgent          # 推荐
-    from dumplingsAI.anthropic_agent import AnthropicAgent  # 旧路径，本文件抛 DeprecationWarning
 
-import 本文件时打印一次 ``DeprecationWarning``；alias re-export 指向 ``dumplingsAI.agent._AnthropicBase``，
-保证旧路径下所有行为 = 新实现（含 P3-P8 瘦身后的 helper）。
+import 本模块时打印一次 ``DeprecationWarning``；旧 :class:`AnthropicAgent` 类保留以
+保持 ``from dumplingsAI.anthropic_agent import AnthropicAgent`` 的旧 import 路径
+继续可用（本路径将在 v0.6.0 删除）。
 """
 import warnings as _warnings
 
+# 模块加载即打 deprecation warning —— 任何 `from dumplingsAI.anthropic_agent import ...`
+# 都会经过 module 求值，触发一次告警。
 _warnings.warn(
     "dumplingsAI.anthropic_agent 已弃用；新代码请用 dumplingsAI.AnthropicAgent "
     "（实现在 dumplingsAI.agent._AnthropicBase）。本路径将在 v0.6.0 删除。",
@@ -22,15 +24,13 @@ _warnings.warn(
     stacklevel=2,
 )
 
-# Re-export 新实现（行为 / 性能 / 与 OpenAI Agent 对称性都集中在 agent.py 维护）
-from .agent import AnthropicAgent  # noqa: E402, F401  (legacy alias)
-import json
-import os
-import platform
-import threading
-import time
-import uuid as _uuid
-from typing import Any, List, Optional
+import json  # noqa: E402  (deprecation 必须先于其他 import 发出)
+import os  # noqa: E402
+import platform  # noqa: E402
+import threading  # noqa: E402
+import time  # noqa: E402
+import uuid as _uuid  # noqa: E402
+from typing import Any, List, Optional  # noqa: E402
 
 try:
     from .agent_tool import _builtin_promote_overrides, builtin_tool, tool_registry
