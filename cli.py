@@ -135,34 +135,34 @@ def cmd_demo(_args: argparse.Namespace) -> int:
     print("本 demo 不连真实 LLM，仅展示框架对象。\n")
 
     from dumplingsAI import (
-        BaseAgent,
+        Agent,
         agent_list,
         builtin_tool,
-        register_agent,
+        template_agent,
     )
-    from dumplingsAI.agent_tool import collect_builtin_tools
+    from dumplingsAI.Agent_list import activate_template
+    from dumplingsAI.agent_tool import tool_registry
     from dumplingsAI.errors import classify
 
-    print("  ✓ BaseAgent / builtin_tool / tool_registry / register_agent import OK")
+    print("  ✓ Agent / builtin_tool / tool_registry / template_agent import OK")
     print(f"  ✓ classify(429, 'rate') → {classify(429, 'rate limited').__class__.__name__}")
 
-    # 临时构造一个 Agent
-    import uuid as _uuid
-    u = _uuid.uuid4().hex
-
-    @register_agent(u, "demo_agent", "demo 用 Agent")
-    class DemoAgent(BaseAgent):
+    # 临时构造一个 Agent（离线 demo，不连真实 LLM）
+    @template_agent("demo_agent", uuid="demo-uuid", description="demo 用 Agent")
+    class DemoAgent(Agent):
         prompt = "demo"
         api_provider = "https://example.com"
         model_name = "demo-model"
         api_key = "demo-key"
+        enable_connectivity = False  # 离线 demo 不发起连通性测试
 
         @builtin_tool(description="hello world")
         def hello(self, name: str) -> str:
             return f"hello, {name}!"
 
+    activate_template("demo_agent")
     ag = agent_list["demo_agent"]
-    schemas = collect_builtin_tools(ag)
+    schemas = tool_registry.collect_builtin_tools(ag)
     print(f"  ✓ DemoAgent 已注册，发现 {len(schemas)} 个内建工具")
     for s in schemas:
         print(f"      - {s['function']['name']}")
@@ -182,6 +182,12 @@ def cmd_help(_args: argparse.Namespace) -> int:
 
 def main(argv: Optional[List[str]] = None) -> int:
     """CLI 入口"""
+    # Windows 终端默认 GBK，先切 UTF-8 再打印 ✓/✗ 等字符
+    if sys.platform == "win32":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except (AttributeError, UnicodeError):
+            pass
     parser = _build_parser()
     args = parser.parse_args(argv)
 
@@ -203,3 +209,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.demo:
         return cmd_demo(args)
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

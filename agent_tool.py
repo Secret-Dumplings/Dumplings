@@ -82,7 +82,7 @@ _BUILTIN_DOC_PARA_RE = re.compile(r"\n\s*\n")
 
 
 def _builtin_derive_description(func, override: Optional[str]) -> str:
-    """优先取装饰器显式传入的描述，否则取 docstring 的第一段"""
+    """优先取装饰器显式传入的描述，否则取 docstring 的第一段（按空行切分的第一段）"""
     if override:
         return override
     doc = (inspect.getdoc(func) or "").strip()
@@ -251,8 +251,9 @@ class tool:
     """工具注册管理器（超详细日志版）"""
     def __init__(self):
         self._tools: dict = {}              # name -> info
-        self._agent_permissions: dict = {}  # 预留
         self._uuid_to_name: dict = {}       # uuid -> name
+        # 仅作测试 fixture（tests/conftest.py 等）的 save/restore 命名空间钩子；框架本身不读不写。
+        self._agent_permissions: dict = {}  # noqa: SLF001 - 测试 fixture 兼容位
         logger.trace("tool.__init__ -> empty registries created")
 
     # --------------------  uuid 映射 --------------------
@@ -342,19 +343,24 @@ class tool:
         return decorator
 
     # --------------------  权限检查 --------------------
-    def check_permission(self, agent_name: str, tool_name: str) -> bool:
+    def check_permission(self, agent_id: str, tool_name: str) -> bool:
+        """校验 agent_id（uuid 或 name）是否被允许调用 tool_name。
+
+        agent_id 可以是 uuid（用户侧传）或 name（内部 _uuid_to_name 翻译），
+        返回 True / False。tool_name 不存在时拒接。
+        """
         logger.trace(
-            f"check_permission(agent_name={agent_name!r}, tool_name={tool_name!r})"
+            f"check_permission(agent_id={agent_id!r}, tool_name={tool_name!r})"
         )
         if tool_name not in self._tools:
-            logger.warning(f"工具 {tool_name!r} 未注册，拒接访问")
+            logger.warning(f"工具 {tool_name!r} 未注册，拒绝访问")
             return False
 
         # uuid -> name
-        original_agent = agent_name
-        if agent_name in self._uuid_to_name:
-            agent_name = self._uuid_to_name[agent_name]
-            logger.debug(f"uuid转换: {original_agent!r} -> {agent_name!r}")
+        original_agent_id = agent_id
+        if agent_id in self._uuid_to_name:
+            agent_id = self._uuid_to_name[agent_id]
+            logger.debug(f"uuid转换: {original_agent_id!r} -> {agent_id!r}")
 
         tool_info = self._tools[tool_name]
         allowed = tool_info["allowed_agents"]
@@ -364,9 +370,9 @@ class tool:
             logger.trace("allowed_agents 为 None，放行")
             return True
 
-        ok = agent_name in allowed
+        ok = agent_id in allowed
         logger.debug(
-            f"权限检查结果: agent={agent_name!r} "
+            f"权限检查结果: agent={agent_id!r} "
             f"{'✔' if ok else '✘'} 工具 {tool_name!r}"
         )
         return ok

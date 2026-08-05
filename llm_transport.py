@@ -168,19 +168,6 @@ class HttpxOpenAITransport(LLMTransport):
         payload.update(req.extra)
         return payload
 
-    def _parse_usage(self, raw: Optional[Dict[str, Any]]) -> Optional[UsageInfo]:
-        if not isinstance(raw, dict):
-            return None
-        u = raw.get("usage") or {}
-        if not isinstance(u, dict):
-            return None
-        return UsageInfo(
-            prompt_tokens=int(u.get("prompt_tokens", 0)),
-            completion_tokens=int(u.get("completion_tokens", 0)),
-            total_tokens=int(u.get("total_tokens", 0)),
-            raw=u,
-        )
-
     def _response_to_llm(self, data: Dict[str, Any]) -> LLMResponse:
         choice = (data.get("choices") or [{}])[0]
         message = choice.get("message") or {}
@@ -188,20 +175,17 @@ class HttpxOpenAITransport(LLMTransport):
         tool_calls: List[ToolCall] = []
         for tc in message.get("tool_calls") or []:
             fn = tc.get("function") or {}
-            try:
-                args = json.loads(fn.get("arguments") or "{}")
-            except json.JSONDecodeError:
-                args = {"_raw": fn.get("arguments")}
+            args = _parse_json_args(fn.get("arguments") or "")
             tool_calls.append(ToolCall(
                 id=tc.get("id", str(_uuid.uuid4())),
                 name=fn.get("name", ""),
-                arguments=args if isinstance(args, dict) else {},
+                arguments=args,
             ))
         return LLMResponse(
             text=text if isinstance(text, str) else "",
             tool_calls=tool_calls,
             stop_reason=choice.get("finish_reason"),
-            usage=self._parse_usage(data),
+            usage=_parse_usage_safe(data),
             raw=data,
         )
 
@@ -246,120 +230,125 @@ class HttpxOpenAITransport(LLMTransport):
                 yield evt
 
     def _iter_openai_sse(self, rsp: httpx.Response) -> Iterator[LLMEvent]:
-        """OpenAI-style SSE: 每行 ``data: {json}``，最后 ``data: [DONE]``"""
-        current_calls: Dict[int, Dict[str, Any]] = {}
-        finish_reason: Optional[str] = None
-        usage: Optional[UsageInfo] = None
+        """OpenAI-style SSE（每行 ``data: {json}``，最后 ``data: [DONE]``）。
+        sync 迭代：逐行喂给共享状态机 ``_process_openai_sse_line``。"""
+        state = _OpenAISSEState()
         for line in rsp.iter_lines():
-            if not line or not line.startswith("data: "):
-                continue
-            data = line[len("data: "):]
-            if data == "[DONE]":
-                break
-            try:
-                chunk = json.loads(data)
-            except json.JSONDecodeError:
-                continue
-            for choice in chunk.get("choices") or []:
-                delta = choice.get("delta") or {}
-                finish_reason = choice.get("finish_reason") or finish_reason
-                content = delta.get("content")
-                if content:
-                    yield LLMEvent(type="text", text=content)
-                for tc in delta.get("tool_calls") or []:
-                    idx = tc.get("index", 0)
-                    slot = current_calls.setdefault(idx, {
-                        "id": tc.get("id", ""),
-                        "name": (tc.get("function") or {}).get("name", ""),
-                        "arguments": "",
-                    })
-                    if "id" in tc and tc["id"]:
-                        slot["id"] = tc["id"]
-                    fn = tc.get("function") or {}
-                    if fn.get("name"):
-                        slot["name"] = fn["name"]
-                    if fn.get("arguments"):
-                        slot["arguments"] += fn["arguments"]
-            u = chunk.get("usage")
-            if u:
-                usage = self._parse_usage(chunk)
-        # flush 累积的 tool_calls
-        for slot in current_calls.values():
-            try:
-                args = json.loads(slot["arguments"]) if slot["arguments"] else {}
-            except json.JSONDecodeError:
-                args = {"_raw": slot["arguments"]}
-            if not isinstance(args, dict):
-                args = {}
-            yield LLMEvent(
-                type="tool_call",
-                tool_call=ToolCall(
-                    id=slot["id"] or str(_uuid.uuid4()),
-                    name=slot["name"],
-                    arguments=args,
-                ),
-            )
-        yield LLMEvent(
-            type="done",
-            stop_reason=finish_reason,
-            usage=usage,
-            raw=None,
-        )
+            yield from _process_openai_sse_line(line, state)
 
     async def _aiter_openai_sse(self, rsp: httpx.Response) -> AsyncIterator[LLMEvent]:
-        # httpx 的 aiter_lines() 是异步的
-        current_calls: Dict[int, Dict[str, Any]] = {}
-        finish_reason: Optional[str] = None
-        usage: Optional[UsageInfo] = None
+        """同上，但 httpx aiter_lines() 是异步的。"""
+        state = _OpenAISSEState()
         async for line in rsp.aiter_lines():
-            if not line or not line.startswith("data: "):
-                continue
-            data = line[len("data: "):]
-            if data == "[DONE]":
-                break
-            try:
-                chunk = json.loads(data)
-            except json.JSONDecodeError:
-                continue
-            for choice in chunk.get("choices") or []:
-                delta = choice.get("delta") or {}
-                finish_reason = choice.get("finish_reason") or finish_reason
-                content = delta.get("content")
-                if content:
-                    yield LLMEvent(type="text", text=content)
-                for tc in delta.get("tool_calls") or []:
-                    idx = tc.get("index", 0)
-                    slot = current_calls.setdefault(idx, {
-                        "id": tc.get("id", ""),
-                        "name": (tc.get("function") or {}).get("name", ""),
-                        "arguments": "",
-                    })
-                    if "id" in tc and tc["id"]:
-                        slot["id"] = tc["id"]
-                    fn = tc.get("function") or {}
-                    if fn.get("name"):
-                        slot["name"] = fn["name"]
-                    if fn.get("arguments"):
-                        slot["arguments"] += fn["arguments"]
-            u = chunk.get("usage")
-            if u:
-                usage = self._parse_usage(chunk)
-        for slot in current_calls.values():
-            try:
-                args = json.loads(slot["arguments"]) if slot["arguments"] else {}
-            except json.JSONDecodeError:
-                args = {"_raw": slot["arguments"]}
-            if not isinstance(args, dict):
-                args = {}
-            yield LLMEvent(
+            for evt in _process_openai_sse_line(line, state):
+                yield evt
+
+
+# ============================================================================
+# OpenAI Chat Completions SSE 共享状态机（chat_stream / achat_stream 共用）
+# ============================================================================
+
+class _OpenAISSEState:
+    """OpenAI Chat Completions SSE 解析状态。"""
+
+    def __init__(self) -> None:
+        self.current_calls: Dict[int, Dict[str, Any]] = {}
+        self.finish_reason: Optional[str] = None
+        self.usage: Optional[UsageInfo] = None
+
+
+def _process_openai_sse_line(line, state: _OpenAISSEState) -> List[LLMEvent]:
+    """处理一行 OpenAI Chat Completions SSE，返回要 yield 的 LLMEvent 列表。"""
+    out: List[LLMEvent] = []
+    if not line or not line.startswith("data: "):
+        return out
+    data = line[len("data: "):]
+    if data == "[DONE]":
+        # flush 累积的 tool_calls + 终止事件
+        for slot in state.current_calls.values():
+            args = _parse_json_args(slot["arguments"])
+            out.append(LLMEvent(
                 type="tool_call",
                 tool_call=ToolCall(
                     id=slot["id"] or str(_uuid.uuid4()),
                     name=slot["name"],
                     arguments=args,
                 ),
-            )
-        yield LLMEvent(type="done", stop_reason=finish_reason, usage=usage, raw=None)
+            ))
+        out.append(LLMEvent(type="done", stop_reason=state.finish_reason, usage=state.usage, raw=None))
+        return out
+    try:
+        chunk = json.loads(data)
+    except json.JSONDecodeError:
+        return out
+    for choice in chunk.get("choices") or []:
+        delta = choice.get("delta") or {}
+        state.finish_reason = choice.get("finish_reason") or state.finish_reason
+        content = delta.get("content")
+        if content:
+            out.append(LLMEvent(type="text", text=content))
+        for tc in delta.get("tool_calls") or []:
+            idx = tc.get("index", 0)
+            slot = state.current_calls.setdefault(idx, {
+                "id": tc.get("id", ""),
+                "name": (tc.get("function") or {}).get("name", ""),
+                "arguments": "",
+            })
+            if "id" in tc and tc["id"]:
+                slot["id"] = tc["id"]
+            fn = tc.get("function") or {}
+            if fn.get("name"):
+                slot["name"] = fn["name"]
+            if fn.get("arguments"):
+                slot["arguments"] += fn["arguments"]
+    u = chunk.get("usage")
+    if u:
+        state.usage = _parse_usage_safe(chunk)
+    return out
+
+
+def _parse_json_args(raw: str) -> Dict[str, Any]:
+    """JSON 解析失败时把原文包到 ``{"_raw": raw}``。"""
+    if not raw:
+        return {}
+    try:
+        args = json.loads(raw)
+    except json.JSONDecodeError:
+        return {"_raw": raw}
+    if not isinstance(args, dict):
+        return {}
+    return args
+
+
+def _parse_usage_safe(raw: Optional[Dict[str, Any]]) -> Optional[UsageInfo]:
+    if not isinstance(raw, dict):
+        return None
+    u = raw.get("usage") or {}
+    if not isinstance(u, dict):
+        return None
+    return UsageInfo(
+        prompt_tokens=int(u.get("prompt_tokens", 0)),
+        completion_tokens=int(u.get("completion_tokens", 0)),
+        total_tokens=int(u.get("total_tokens", 0)),
+        raw=u,
+    )
+
+
+def _parse_usage_anthropic(raw: Optional[Dict[str, Any]]) -> Optional[UsageInfo]:
+    """Anthropic Messages API 的 usage 字段：``input_tokens`` / ``output_tokens``，无 ``prompt_tokens`` alias。"""
+    if not isinstance(raw, dict):
+        return None
+    u = raw.get("usage") or {}
+    if not isinstance(u, dict):
+        return None
+    in_t = int(u.get("input_tokens", 0))
+    out_t = int(u.get("output_tokens", 0))
+    return UsageInfo(
+        prompt_tokens=in_t,
+        completion_tokens=out_t,
+        total_tokens=in_t + out_t,
+        raw=u,
+    )
 
 
 # ============================================================================
@@ -676,19 +665,6 @@ class HttpxAnthropicTransport(LLMTransport):
         payload.update(req.extra)
         return payload
 
-    def _parse_usage(self, raw: Optional[Dict[str, Any]]) -> Optional[UsageInfo]:
-        if not isinstance(raw, dict):
-            return None
-        u = raw.get("usage") or {}
-        if not isinstance(u, dict):
-            return None
-        return UsageInfo(
-            prompt_tokens=int(u.get("input_tokens", 0)),
-            completion_tokens=int(u.get("output_tokens", 0)),
-            total_tokens=int(u.get("input_tokens", 0)) + int(u.get("output_tokens", 0)),
-            raw=u,
-        )
-
     def _response_to_llm(self, data: Dict[str, Any]) -> LLMResponse:
         blocks = data.get("content") or []
         text = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
@@ -705,7 +681,7 @@ class HttpxAnthropicTransport(LLMTransport):
             text=text,
             tool_calls=tool_calls,
             stop_reason=data.get("stop_reason"),
-            usage=self._parse_usage(data),
+            usage=_parse_usage_anthropic(data),
             raw=data,
         )
 
@@ -744,134 +720,107 @@ class HttpxAnthropicTransport(LLMTransport):
                 yield evt
 
     def _iter_anthropic_sse(self, rsp: httpx.Response) -> Iterator[LLMEvent]:
-        """Anthropic SSE: ``event: <name>\\ndata: <json>`` 序列"""
-        current: Optional[Dict[str, Any]] = None
-        json_buf = ""
-        finish_reason: Optional[str] = None
-        usage: Optional[UsageInfo] = None
-        event_type: Optional[str] = None
-
+        """Anthropic SSE（``event: <name>`` 后接 ``data: <json>``）。
+        sync 迭代：逐行喂给共享状态机 ``_process_anthropic_sse_line``，遇 message_stop 终止。"""
+        state = _AnthropicSSEState(_parse_usage_anthropic)
         for line in rsp.iter_lines():
-            if line is None:
-                continue
-            if line.startswith("event: "):
-                event_type = line[len("event: "):].strip()
-                continue
-            if not line.startswith("data: "):
-                continue
-            try:
-                evt = json.loads(line[len("data: "):])
-            except json.JSONDecodeError:
-                continue
-            etype = evt.get("type") or event_type
-            if etype == "content_block_start":
-                cb = evt.get("content_block") or {}
-                current = {
-                    "type": cb.get("type", "text"),
-                    "id": cb.get("id"),
-                    "name": cb.get("name"),
-                    "text": cb.get("text", "") or "",
-                    "input": {},
-                }
-                json_buf = ""
-            elif etype == "content_block_delta":
-                if current is None:
-                    continue
-                delta = evt.get("delta") or {}
-                if delta.get("type") == "text_delta":
-                    chunk = delta.get("text", "")
-                    current["text"] = current.get("text", "") + chunk
-                    yield LLMEvent(type="text", text=chunk)
-                elif delta.get("type") == "input_json_delta":
-                    json_buf += delta.get("partial_json", "")
-            elif etype == "content_block_stop":
-                if current is not None:
-                    if current.get("type") == "tool_use":
-                        try:
-                            current["input"] = json.loads(json_buf) if json_buf else {}
-                        except json.JSONDecodeError:
-                            current["input"] = {"_raw": json_buf}
-                        yield LLMEvent(
-                            type="tool_call",
-                            tool_call=ToolCall(
-                                id=current.get("id") or str(_uuid.uuid4()),
-                                name=current.get("name", ""),
-                                arguments=current.get("input", {}),
-                            ),
-                        )
-                current = None
-                json_buf = ""
-            elif etype == "message_delta":
-                delta = evt.get("delta") or {}
-                if "stop_reason" in delta:
-                    finish_reason = delta["stop_reason"]
-                if "usage" in evt:
-                    usage = self._parse_usage(evt)
-            elif etype == "message_stop":
+            for evt in _process_anthropic_sse_line(line, state):
+                yield evt
+            if state.stopped:
                 break
-        yield LLMEvent(type="done", stop_reason=finish_reason, usage=usage, raw=None)
 
     async def _aiter_anthropic_sse(self, rsp: httpx.Response) -> AsyncIterator[LLMEvent]:
-        current: Optional[Dict[str, Any]] = None
-        json_buf = ""
-        finish_reason: Optional[str] = None
-        usage: Optional[UsageInfo] = None
-        event_type: Optional[str] = None
+        state = _AnthropicSSEState(_parse_usage_anthropic)
         async for line in rsp.aiter_lines():
-            if line is None:
-                continue
-            if line.startswith("event: "):
-                event_type = line[len("event: "):].strip()
-                continue
-            if not line.startswith("data: "):
-                continue
-            try:
-                evt = json.loads(line[len("data: "):])
-            except json.JSONDecodeError:
-                continue
-            etype = evt.get("type") or event_type
-            if etype == "content_block_start":
-                cb = evt.get("content_block") or {}
-                current = {
-                    "type": cb.get("type", "text"),
-                    "id": cb.get("id"),
-                    "name": cb.get("name"),
-                    "text": cb.get("text", "") or "",
-                    "input": {},
-                }
-                json_buf = ""
-            elif etype == "content_block_delta":
-                if current is None:
-                    continue
-                delta = evt.get("delta") or {}
-                if delta.get("type") == "text_delta":
-                    chunk = delta.get("text", "")
-                    current["text"] = current.get("text", "") + chunk
-                    yield LLMEvent(type="text", text=chunk)
-                elif delta.get("type") == "input_json_delta":
-                    json_buf += delta.get("partial_json", "")
-            elif etype == "content_block_stop":
-                if current is not None and current.get("type") == "tool_use":
-                    try:
-                        current["input"] = json.loads(json_buf) if json_buf else {}
-                    except json.JSONDecodeError:
-                        current["input"] = {"_raw": json_buf}
-                    yield LLMEvent(
-                        type="tool_call",
-                        tool_call=ToolCall(
-                            id=current.get("id") or str(_uuid.uuid4()),
-                            name=current.get("name", ""),
-                            arguments=current.get("input", {}),
-                        ),
-                    )
-                current = None
-                json_buf = ""
-            elif etype == "message_delta":
-                delta = evt.get("delta") or {}
-                if "stop_reason" in delta:
-                    finish_reason = delta["stop_reason"]
-                if "usage" in evt:
-                    usage = self._parse_usage(evt)
-            elif etype == "message_stop":
+            for evt in _process_anthropic_sse_line(line, state):
+                yield evt
+            if state.stopped:
                 break
-        yield LLMEvent(type="done", stop_reason=finish_reason, usage=usage, raw=None)
+
+
+# ============================================================================
+# Anthropic Messages API SSE 共享状态机（chat_stream / achat_stream 共用）
+# ============================================================================
+
+class _AnthropicSSEState:
+    """Anthropic SSE 解析状态（content_block + 累积 + done 拦截）。"""
+
+    def __init__(self, parse_usage) -> None:
+        self.parse_usage = parse_usage
+        self.event_type: Optional[str] = None
+        self.current: Optional[Dict[str, Any]] = None  # 进行中的 content_block
+        self.json_buf = ""
+        self.finish_reason: Optional[str] = None
+        self.usage: Optional[UsageInfo] = None
+        self.stopped = False  # 收到 message_stop
+
+
+def _process_anthropic_sse_line(line, state: _AnthropicSSEState) -> List[LLMEvent]:
+    """处理一行 Anthropic SSE，返回要 yield 的 LLMEvent 列表。
+
+    关键事件：
+      content_block_start / content_block_delta / content_block_stop
+      message_delta / message_stop
+    """
+    out: List[LLMEvent] = []
+    if line is None:
+        return out
+    if line.startswith("event: "):
+        state.event_type = line[len("event: "):].strip()
+        return out
+    if not line.startswith("data: "):
+        return out
+    try:
+        evt = json.loads(line[len("data: "):])
+    except json.JSONDecodeError:
+        return out
+    etype = evt.get("type") or state.event_type
+
+    if etype == "content_block_start":
+        cb = evt.get("content_block") or {}
+        state.current = {
+            "type": cb.get("type", "text"),
+            "id": cb.get("id"),
+            "name": cb.get("name"),
+            "text": cb.get("text", "") or "",
+            "input": {},
+        }
+        state.json_buf = ""
+    elif etype == "content_block_delta":
+        if state.current is None:
+            return out
+        delta = evt.get("delta") or {}
+        if delta.get("type") == "text_delta":
+            chunk = delta.get("text", "")
+            state.current["text"] = state.current.get("text", "") + chunk
+            out.append(LLMEvent(type="text", text=chunk))
+        elif delta.get("type") == "input_json_delta":
+            state.json_buf += delta.get("partial_json", "")
+    elif etype == "content_block_stop":
+        if state.current is not None and state.current.get("type") == "tool_use":
+            state.current["input"] = _parse_json_args(state.json_buf)
+            out.append(LLMEvent(
+                type="tool_call",
+                tool_call=ToolCall(
+                    id=state.current.get("id") or str(_uuid.uuid4()),
+                    name=state.current.get("name", ""),
+                    arguments=state.current.get("input", {}),
+                ),
+            ))
+        state.current = None
+        state.json_buf = ""
+    elif etype == "message_delta":
+        delta = evt.get("delta") or {}
+        if "stop_reason" in delta:
+            state.finish_reason = delta["stop_reason"]
+        if "usage" in evt:
+            state.usage = state.parse_usage(evt)
+    elif etype == "message_stop":
+        state.stopped = True
+        out.append(LLMEvent(
+            type="done",
+            stop_reason=state.finish_reason,
+            usage=state.usage,
+            raw=None,
+        ))
+    return out

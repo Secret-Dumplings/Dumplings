@@ -1,5 +1,30 @@
 # -*- coding: utf-8 -*-
-from __future__ import annotations  # 启用 PEP 563：所有注解默认惰性求值，解决前向引用
+"""⚠️ v0.4.2+ 兼容壳 / DEPRECATED：本文件的实现已合并到 ``dumplingsAI.agent``。
+
+OpenAI 协议 Agent 基类（兼容旧 import 路径 ``dumplingsAI.Agent_Base_.Agent``）。
+逻辑、bug 修复、瘦身现在只发生在 ``dumplingsAI.agent._OpenAIBase``
+（对外别名 :class:`dumplingsAI.BaseAgent`）。
+
+新代码请直接用::
+
+    from dumplingsAI import BaseAgent               # 推荐
+    class MyAgent(BaseAgent): ...
+
+import 本文件时打印一次 ``DeprecationWarning``；类本身保留（不删除旧路径），
+以保持依赖 ``from dumplingsAI.Agent_Base_ import Agent`` 的旧代码继续可用。
+"""
+from __future__ import annotations
+
+import warnings as _warnings
+
+_warnings.warn(
+    "dumplingsAI.Agent_Base_ 已弃用；新代码请用 dumplingsAI.BaseAgent "
+    "（实现在 dumplingsAI.agent._OpenAIBase）。本路径将在 v0.6.0 删除。",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from .agent import BaseAgent as Agent  # noqa: E402, F401  (legacy alias)
 
 import json
 import os

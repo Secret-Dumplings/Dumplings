@@ -210,18 +210,12 @@ class HTTPClient:
     # ----- 助手 -----
 
     def _sleep_backoff(self, attempt: int) -> None:
-        delay = self.backoff_base * (2 ** attempt)
-        delay = min(delay, self.backoff_cap)
-        delay += random.uniform(0, self.jitter)
+        delay = _compute_backoff_seconds(attempt, self.backoff_base, self.backoff_cap, self.jitter)
         time.sleep(delay)
 
     @staticmethod
     def _safe_body_preview(rsp: httpx.Response, limit: int = 300) -> str:
-        try:
-            content = rsp.text or ""
-            return content[:limit]
-        except Exception:
-            return "<unrepresentable body>"
+        return _safe_body_preview(rsp, limit)
 
 
 # ---------------------------------------------------------------------------
@@ -336,10 +330,16 @@ class AsyncHTTPClient:
         raise last_exc
 
     async def _asleep_backoff(self, attempt: int) -> None:
-        delay = self.backoff_base * (2 ** attempt)
-        delay = min(delay, self.backoff_cap)
-        delay += random.uniform(0, self.jitter)
+        delay = _compute_backoff_seconds(attempt, self.backoff_base, self.backoff_cap, self.jitter)
         await asyncio.sleep(delay)
+
+
+def _compute_backoff_seconds(attempt: int, base: float, cap: float, jitter: float) -> float:
+    """指数退避 + 抖动：``base * 2^attempt`` 截到 cap + 随机抖动。"""
+    delay = base * (2 ** attempt)
+    delay = min(delay, cap)
+    delay += random.uniform(0, jitter)
+    return delay
 
 
 def _safe_body_preview(rsp: httpx.Response, limit: int = 300) -> str:

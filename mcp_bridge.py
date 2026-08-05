@@ -22,8 +22,9 @@ from .agent_tool import tool_registry
 from .logging_config import logger
 
 # ==================== 全局会话池 ====================
-MCP_SESSION_POOL: Dict[str, Dict[str, Any]] = {}
-SESSION_LOCK = asyncio.Lock()
+# 会话统一由 _global_session_pool（MCPSessionPool 实例）管理：
+# register_mcp_tools_async 初始化后 adopt 进池，wrapper / 健康检查 / 关闭都走同一个池。
+SESSION_LOCK = asyncio.Lock()  # 保护 register_mcp_tools_async 的初始化段（防并发重复初始化）
 
 # 全局事件循环复用器
 _event_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -191,26 +192,31 @@ class MCPSessionPool:
         """获取会话信息"""
         if server_path is None:
             return {
-                path: {
-                    "initialized": info.get("initialized", False),
-                    "tools_count": len(info.get("tools", [])),
-                    "resources_count": len(info.get("resources", [])),
-                    "last_used": info.get("last_used", 0)
-                }
+                path: self._summarize(info)
                 for path, info in self._pool.items()
             }
-        else:
-            info = self._pool.get(server_path)
-            if info:
-                return {
-                    "initialized": info.get("initialized", False),
-                    "tools_count": len(info.get("tools", [])),
-                    "resources_count": len(info.get("resources", [])),
-                    "last_used": info.get("last_used", 0),
-                    "tools": [t.name for t in info.get("tools", [])],
-                    "resources": [r.uri for r in info.get("resources", [])]
-                }
+        info = self._pool.get(server_path)
+        if not info:
             return {}
+        detail = self._summarize(info)
+        detail["tools"] = [t.name for t in info.get("tools", [])]
+        detail["resources"] = [r.uri for r in info.get("resources", [])]
+        return detail
+
+    @staticmethod
+    def _summarize(info: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            "initialized": info.get("initialized", False),
+            "tools_count": len(info.get("tools", [])),
+            "resources_count": len(info.get("resources", [])),
+            "last_used": info.get("last_used", 0),
+        }
+
+    async def adopt(self, session_info: Dict[str, Any]) -> None:
+        """把已初始化的会话写入池（register_mcp_tools_async 用）。
+        与 get_session 并发安全。"""
+        async with self._lock:
+            self._pool[session_info["server_path"]] = session_info
 
 
 # 全局会话池实例
@@ -298,77 +304,35 @@ async def _initialize_mcp_session(server_path: str) -> Dict[str, Any]:
         raise
 
 
-def _make_tool_wrapper(tool_name: str, server_path: str, input_schema: Dict[str, Any]):
+def _make_session_wrapper(server_path: str, kind: str, name: str):
+    """同步包装器工厂：kind = "tool" 或 "resource"。
+
+    统一工具调用与资源读取两条路径的样板：
+    取会话 → 检查 initialized → 用共享事件循环 run_until_complete 执行异步操作。
     """
-    创建工具包装器
-    将 MCP 工具转换为标准工具，支持同步调用
-    """
+    is_tool = kind == "tool"
+
     def sync_wrapper(**kwargs) -> str:
         try:
-            # 使用全局事件循环执行异步调用
             loop = get_or_create_event_loop()
-
-            # 获取会话
-            session_info = None
-            if server_path in MCP_SESSION_POOL:
-                session_info = MCP_SESSION_POOL[server_path]
-
+            session_info = _global_session_pool._pool.get(server_path)
             if not session_info or not session_info.get("initialized"):
-                error_msg = f"MCP 会话未初始化：{server_path}"
-                logger.error(error_msg)
-                raise RuntimeError(error_msg)
-
+                raise RuntimeError(f"MCP 会话未初始化：{server_path}")
             session = session_info["session"]
 
-            logger.trace(f"调用 MCP 工具：{tool_name} @ {server_path}, args={kwargs}")
-
-            # 在事件循环中执行异步调用
-            result = loop.run_until_complete(session.call_tool(tool_name, kwargs))
-            content = result.content or ""
-            logger.debug(f"工具 {tool_name} 返回：{content[:100]}")
+            if is_tool:
+                logger.trace(f"调用 MCP 工具：{name} @ {server_path}, args={kwargs}")
+                result = loop.run_until_complete(session.call_tool(name, kwargs))
+                content = result.content or ""
+                logger.debug(f"工具 {name} 返回：{content[:100]}")
+            else:
+                logger.trace(f"读取 MCP 资源：{name} @ {server_path}")
+                result = loop.run_until_complete(session.read_resource(name))
+                content = result.contents or ""
+                logger.debug(f"资源 {name} 内容长度：{len(content)}")
             return content
-
         except Exception as e:
-            error_msg = f"调用工具失败 {tool_name}: {str(e)}"
-            logger.error(error_msg)
-            raise
-
-    return sync_wrapper
-
-
-def _make_resource_wrapper(resource_uri: str, server_path: str):
-    """
-    创建资源包装器
-    将 MCP 资源转换为工具，支持同步调用
-    """
-    def sync_wrapper() -> str:
-        try:
-            # 使用全局事件循环执行异步调用
-            loop = get_or_create_event_loop()
-
-            # 获取会话
-            session_info = None
-            if server_path in MCP_SESSION_POOL:
-                session_info = MCP_SESSION_POOL[server_path]
-
-            if not session_info or not session_info.get("initialized"):
-                error_msg = f"MCP 会话未初始化：{server_path}"
-                logger.error(error_msg)
-                raise RuntimeError(error_msg)
-
-            session = session_info["session"]
-
-            logger.trace(f"读取 MCP 资源：{resource_uri} @ {server_path}")
-
-            # 在事件循环中执行异步调用
-            result = loop.run_until_complete(session.read_resource(resource_uri))
-            content = result.contents or ""
-            logger.debug(f"资源 {resource_uri} 内容长度：{len(content)}")
-            return content
-
-        except Exception as e:
-            error_msg = f"读取资源失败 {resource_uri}: {str(e)}"
-            logger.error(error_msg)
+            logger.error(f"{kind} 调用失败 {name}: {e}")
             raise
 
     return sync_wrapper
@@ -412,15 +376,17 @@ async def register_mcp_tools_async(
         int: 注册成功的工具数量
     """
     try:
-        # 使用会话池获取或创建会话
+        # 使用会话池初始化会话
         async with SESSION_LOCK:
             session_info = await _initialize_mcp_session(server_path)
-            MCP_SESSION_POOL[server_path] = session_info
+            await _global_session_pool.adopt(session_info)
 
         tools = session_info["tools"]
         resources = session_info["resources"]
 
+
         registered_count = 0
+
 
         # 注册工具
         for tool in tools:
@@ -434,7 +400,7 @@ async def register_mcp_tools_async(
             openai_schema = _convert_mcp_schema_to_openai(input_schema)
 
             # 创建包装器并注册
-            wrapper = _make_tool_wrapper(tool_name, server_path, input_schema)
+            wrapper = _make_session_wrapper(server_path, "tool", tool_name)
 
             tool_registry.register_tool(
                 name=tool_name,
@@ -458,7 +424,7 @@ async def register_mcp_tools_async(
                 logger.debug(f"注册资源工具：{resource_name} ({uri})")
 
                 # 创建包装器并注册
-                wrapper = _make_resource_wrapper(uri, server_path)
+                wrapper = _make_session_wrapper(server_path, "resource", uri)
 
                 tool_registry.register_tool(
                     name=resource_name,

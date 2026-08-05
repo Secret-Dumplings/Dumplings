@@ -13,6 +13,14 @@ dumplingsAI Agent 统一实现（v0.4.2+）。
 - ``dumplingsAI.BaseAgent``（OpenAI 协议）
 - ``dumplingsAI.anthropic_agent.AnthropicAgent``（Anthropic 协议）
 - ``register_protocol(name, base_cls)``（第三方扩展）
+
+设计要点（v0.4.2+ 瘦身版）：
+
+- ``_AgentCommon`` 持有**共享对话循环**（conversation_with_tool / aconversation_with_tool）
+- 三个协议类只声明协议钩子（transport 类 / endpoint / schema 收集 / XML 模式）
+- 协议差异通过钩子注入，不再各写一份对话循环
+- ``enable_connectivity`` 类属性可关后台 ping
+- metaclass 用 ``__name__`` 比较（避免循环引用 NameError）
 """
 from __future__ import annotations
 
@@ -72,15 +80,14 @@ def _resolve_protocol_base(name: str) -> type:
 # ============================================================================
 
 class _ProtocolMeta(type):
-    """``Agent`` 占位 → 真实基类（OpenAI / Anthropic）。
+    """``Agent`` 占位 → 真实基类（OpenAI / Anthropic / 自定义）。
 
-    关键：用 ``b.__name__ == "Agent"`` 字符串比较代替 ``b is Agent``。
-    因为在 ``class Agent(...)`` 自定义过程中，``Agent`` 名字尚未绑定到模块 globals，
+    用 ``b.__name__ == "Agent"`` 字符串比较代替 ``b is Agent``：
+    在 ``class Agent(...)`` 自定义过程中，``Agent`` 名字尚未绑定到模块 globals，
     会 NameError。用名字比较避免循环。
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
-        # 检测占位基类
         has_placeholder = any(getattr(b, "__name__", "") == "Agent" for b in bases)
         if has_placeholder:
             protocol = namespace.get("protocol", "openai")
@@ -97,14 +104,13 @@ class _ProtocolMeta(type):
         return super().__new__(mcs, name, bases, namespace, **kwargs)
 
 
-# 协议无关的 Agent 占位类 —— 必须在 _OpenAIBase / _AnthropicBase 之前定义，
-# 因为它们的 metaclass 引用 ``Agent`` 类对象。
+# 协议无关的 Agent 占位类 —— 必须在 _OpenAIBase 等之前定义（metaclass 引用它）。
 class Agent(metaclass=_ProtocolMeta):
     """协议无关的 Agent 工厂占位类。
 
     通过类属性 ``protocol`` 决定实际继承 ``BaseAgent`` 或 ``AnthropicAgent``::
 
-        @dumplingsAI.register_agent("uuid-1", "my_agent")
+        @dumplingsAI.template_agent("my_agent", uuid="uuid-1")
         class MyAgent(dumplingsAI.Agent):
             protocol = "anthropic"
             ...
@@ -123,8 +129,9 @@ agent = Agent
 # ============================================================================
 
 class _AgentCommon:
-    """OpenAI / Anthropic 共享方法 mixin。"""
+    """OpenAI / Anthropic / Responses 三个 Agent 类共享的方法 mixin。"""
 
+    # ---- 类属性（子类覆盖） ----
     prompt: Optional[str] = None
     api_provider: Optional[str] = None
     model_name: Optional[str] = None
@@ -135,8 +142,12 @@ class _AgentCommon:
     tool_timeout: float = 60.0
     tool_max_workers: int = 8
 
-    # v0.4.2+：连通性测试可关
-    enable_connectivity: bool = True
+    # ---- 开关（v0.4.2+） ----
+    enable_connectivity: bool = True  # 默认开启；测试 / 离线开发可关
+
+    # ---- 协议钩子（子类覆盖） ----
+    _transport_cls: type = None  # LLMTransport 子类
+    _default_max_tokens: Optional[int] = None  # Anthropic 用 4096，OpenAI 不传
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -147,6 +158,7 @@ class _AgentCommon:
                 "请覆写 out(content) 而不是 pack()。".format(cls.__name__)
             )
 
+    # ---- 通用构造 ----
     def __init__(self, new_load: bool = True):
         self.uuid = self.__class__.uuid
         self.name = self.__class__.name
@@ -238,8 +250,10 @@ class _AgentCommon:
                 logger.error(f"钩子执行失败：{e}")
 
     def register_tool_hook(self, hook_func):
+        """注册工具调用钩子。签名：hook(event_type, tool_name, tool_args, tool_result, task_id)"""
         self.tool_call_hooks.append(hook_func)
 
+    # ---- 持久化 wrapper ----
     def save_state(self, key: str, backend: Optional[str] = None) -> None:
         from .persistence import save_state as _save_state
         _save_state(self, key, backend=backend)
@@ -249,7 +263,7 @@ class _AgentCommon:
         from .persistence import load_state as _load_state
         return _load_state(key, backend=backend)
 
-    # ---- shared builtin_tools ----
+    # ---- 共享 builtin_tools ----
     @builtin_tool(
         description="请求其他Agent帮助，调用另一个Agent完成子任务并把它的回复作为工具结果返回。",
         params={
@@ -437,20 +451,17 @@ class _AgentCommon:
             print(content.get("message"), end="")
 
     # ------------------------------------------------------------------
-    # 共享对话循环（v0.4.2+）—— 三个协议类共用，协议差异通过钩子注入
+    # 共享对话循环（v0.4.2+）—— 三个协议类共用
     # ------------------------------------------------------------------
     #
     # 协议钩子（子类覆盖）：
-    #   - ``_transport_cls``       : LLMTransport 子类（必填）
-    #   - ``_endpoint()``          : transport 的请求 URL（默认 api_provider）
-    #   - ``_transport_kwargs()``  : transport 构造参数（如 anthropic_version）
-    #   - ``_build_user_message()``: user 消息构造（多模态差异）
+    #   - ``_transport_cls``        : LLMTransport 子类（必填）
+    #   - ``_endpoint()``           : transport 的请求 URL（默认 api_provider）
+    #   - ``_transport_kwargs()``   : transport 构造参数（如 anthropic_version）
+    #   - ``_build_user_message()`` : user 消息构造（多模态差异）
     #   - ``_collect_tools_schema()``: 工具 schema 收集
     #   - ``_extract_system_and_messages()``: system 抽取
-    #   - ``_handle_xml_mode()``   : OpenAI 特有 XML 标签模式（默认不处理）
-
-    _transport_cls: type = None
-    _default_max_tokens: Optional[int] = None  # Anthropic 用 4096，OpenAI 不传
+    #   - ``_handle_xml_mode()``    : OpenAI 特有 XML 标签模式（默认不处理）
 
     def _endpoint(self) -> str:
         return self.api_provider
@@ -461,6 +472,74 @@ class _AgentCommon:
     def _handle_xml_mode(self, work_history, full_content):
         """默认不处理 XML 标签模式；OpenAI 协议覆盖。"""
         return None
+
+    def _extract_system_and_messages(self, work_history):
+        """把 system message 从 history 里拆出来；其他 message 一律透传。"""
+        if work_history and isinstance(work_history[0], dict) and work_history[0].get("role") == "system":
+            return work_history[0].get("content") or "", list(work_history[1:])
+        return "", list(work_history)
+
+    def _collect_tools_schema(self) -> list:
+        """OpenAI 兼容的工具 schema：注册工具 + builtin + skills（统一 OpenAI tool 定义）。"""
+        tools_schema = list(tool_registry.get_all_tools_schema(self.uuid))
+        for s in tool_registry.collect_builtin_tools(self):
+            tools_schema.append(s)
+        try:
+            from .skill import skill_registry
+            tools_schema.extend(skill_registry.get_all_tool_schemas())
+        except ImportError:
+            pass
+        return tools_schema
+
+    def _build_user_message(self, messages, images) -> dict:
+        """构造 OpenAI 风格 user message（含多模态图）。"""
+        if not images:
+            return {"role": "user", "content": messages}
+        content_list = [{"type": "text", "text": messages}]
+        for img in images:
+            if isinstance(img, str) and img.startswith("http"):
+                content_list.append({"type": "image_url", "image_url": {"url": img}})
+            else:
+                content_list.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img}"}})
+        return {"role": "user", "content": content_list}
+
+    def _connectivity(self):
+        """后台 ping：默认走 self.api_provider。子类 override ``_ping_endpoint()`` / ``_ping_payload()`` 适配协议。"""
+        from .errors import APIError
+        from .http_utils import HTTPClient
+
+        try:
+            client = HTTPClient()
+            rsp = client.post(
+                self._ping_endpoint(),
+                headers=self.headers,
+                json=self._ping_payload(),
+                max_retries=0,
+            )
+            ok = 200 <= rsp.status_code < 300
+        except APIError as e:
+            logger.error(f"{self.name} 连接测试未通过：{e}")
+            return False
+        except Exception as e:
+            logger.error(f"{self.name} 连接异常：{e}")
+            return False
+        if ok:
+            logger.info(f"{self.name} 连接正常")
+        else:
+            logger.error(f"{self.name} 连接测试未通过：status={rsp.status_code}")
+        return ok
+
+    def _ping_endpoint(self) -> str:
+        return self.api_provider
+
+    def _ping_payload(self) -> dict:
+        return {
+            "model": self.model_name,
+            "messages": [{"role": "user", "content": "你好"}],
+            "stream": self.stream,
+            "stream_options": {"include_usage": True},
+            "max_tokens": 1,
+        }
 
     def _dispatch_tool(self, name: str, arguments: dict):
         """Pydantic 校验 + ACL 检查 + ToolRunner 执行（三个协议共享）。"""
@@ -732,59 +811,17 @@ class _AgentCommon:
 
 
 # ============================================================================
-# 协议特定方法 - 由子类实现
+# OpenAI 协议
 # ============================================================================
-
-# 这些抽象方法在 _OpenAIBase 和 _AnthropicBase 中实现。
-# 在这里只声明 stub 让 mypy 满意。如果某个方法没实现，运行时会 AttributeError。
-
-
-# ============================================================================
-# 后置定义：OpenAI / Anthropic 协议实现
-# ============================================================================
-# 这里延迟 import 避免循环依赖（protocol = openai / anthropic 在类体内读取）。
-
 
 class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
     """OpenAI 兼容 Chat Completions 协议。"""
 
     protocol: str = "openai"
-
-    def _connectivity(self):
-        """异步 ping：走 HTTPClient，不重试。"""
-        from .errors import APIError
-        from .http_utils import HTTPClient
-
-        try:
-            client = HTTPClient()
-            payload = {
-                "model": self.model_name,
-                "messages": [{"role": "user", "content": "你好"}],
-                "stream": self.stream,
-                "stream_options": {"include_usage": True},
-                "max_tokens": 1,
-            }
-            rsp = client.post(
-                self.api_provider,
-                headers=self.headers,
-                json=payload,
-                max_retries=0,
-            )
-            ok = 200 <= rsp.status_code < 300
-        except APIError as e:
-            logger.error(f"{self.name} 连接测试未通过：{e}")
-            return False
-        except Exception as e:
-            logger.error(f"{self.name} 连接异常：{e}")
-            return False
-        if ok:
-            logger.info(f"{self.name} 连接正常")
-        else:
-            logger.error(f"{self.name} 连接测试未通过：status={rsp.status_code}")
-        return ok
+    _transport_cls = HttpxOpenAITransport
 
     def _resolve_tool(self, name: str):
-        """解析 tool 名字到实际 callable"""
+        """解析 tool 名字到实际 callable（XML 模式用）。"""
         tool_func = None
         if tool_registry.check_permission(self.uuid, name):
             info = tool_registry.get_tool_info(name)
@@ -798,101 +835,11 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
             raise ValueError(f"tool not found: {name}")
         return tool_func
 
-    def _collect_tools_schema(self) -> list:
-        """收集 tools schema（OpenAI 格式）"""
-        tools_schema = list(tool_registry.get_all_tools_schema(self.uuid))
-        for s in tool_registry.collect_builtin_tools(self):
-            tools_schema.append(s)
-        try:
-            from .skill import skill_registry
-            tools_schema.extend(skill_registry.get_all_tool_schemas())
-        except ImportError:
-            pass
-        return tools_schema if self.fc_model else []
-
-    def _build_user_message(self, messages, images) -> dict:
-        """构建 OpenAI user message（支持多模态）"""
-        if not images:
-            return {"role": "user", "content": messages}
-        content_list = [{"type": "text", "text": messages}]
-        for img in images:
-            if isinstance(img, str) and img.startswith("http"):
-                content_list.append({"type": "image_url", "image_url": {"url": img}})
-            else:
-                content_list.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img}"}})
-        return {"role": "user", "content": content_list}
-
-    def _extract_system_and_messages(self, work_history):
-        """抽出 system 消息，剩余为对话"""
-        if work_history and isinstance(work_history[0], dict) and work_history[0].get("role") == "system":
-            return work_history[0].get("content") or "", list(work_history[1:])
-        return "", list(work_history)
-
-    def _handle_fc_mode(self, work_history, tool_calls_list, full_content):
-        """OpenAI Function Calling 模式：执行工具 - 复用 BaseAgent 逻辑"""
-        if not (self.fc_model and tool_calls_list):
-            return None
-        logger.debug(f"发现 Function Calling 工具调用: {tool_calls_list}")
-
-        work_history.append({
-            "role": "assistant",
-            "content": None,
-            "tool_calls": tool_calls_list,
-        })
-
-        tool_results = []
-        for tool_call in tool_calls_list:
-            tool_name = tool_call['function']['name']
-            tool_id = tool_call['id']
-
-            try:
-                args = json.loads(tool_call['function']['arguments'])
-                self.current_task_id = self._generate_task_id()
-                self._execute_hooks('before', tool_name, args)
-                logger.debug(f"调用工具 {tool_name}，参数: {args}")
-                self.pack(tool_name=tool_name, tool_parameter=args)
-
-                from .agent_tool import _validate_tool_args_for
-                args = _validate_tool_args_for(self, tool_name, args)
-
-                async_id = None
-                result, async_id = self._tool_runner.submit(
-                    tool_func=self._resolve_tool(tool_name),
-                    tool_name=tool_name,
-                    timeout=self.tool_timeout,
-                    **args,
-                )
-                if async_id is not None:
-                    result = f"[tool {tool_name} still running in background as task_id={async_id}]"
-                self._execute_hooks('after', tool_name, args, result)
-                self.pack(tool_result=result, tool_name=tool_name)
-                tool_results.append({
-                    "tool_call_id": tool_id, "name": tool_name, "content": result,
-                })
-            except Exception as e:
-                error_msg = f"执行工具 {tool_name} 时出错: {str(e)}"
-                logger.error(error_msg)
-                if 'args' in locals():
-                    self._execute_hooks('error', tool_name, args, error_msg)
-                tool_results.append({
-                    "tool_call_id": tool_id, "name": tool_name, "content": error_msg,
-                })
-
-        for result in tool_results:
-            work_history.append({
-                "role": "tool",
-                "tool_call_id": result['tool_call_id'],
-                "name": result['name'],
-                "content": result['content'],
-            })
-
-        return self.conversation_with_tool(tool=True)
-
     def _handle_xml_mode(self, work_history, full_content):
-        """OpenAI XML 模式：解析 <tool_name>...</tool_name> 块"""
+        """OpenAI XML 模式：解析 <tool_name>...</tool_name> 块（fc_model=False 时）。"""
         from bs4 import BeautifulSoup
-        xml_pattern = re.compile(r'<(\w+)>.*?</\1>', flags=re.S)
-        clean_pattern = re.compile(r'</?(out_text|thinking)>', flags=re.S)
+        xml_pattern = re.compile(r"<(\w+)>.*?</\1>", flags=re.S)
+        clean_pattern = re.compile(r"</?(out_text|thinking)>", flags=re.S)
         clean_content = clean_pattern.sub('', full_content)
         xml_blocks = [m.group(0) for m in xml_pattern.finditer(clean_content)]
 
@@ -912,19 +859,16 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
             tool_name = root.name
 
             tool_func = None
-            tool_source = None
 
             if tool_registry.check_permission(self.uuid, tool_name):
                 tool_info = tool_registry.get_tool_info(tool_name)
                 if tool_info is not None:
-                    tool_func = tool_info['function']
-                    tool_source = "工具注册器"
+                    tool_func = tool_info["function"]
 
             if tool_func is None and hasattr(self, tool_name):
                 method = getattr(self, tool_name)
                 if callable(method):
                     tool_func = method
-                    tool_source = "类方法"
 
             if tool_func is None:
                 available_tools = self.get_all_available_tools()
@@ -936,14 +880,13 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
                 logger.warning(f"工具 {tool_name} 未找到，可用工具: {available_tools}")
                 continue
 
-            logger.debug(f"从 {tool_source} 找到工具 {tool_name}")
             params = {}
             for child in root.children:
                 if hasattr(child, "name") and child.name:
                     params[child.name] = child.text
 
             self.current_task_id = self._generate_task_id()
-            self._execute_hooks('before', tool_name, params)
+            self._execute_hooks("before", tool_name, params)
             self.pack(tool_name=tool_name, tool_parameter=params)
 
             import inspect
@@ -955,7 +898,7 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
                 result = f"工具参数校验失败：{e}"
                 tool_results.append(result)
                 tool_names.append(tool_name)
-                self._execute_hooks('error', tool_name, params, result)
+                self._execute_hooks("error", tool_name, params, result)
                 continue
 
             sig = inspect.signature(tool_func)
@@ -973,7 +916,7 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
                 except TypeError:
                     result = tool_func(block)
 
-            self._execute_hooks('after', tool_name, params, result)
+            self._execute_hooks("after", tool_name, params, result)
             self.pack(tool_result=result, tool_name=tool_name)
 
             if not result:
@@ -995,175 +938,10 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
             return self.conversation_with_tool(tool=True)
         return full_content
 
-    @_auto_save
-    def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
-        """进行对话，支持多模态输入（文本 + 图片）"""
-        work_history = self.history
 
-        if not tool and messages:
-            work_history.append(self._build_user_message(messages, images))
-
-        tools_schema = self._collect_tools_schema()
-        system_str, rest_messages = self._extract_system_and_messages(work_history)
-
-        req = ChatRequest(
-            model=self.model_name,
-            system=system_str,
-            messages=rest_messages,
-            tools=tools_schema,
-            stream=self.stream,
-        )
-
-        transport = HttpxOpenAITransport(
-            endpoint=self.api_provider,
-            api_key=self.api_key,
-        )
-
-        full_content = ""
-        tool_calls_list: list = []
-        self.stream_run = True
-
-        if self.stream:
-            for evt in transport.chat_stream(req):
-                if evt.type == "text":
-                    full_content += evt.text
-                    self.pack(evt.text, finish_task=False)
-                elif evt.type == "tool_call" and evt.tool_call is not None:
-                    tc = evt.tool_call
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                elif evt.type == "usage" and evt.usage is not None:
-                    self.stream_run = False
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"\n本次请求用量：提示 {evt.usage.prompt_tokens} tokens，"
-                        f"生成 {evt.usage.completion_tokens} tokens，"
-                        f"总计 {evt.usage.total_tokens} tokens。",
-                        other=True,
-                    )
-        else:
-            self.stream_run = False
-            try:
-                llm_rsp: LLMResponse = transport.chat(req)
-                full_content = llm_rsp.text
-                if full_content:
-                    self.pack(full_content, finish_task=False)
-                for tc in llm_rsp.tool_calls:
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                if llm_rsp.usage is not None:
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"\n本次请求用量：提示 {llm_rsp.usage.prompt_tokens} tokens，"
-                        f"生成 {llm_rsp.usage.completion_tokens} tokens，"
-                        f"总计 {llm_rsp.usage.total_tokens} tokens。",
-                        other=True,
-                    )
-            except Exception as e:
-                logger.error(f"非流式响应处理错误: {e}")
-                full_content = ""
-
-        logger.trace(f"AI 回复内容长度：{len(full_content)}")
-
-        # FC 模式
-        if self.fc_model and tool_calls_list:
-            return self._handle_fc_mode(work_history, tool_calls_list, full_content)
-
-        # XML 模式
-        result = self._handle_xml_mode(work_history, full_content)
-        if result is not None:
-            return result
-        return full_content
-
-    @_auto_save_async
-    async def aconversation_with_tool(self, messages=None, tool: bool = False, images=None):
-        """异步版 conversation_with_tool"""
-        work_history = self.history
-
-        if not tool and messages:
-            work_history.append(self._build_user_message(messages, images))
-
-        tools_schema = self._collect_tools_schema()
-        system_str, rest_messages = self._extract_system_and_messages(work_history)
-
-        req = ChatRequest(
-            model=self.model_name,
-            system=system_str,
-            messages=rest_messages,
-            tools=tools_schema,
-            stream=self.stream,
-        )
-
-        transport = HttpxOpenAITransport(endpoint=self.api_provider, api_key=self.api_key)
-        full_content = ""
-        tool_calls_list: list = []
-
-        if self.stream:
-            async for evt in transport.achat_stream(req):
-                if evt.type == "text":
-                    full_content += evt.text
-                    self.pack(evt.text, finish_task=False)
-                elif evt.type == "tool_call" and evt.tool_call is not None:
-                    tc = evt.tool_call
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                elif evt.type == "usage" and evt.usage is not None:
-                    self.stream_run = False
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"usage: prompt={evt.usage.prompt_tokens} "
-                        f"completion={evt.usage.completion_tokens} "
-                        f"total={evt.usage.total_tokens}",
-                        other=True,
-                    )
-        else:
-            self.stream_run = False
-            try:
-                llm_rsp: LLMResponse = await transport.achat(req)
-                full_content = llm_rsp.text
-                if full_content:
-                    self.pack(full_content, finish_task=False)
-                for tc in llm_rsp.tool_calls:
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                if llm_rsp.usage is not None:
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"usage: prompt={llm_rsp.usage.prompt_tokens} "
-                        f"completion={llm_rsp.usage.completion_tokens} "
-                        f"total={llm_rsp.usage.total_tokens}",
-                        other=True,
-                    )
-            except Exception as e:
-                logger.error(f"非流式响应处理错误: {e}")
-                full_content = ""
-
-        # FC 模式走相同逻辑（包一层 asyncio 友好）
-        if self.fc_model and tool_calls_list:
-            # 简化复用：调用 sync 版本（ToolRunner 不阻塞）
-            return self._handle_fc_mode(work_history, tool_calls_list, full_content)
-        return full_content
-
+# ============================================================================
+# Anthropic 协议
+# ============================================================================
 
 class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
     """Anthropic Messages API 协议。"""
@@ -1185,91 +963,21 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
             return base + "/messages"
         return base + "/v1/messages"
 
-    def _connectivity(self):
-        from .errors import APIError
-        from .http_utils import HTTPClient
+    def _ping_endpoint(self) -> str:
+        return self._endpoint()
 
-        try:
-            client = HTTPClient()
-            payload = {
-                "model": self.model_name,
-                "max_tokens": 1,
-                "messages": [{"role": "user", "content": "ping"}],
-            }
-            rsp = client.post(
-                self._endpoint(),
-                headers=self.headers,
-                json=payload,
-                max_retries=0,
-            )
-            ok = 200 <= rsp.status_code < 300
-        except APIError as e:
-            logger.error(f"{self.name} Anthropic 连接测试未通过：{e}")
-            return False
-        except Exception as e:
-            logger.error(f"{self.name} Anthropic 连接异常：{e}")
-            return False
-        if ok:
-            logger.info(f"{self.name} Anthropic 连接正常")
-        else:
-            logger.error(f"{self.name} Anthropic 连接测试未通过：status={rsp.status_code}")
-        return ok
-
-    def _dispatch_tool(self, name: str, arguments: dict):
-        """Pydantic 校验 + 工具分发 + ToolRunner 执行"""
-        from .agent_tool import _validate_tool_args_for
-        try:
-            arguments = _validate_tool_args_for(self, name, arguments)
-        except Exception as e:
-            return (f"工具参数校验失败：{e}", None)
-
-        builtin_names = {s["function"]["name"] for s in tool_registry.collect_builtin_tools(self)}
-        if name in builtin_names:
-            method = getattr(self, name, None)
-            if callable(method):
-                if arguments:
-                    result, async_id = self._tool_runner.submit(
-                        method, tool_name=name, timeout=self.tool_timeout, **arguments,
-                    )
-                else:
-                    result, async_id = self._tool_runner.submit(
-                        method, tool_name=name, timeout=self.tool_timeout,
-                    )
-                return result, async_id
-
-        if tool_registry.check_permission(self.uuid, name):
-            tool_info = tool_registry.get_tool_info(name)
-            if tool_info:
-                func = tool_info["function"]
-                try:
-                    if arguments:
-                        result, async_id = self._tool_runner.submit(
-                            func, tool_name=name, timeout=self.tool_timeout, **arguments,
-                        )
-                    else:
-                        result, async_id = self._tool_runner.submit(
-                            func, tool_name=name, timeout=self.tool_timeout,
-                        )
-                    return result, async_id
-                except TypeError:
-                    result, async_id = self._tool_runner.submit(
-                        func, tool_name=name, timeout=self.tool_timeout, xml=str(arguments),
-                    )
-                    return result, async_id
-        return (f"找不到工具：{name}", None)
+    def _ping_payload(self) -> dict:
+        return {
+            "model": self.model_name,
+            "max_tokens": 1,
+            "messages": [{"role": "user", "content": "ping"}],
+        }
 
     def _collect_tools_schema(self) -> list:
-        """Anthropic 工具 schema（含 builtin）"""
-        tools_schema = list(tool_registry.get_all_tools_schema(self.uuid))
-        for s in tool_registry.collect_builtin_tools(self):
-            tools_schema.append(s)
-        try:
-            from .skill import skill_registry
-            tools_schema.extend(skill_registry.get_all_tool_schemas())
-        except ImportError:
-            pass
-        # OpenAI → Anthropic 转换由 HttpxAnthropicTransport._convert_tools 内部处理
-        return tools_schema if self.fc_model else []
+        """Anthropic：fc_model=False 时不挂 tools（OpenAI→Anthropic 转换由 transport 处理）。"""
+        if not self.fc_model:
+            return []
+        return super()._collect_tools_schema()
 
     def _build_user_message(self, messages, images) -> dict:
         """构建 Anthropic user message（支持多模态）"""
@@ -1286,22 +994,12 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
                 })
         return {"role": "user", "content": content_list}
 
-    def _extract_system_and_messages(self, work_history):
-        if work_history and isinstance(work_history[0], dict) and work_history[0].get("role") == "system":
-            return work_history[0].get("content") or "", list(work_history[1:])
-        return "", list(work_history)
+    # ---- Anthropic 对话循环的共享助手（sync/async 共用） ----
 
-    @_auto_save
-    def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
-        """Anthropic Messages API 对话"""
-        work_history = self.history
-
-        if not tool and messages:
-            work_history.append(self._build_user_message(messages, images))
-
+    def _build_anthropic_request(self) -> "tuple[ChatRequest, HttpxAnthropicTransport]":
+        """构造 Anthropic ChatRequest + Transport（基于当前 self.history）。"""
+        system_str, rest_messages = self._extract_system_and_messages(self.history)
         tools_schema = self._collect_tools_schema()
-        system_str, rest_messages = self._extract_system_and_messages(work_history)
-
         req = ChatRequest(
             model=self.model_name,
             system=system_str,
@@ -1310,13 +1008,68 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
             stream=self.stream,
             max_tokens=self.max_tokens,
         )
-
         transport = HttpxAnthropicTransport(
             endpoint=self._endpoint(),
             api_key=self.api_key,
             anthropic_version=self.anthropic_version,
             max_tokens=self.max_tokens,
         )
+        return req, transport
+
+    def _accumulate_anthropic_evt(self, blocks, tool_uses, evt) -> None:
+        """把单个 LLMEvent 累积进 assistant_blocks + tool_uses；文本事件同时 self.pack。"""
+        if evt.type == "text":
+            blocks.append({"type": "text", "text": evt.text})
+            self.pack(evt.text, finish_task=False)
+        elif evt.type == "tool_call" and evt.tool_call is not None:
+            tc = evt.tool_call
+            blocks.append({"type": "tool_use", "id": tc.id, "name": tc.name, "input": tc.arguments})
+            tool_uses.append({"id": tc.id, "name": tc.name, "input": tc.arguments})
+
+    def _accumulate_anthropic_rsp(self, blocks, tool_uses, full_text, llm_rsp) -> str:
+        """把一次性 LLMResponse 累积进 blocks + tool_uses；返回最新 full_text。"""
+        for tc in llm_rsp.tool_calls:
+            blocks.append({"type": "tool_use", "id": tc.id, "name": tc.name, "input": tc.arguments})
+            tool_uses.append({"id": tc.id, "name": tc.name, "input": tc.arguments})
+        if llm_rsp.text:
+            full_text += llm_rsp.text
+            blocks.append({"type": "text", "text": llm_rsp.text})
+            self.pack(llm_rsp.text, finish_task=False)
+        return full_text
+
+    def _execute_anthropic_tool_use(self, tu: dict) -> dict:
+        """执行单个 tool_use（dispatch + hooks + async_id 包裹），返回 Anthropic tool_result dict。"""
+        self.current_task_id = self._generate_task_id()
+        self._execute_hooks("before", tu["name"], tu["input"])
+        self.pack(tool_model=True, tool_name=tu["name"], tool_parameter=tu["input"])
+        async_id = None
+        try:
+            result, async_id = self._dispatch_tool(tu["name"], tu["input"])
+        except Exception as e:
+            result = f"工具执行失败：{e}"
+            self._execute_hooks("error", tu["name"], tu["input"], result)
+        else:
+            self._execute_hooks("after", tu["name"], tu["input"], result)
+            self.pack(tool_result=result, tool_name=tu["name"])
+
+        if async_id is not None:
+            result = f"[tool {tu['name']} still running in background as task_id={async_id}]"
+
+        return {
+            "type": "tool_result",
+            "tool_use_id": tu["id"],
+            "content": result if isinstance(result, str) else json.dumps(result, ensure_ascii=False),
+        }
+
+    @_auto_save
+    def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
+        """Anthropic Messages API 同步对话。"""
+        work_history = self.history
+
+        if not tool and messages:
+            work_history.append(self._build_user_message(messages, images))
+
+        req, transport = self._build_anthropic_request()
 
         full_text = ""
         assistant_blocks: list = []
@@ -1325,103 +1078,26 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
         try:
             if self.stream:
                 for evt in transport.chat_stream(req):
-                    if evt.type == "text":
-                        assistant_blocks.append({"type": "text", "text": evt.text})
-                        self.pack(evt.text, finish_task=False)
-                    elif evt.type == "tool_call" and evt.tool_call is not None:
-                        tool_use_block = {
-                            "type": "tool_use",
-                            "id": evt.tool_call.id,
-                            "name": evt.tool_call.name,
-                            "input": evt.tool_call.arguments,
-                        }
-                        assistant_blocks.append(tool_use_block)
-                        tool_uses.append({
-                            "id": evt.tool_call.id,
-                            "name": evt.tool_call.name,
-                            "input": evt.tool_call.arguments,
-                        })
+                    self._accumulate_anthropic_evt(assistant_blocks, tool_uses, evt)
             else:
-                llm_rsp: LLMResponse = transport.chat(req)
-                for tc in llm_rsp.tool_calls:
-                    assistant_blocks.append({
-                        "type": "tool_use",
-                        "id": tc.id, "name": tc.name, "input": tc.arguments,
-                    })
-                    tool_uses.append({
-                        "id": tc.id, "name": tc.name, "input": tc.arguments,
-                    })
-                if llm_rsp.text:
-                    full_text += llm_rsp.text
-                    assistant_blocks.append({"type": "text", "text": llm_rsp.text})
-                    self.pack(llm_rsp.text, finish_task=False)
+                full_text = self._accumulate_anthropic_rsp(
+                    assistant_blocks, tool_uses, full_text, transport.chat(req),
+                )
         except Exception as e:
             logger.error(f"{self.name} Anthropic 调用失败：{e}")
             raise
 
-        if self.stream and not any(b.get("type") == "text" for b in assistant_blocks) and full_text:
-            assistant_blocks.append({"type": "text", "text": full_text})
-
-        work_history.append({"role": "assistant", "content": assistant_blocks})
-        if not tool_uses:
-            return "".join(b.get("text", "") for b in assistant_blocks if b.get("type") == "text")
-
-        tool_results: list = []
-        for tu in tool_uses:
-            self.current_task_id = self._generate_task_id()
-            self._execute_hooks("before", tu["name"], tu["input"])
-            self.pack(tool_model=True, tool_name=tu["name"], tool_parameter=tu["input"])
-            async_id = None
-            try:
-                result, async_id = self._dispatch_tool(tu["name"], tu["input"])
-            except Exception as e:
-                result = f"工具执行失败：{e}"
-                self._execute_hooks("error", tu["name"], tu["input"], result)
-            else:
-                self._execute_hooks("after", tu["name"], tu["input"], result)
-                self.pack(tool_result=result, tool_name=tu["name"])
-
-            if async_id is not None:
-                result = (
-                    f"[tool {tu['name']} still running in background as task_id={async_id}; "
-                    f"check via self._tool_runner.get_status('{async_id}') "
-                    f"or wait via self._tool_runner.wait('{async_id}')]"
-                )
-
-            tool_results.append({
-                "type": "tool_result",
-                "tool_use_id": tu["id"],
-                "content": result if isinstance(result, str) else json.dumps(result, ensure_ascii=False),
-            })
-
-        work_history.append({"role": "user", "content": tool_results})
-        return self.conversation_with_tool(tool=True)
+        return self._finish_anthropic_round(work_history, assistant_blocks, tool_uses, full_text)
 
     @_auto_save_async
     async def aconversation_with_tool(self, messages=None, tool: bool = False, images=None):
+        """Anthropic Messages API 异步对话。"""
         work_history = self.history
 
         if not tool and messages:
             work_history.append(self._build_user_message(messages, images))
 
-        tools_schema = self._collect_tools_schema()
-        system_str, rest_messages = self._extract_system_and_messages(work_history)
-
-        req = ChatRequest(
-            model=self.model_name,
-            system=system_str,
-            messages=rest_messages,
-            tools=tools_schema,
-            stream=self.stream,
-            max_tokens=self.max_tokens,
-        )
-
-        transport = HttpxAnthropicTransport(
-            endpoint=self._endpoint(),
-            api_key=self.api_key,
-            anthropic_version=self.anthropic_version,
-            max_tokens=self.max_tokens,
-        )
+        req, transport = self._build_anthropic_request()
 
         full_text = ""
         assistant_blocks: list = []
@@ -1430,397 +1106,84 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
         try:
             if self.stream:
                 async for evt in transport.achat_stream(req):
-                    if evt.type == "text":
-                        assistant_blocks.append({"type": "text", "text": evt.text})
-                        self.pack(evt.text, finish_task=False)
-                    elif evt.type == "tool_call" and evt.tool_call is not None:
-                        tool_use_block = {
-                            "type": "tool_use",
-                            "id": evt.tool_call.id,
-                            "name": evt.tool_call.name,
-                            "input": evt.tool_call.arguments,
-                        }
-                        assistant_blocks.append(tool_use_block)
-                        tool_uses.append({
-                            "id": evt.tool_call.id,
-                            "name": evt.tool_call.name,
-                            "input": evt.tool_call.arguments,
-                        })
+                    self._accumulate_anthropic_evt(assistant_blocks, tool_uses, evt)
             else:
-                llm_rsp: LLMResponse = await transport.achat(req)
-                for tc in llm_rsp.tool_calls:
-                    assistant_blocks.append({
-                        "type": "tool_use",
-                        "id": tc.id, "name": tc.name, "input": tc.arguments,
-                    })
-                    tool_uses.append({
-                        "id": tc.id, "name": tc.name, "input": tc.arguments,
-                    })
-                if llm_rsp.text:
-                    full_text += llm_rsp.text
-                    assistant_blocks.append({"type": "text", "text": llm_rsp.text})
-                    self.pack(llm_rsp.text, finish_task=False)
+                full_text = self._accumulate_anthropic_rsp(
+                    assistant_blocks, tool_uses, full_text, await transport.achat(req),
+                )
         except Exception as e:
             logger.error(f"{self.name} Anthropic 异步调用失败：{e}")
             raise
+
+        return await self._finish_anthropic_round_async(work_history, assistant_blocks, tool_uses, full_text)
+
+    def _finish_anthropic_round(self, work_history, assistant_blocks, tool_uses, full_text):
+        """sync 对话循环收尾：append assistant message → 执行 tool_uses → 递归或返回文本。"""
+        if self.stream and not any(b.get("type") == "text" for b in assistant_blocks) and full_text:
+            assistant_blocks.append({"type": "text", "text": full_text})
 
         work_history.append({"role": "assistant", "content": assistant_blocks})
         if not tool_uses:
             return "".join(b.get("text", "") for b in assistant_blocks if b.get("type") == "text")
 
-        tool_results: list = []
-        for tu in tool_uses:
-            self.current_task_id = self._generate_task_id()
-            self._execute_hooks("before", tu["name"], tu["input"])
-            self.pack(tool_model=True, tool_name=tu["name"], tool_parameter=tu["input"])
-            async_id = None
-            try:
-                result, async_id = self._dispatch_tool(tu["name"], tu["input"])
-            except Exception as e:
-                result = f"tools execution failed: {e}"
-                self._execute_hooks("error", tu["name"], tu["input"], result)
-            else:
-                self._execute_hooks("after", tu["name"], tu["input"], result)
-                self.pack(tool_result=result, tool_name=tu["name"])
+        tool_results = [self._execute_anthropic_tool_use(tu) for tu in tool_uses]
+        work_history.append({"role": "user", "content": tool_results})
+        return self.conversation_with_tool(tool=True)
 
-            if async_id is not None:
-                result = f"[tool {tu['name']} still running in background as task_id={async_id}]"
+    async def _finish_anthropic_round_async(self, work_history, assistant_blocks, tool_uses, full_text):
+        """async 对话循环收尾；用 await 调递归。"""
+        # 非流式分支已经会把 text 推到 assistant_blocks；流式下若 blocks 没
+        # 任何 text 但 full_text 非空，补一个 text block（与 sync 行为对齐）。
+        if self.stream and not any(b.get("type") == "text" for b in assistant_blocks) and full_text:
+            assistant_blocks.append({"type": "text", "text": full_text})
 
-            tool_results.append({
-                "type": "tool_result",
-                "tool_use_id": tu["id"],
-                "content": result if isinstance(result, str) else json.dumps(result, ensure_ascii=False),
-            })
+        work_history.append({"role": "assistant", "content": assistant_blocks})
+        if not tool_uses:
+            return "".join(b.get("text", "") for b in assistant_blocks if b.get("type") == "text")
 
+        tool_results = [self._execute_anthropic_tool_use(tu) for tu in tool_uses]
         work_history.append({"role": "user", "content": tool_results})
         return await self.aconversation_with_tool(tool=True)
 
 
 # ============================================================================
-# Agent 占位类 + 小写别名
+# 协议名称常量 —— 让 ``agent.protocol = OPENAI`` 不需要打引号
 # ============================================================================
 #
-# 写两遍 ``class Agent`` 的原因：
-# 1. 第一次：作为 metaclass 分发的"占位类"（protocol 字段会被换）
-# 2. metaclass 之后 ``_OpenAIBase`` / ``_AnthropicBase`` 已经定义，可以做
-#    ``isinstance / issubclass`` 比较
-# 3. 第二次：最终版 Agent 类（绑定到上面的两个真实基类）
-#
-# 简化版：只写一次 final Agent（在文件顶部，metaclass 之后），metaclass 在子类化时查找
-# _PROTOCOL_BASES。这里不再重复定义。
+# 用法：
+#     from dumplingsAI import OPENAI, ANTHROPIC, openai
+#     agent.protocol = OPENAI                # 大写常量
+#     agent.protocol = "anthropic"           # 也行（兼容打引号）
+#     agent.protocol = openai                # 小写别名（推荐 ``from dumplingsAI import openai``）
 
+OPENAI = "openai"
+ANTHROPIC = "anthropic"
+OPENAI_RESPONSES = "openai-responses"
+openai = OPENAI                # 小写别名
+anthropic = ANTHROPIC
+openai_responses = OPENAI_RESPONSES
 
-# ============================================================================
 # 向后兼容别名
-# ============================================================================
-
 BaseAgent = _OpenAIBase
 AnthropicAgent = _AnthropicBase
 
 
-# ============================================================================
-# 注册默认协议
-# ============================================================================
-
-register_protocol("openai", _OpenAIBase)
-register_protocol("anthropic", _AnthropicBase)
-
-
-# OpenAI Responses API（v0.4.2+）—— 复用 _AgentCommon 共享方法，
-# 协议特定：conversational flow 用 HttpxOpenAIResponsesTransport
 class _OpenAIResponsesBase(_AgentCommon, metaclass=_ProtocolMeta):
     """OpenAI Responses API 兼容（v0.4.2+）。
 
     用法：``protocol = "openai-responses"``，框架用 ``HttpxOpenAIResponsesTransport``
-    调 ``/v1/responses`` endpoint。响应格式（output[] 含 message / function_call）
-    框架内部已转成中性的 LLMResponse / LLMEvent。
+    调 ``/v1/responses`` endpoint。schema 收集 / user message 构造复用 mixin 默认；
+    schema 转换由 transport 在 ``_build_payload`` 内完成。
     """
 
     protocol: str = "openai-responses"
-
-    def _build_user_message(self, messages, images):
-        # Responses API 的 content 可以是 string 或 array（多模态直接展开）
-        if not images:
-            return {"role": "user", "content": messages}
-        content_list = [{"type": "text", "text": messages}]
-        for img in images:
-            if isinstance(img, str) and img.startswith("http"):
-                content_list.append({"type": "image_url", "image_url": {"url": img}})
-            else:
-                content_list.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img}"}})
-        return {"role": "user", "content": content_list}
-
-    def _extract_system_and_messages(self, work_history):
-        """Responses API 用 ``instructions``（顶字段）替代 system 消息。"""
-        if work_history and isinstance(work_history[0], dict) and work_history[0].get("role") == "system":
-            return work_history[0].get("content") or "", list(work_history[1:])
-        return "", list(work_history)
-
-    def _collect_tools_schema(self):
-        return list(tool_registry.get_all_tools_schema(self.uuid)) + [
-            s for s in tool_registry.collect_builtin_tools(self)
-        ]
-
-    def _resolve_tool(self, name: str):
-        tool_func = None
-        if tool_registry.check_permission(self.uuid, name):
-            info = tool_registry.get_tool_info(name)
-            if info is not None:
-                tool_func = info["function"]
-        if tool_func is None and hasattr(self, name):
-            method = getattr(self, name)
-            if callable(method):
-                tool_func = method
-        if tool_func is None:
-            raise ValueError(f"tool not found: {name}")
-        return tool_func
-
-    @_auto_save
-    def conversation_with_tool(self, messages=None, tool: bool = False, images=None):
-        work_history = self.history
-
-        if not tool and messages:
-            work_history.append(self._build_user_message(messages, images))
-
-        tools_schema = self._collect_tools_schema() if self.fc_model else []
-        system_str, rest_messages = self._extract_system_and_messages(work_history)
-
-        req = ChatRequest(
-            model=self.model_name,
-            system=system_str,
-            messages=rest_messages,
-            tools=tools_schema,
-            stream=self.stream,
-        )
-
-        transport = HttpxOpenAIResponsesTransport(
-            endpoint=self.api_provider, api_key=self.api_key,
-        )
-
-        full_content = ""
-        tool_calls_list: list = []
-        self.stream_run = True
-
-        if self.stream:
-            for evt in transport.chat_stream(req):
-                if evt.type == "text":
-                    full_content += evt.text
-                    self.pack(evt.text, finish_task=False)
-                elif evt.type == "tool_call" and evt.tool_call is not None:
-                    tc = evt.tool_call
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                elif evt.type == "usage" and evt.usage is not None:
-                    self.stream_run = False
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"\n本次请求用量：提示 {evt.usage.prompt_tokens} tokens，"
-                        f"生成 {evt.usage.completion_tokens} tokens，"
-                        f"总计 {evt.usage.total_tokens} tokens。",
-                        other=True,
-                    )
-        else:
-            self.stream_run = False
-            try:
-                llm_rsp: LLMResponse = transport.chat(req)
-                full_content = llm_rsp.text
-                if full_content:
-                    self.pack(full_content, finish_task=False)
-                for tc in llm_rsp.tool_calls:
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                if llm_rsp.usage is not None:
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"\n本次请求用量：提示 {llm_rsp.usage.prompt_tokens} tokens，"
-                        f"生成 {llm_rsp.usage.completion_tokens} tokens，"
-                        f"总计 {llm_rsp.usage.total_tokens} tokens。",
-                        other=True,
-                    )
-            except Exception as e:
-                logger.error(f"非流式响应处理错误: {e}")
-                full_content = ""
-
-        if self.fc_model and tool_calls_list:
-            work_history.append({
-                "role": "assistant",
-                "content": None,
-                "tool_calls": tool_calls_list,
-            })
-            tool_results = []
-            for tool_call in tool_calls_list:
-                tool_name = tool_call["function"]["name"]
-                tool_id = tool_call["id"]
-                try:
-                    args = json.loads(tool_call["function"]["arguments"])
-                    self.current_task_id = self._generate_task_id()
-                    self._execute_hooks("before", tool_name, args)
-                    logger.debug(f"调用工具 {tool_name}，参数: {args}")
-                    self.pack(tool_name=tool_name, tool_parameter=args)
-                    from .agent_tool import _validate_tool_args_for
-                    args = _validate_tool_args_for(self, tool_name, args)
-                    async_id = None
-                    result, async_id = self._tool_runner.submit(
-                        tool_func=self._resolve_tool(tool_name),
-                        tool_name=tool_name,
-                        timeout=self.tool_timeout,
-                        **args,
-                    )
-                    if async_id is not None:
-                        result = f"[tool {tool_name} still running in background as task_id={async_id}]"
-                    self._execute_hooks("after", tool_name, args, result)
-                    self.pack(tool_result=result, tool_name=tool_name)
-                    tool_results.append({
-                        "tool_call_id": tool_id, "name": tool_name, "content": result,
-                    })
-                except Exception as e:
-                    error_msg = f"执行工具 {tool_name} 时出错: {str(e)}"
-                    logger.error(error_msg)
-                    if 'args' in locals():
-                        self._execute_hooks("error", tool_name, args, error_msg)
-                    tool_results.append({
-                        "tool_call_id": tool_id, "name": tool_name, "content": error_msg,
-                    })
-            for result in tool_results:
-                work_history.append({
-                    "role": "tool",
-                    "tool_call_id": result["tool_call_id"],
-                    "name": result["name"],
-                    "content": result["content"],
-                })
-            return self.conversation_with_tool(tool=True)
-        return full_content
-
-    @_auto_save_async
-    async def aconversation_with_tool(self, messages=None, tool: bool = False, images=None):
-        work_history = self.history
-        if not tool and messages:
-            work_history.append(self._build_user_message(messages, images))
-
-        tools_schema = self._collect_tools_schema() if self.fc_model else []
-        system_str, rest_messages = self._extract_system_and_messages(work_history)
-
-        req = ChatRequest(
-            model=self.model_name,
-            system=system_str,
-            messages=rest_messages,
-            tools=tools_schema,
-            stream=self.stream,
-        )
-
-        transport = HttpxOpenAIResponsesTransport(
-            endpoint=self.api_provider, api_key=self.api_key,
-        )
-        full_content = ""
-        tool_calls_list: list = []
-
-        if self.stream:
-            async for evt in transport.achat_stream(req):
-                if evt.type == "text":
-                    full_content += evt.text
-                    self.pack(evt.text, finish_task=False)
-                elif evt.type == "tool_call" and evt.tool_call is not None:
-                    tc = evt.tool_call
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                elif evt.type == "usage" and evt.usage is not None:
-                    self.stream_run = False
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"usage: prompt={evt.usage.prompt_tokens} "
-                        f"completion={evt.usage.completion_tokens} "
-                        f"total={evt.usage.total_tokens}",
-                        other=True,
-                    )
-        else:
-            self.stream_run = False
-            try:
-                llm_rsp: LLMResponse = await transport.achat(req)
-                full_content = llm_rsp.text
-                if full_content:
-                    self.pack(full_content, finish_task=False)
-                for tc in llm_rsp.tool_calls:
-                    tool_calls_list.append({
-                        "id": tc.id, "type": "function",
-                        "function": {
-                            "name": tc.name,
-                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
-                        },
-                    })
-                if llm_rsp.usage is not None:
-                    self.pack(finish_task=True)
-                    self.pack(
-                        f"usage: prompt={llm_rsp.usage.prompt_tokens} "
-                        f"completion={llm_rsp.usage.completion_tokens} "
-                        f"total={llm_rsp.usage.total_tokens}",
-                        other=True,
-                    )
-            except Exception as e:
-                logger.error(f"非流式响应处理错误: {e}")
-                full_content = ""
-
-        if self.fc_model and tool_calls_list:
-            work_history.append({
-                "role": "assistant",
-                "content": None,
-                "tool_calls": tool_calls_list,
-            })
-            tool_results = []
-            for tool_call in tool_calls_list:
-                tool_name = tool_call["function"]["name"]
-                tool_id = tool_call["id"]
-                try:
-                    args = json.loads(tool_call["function"]["arguments"])
-                    from .agent_tool import _validate_tool_args_for
-                    args = _validate_tool_args_for(self, tool_name, args)
-                    self.current_task_id = self._generate_task_id()
-                    self._execute_hooks("before", tool_name, args)
-                    self.pack(tool_name=tool_name, tool_parameter=args)
-                    async_id = None
-                    result, async_id = self._tool_runner.submit(
-                        tool_func=self._resolve_tool(tool_name),
-                        tool_name=tool_name,
-                        timeout=self.tool_timeout,
-                        **args,
-                    )
-                    if async_id is not None:
-                        result = f"[tool {tool_name} still running in background as task_id={async_id}]"
-                    self._execute_hooks("after", tool_name, args, result)
-                    self.pack(tool_result=result, tool_name=tool_name)
-                    tool_results.append({
-                        "tool_call_id": tool_id, "name": tool_name, "content": result,
-                    })
-                except Exception as e:
-                    error_msg = f"tools execution failed: {e}"
-                    logger.error(error_msg)
-                    self._execute_hooks("error", tool_name, args, error_msg)
-                    tool_results.append({
-                        "tool_call_id": tool_id, "name": tool_name, "content": error_msg,
-                    })
-            for result in tool_results:
-                work_history.append({
-                    "role": "tool",
-                    "tool_call_id": result["tool_call_id"],
-                    "name": result["name"],
-                    "content": result["content"],
-                })
-            return await self.aconversation_with_tool(tool=True)
-        return full_content
+    _transport_cls = HttpxOpenAIResponsesTransport
 
 
+# ============================================================================
+# 注册默认协议（须在 _OpenAIResponsesBase 定义之后执行）
+# ============================================================================
+
+register_protocol("openai", _OpenAIBase)
+register_protocol("anthropic", _AnthropicBase)
 register_protocol("openai-responses", _OpenAIResponsesBase)

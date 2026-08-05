@@ -52,6 +52,8 @@ FORMAT_VERSION = 1
 # 保证 pyproject.toml bump 后状态文件自动带上新版本号。fallback 用 "0.0.0+unknown"。
 SCHEMA_VERSION_FALLBACK = "0.0.0+unknown"
 
+from .logging_config import logger  # noqa: E402  (与 FileBackend 段一起使用)
+
 
 def _get_schema_version() -> str:
     """读 dumplingsAI.__version__；持久化模块被 import 时 dumplingsAI.__init__ 还没跑完，
@@ -281,8 +283,7 @@ def auto_save(agent: Any) -> bool:
         return True
     except Exception as e:
         # 自动保存失败不应阻塞对话；只记日志
-        import logging
-        logging.getLogger("dumplingsAI.persistence").warning(
+        logger.warning(
             f"auto_save 失败（agent uuid={uuid_str} name={name_str}）: {e}"
         )
         return False
@@ -636,24 +637,27 @@ def load_state_string(text: str) -> Any:
     _apply_class_attrs(cls, config)
     _apply_api_key_env(cls, config.get("api_key_env", ""))
 
-    # 重新构造 system_prompt（AnthropicAgent 用） / headers（双协议通用）
+    # 4. 还原 headers（OpenAI 默认用 Bearer；Anthropic 用 x-api-key + anthropic-version）
     import dumplingsAI
-    if isinstance(agent, getattr(dumplingsAI, "AnthropicAgent", ())):
+    is_anthropic = isinstance(agent, getattr(dumplingsAI, "AnthropicAgent", ()))
+    if is_anthropic:
         agent._build_system_prompt()
-    agent.headers = {
-        **({"Authorization": f"Bearer {agent.api_key}"} if hasattr(agent, "api_key") else {}),
-        "Content-Type": "application/json",
-    }
-    if isinstance(agent, getattr(dumplingsAI, "AnthropicAgent", ())):
-        agent.headers["x-api-key"] = agent.api_key or ""
-        agent.headers["anthropic-version"] = agent.anthropic_version
-        agent.headers.pop("Authorization", None)
+        agent.headers = {
+            "x-api-key": agent.api_key or "",
+            "anthropic-version": agent.anthropic_version,
+            "Content-Type": "application/json",
+        }
+    else:
+        agent.headers = {
+            **({"Authorization": f"Bearer {agent.api_key}"} if hasattr(agent, "api_key") else {}),
+            "Content-Type": "application/json",
+        }
 
-    # 4. 还原 history
-    agent.history = [json.loads(line) for line in history_raw if line.strip()]
+    # 5. 还原 history
+    agent.history = [json.loads(line) for line in history_raw if line.strip()]  # noqa: SLF001
 
-    # 5. 还原 state
-    tid = state.get("current_task_id", "")
+    # 6. 还原 state
+    tid = state.get("current_task_id", "")  # noqa: SLF001
     if tid:
         agent.current_task_id = tid
 

@@ -59,11 +59,17 @@ Anthropic 协议用法::
 """
 
 from .agent import (
+    ANTHROPIC,
+    OPENAI,
+    OPENAI_RESPONSES,
     Agent,
     AnthropicAgent,  # noqa: F401  (re-exported in __all__)
     BaseAgent,  # noqa: F401  (re-exported in __all__)
     agent,  # noqa: F401  (lowercase alias, re-exported)
+    anthropic,  # noqa: F401  (lowercase alias, re-exported)
     list_protocols,  # noqa: F401
+    openai,  # noqa: F401  (lowercase alias, re-exported)
+    openai_responses,  # noqa: F401  (lowercase alias, re-exported)
     register_protocol,  # noqa: F401
 )
 from .Agent_list import (
@@ -149,6 +155,13 @@ __all__ = [
     "Agent",          # 协议无关的工厂基类（推荐）
     "BaseAgent",      # OpenAI 协议基类（直接继承时用）
     "agent_list",
+    # 协议常量（v0.4.2+）：agent.protocol = OPENAI 无需打引号
+    "OPENAI",
+    "ANTHROPIC",
+    "OPENAI_RESPONSES",
+    "openai",
+    "anthropic",
+    "openai_responses",
     # MCP 功能
     "register_mcp_tools",
     "register_mcp_tools_async",

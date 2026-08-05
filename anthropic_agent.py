@@ -1,22 +1,29 @@
 # -*- coding: utf-8 -*-
-"""
-Anthropic 协议 Agent 基类
+"""⚠️ v0.4.2+ 兼容壳 / DEPRECATED：本文件的实现已合并到 ``dumplingsAI.agent``。
 
-与 BaseAgent 共享 tool_registry / agent_list / skill_registry，
-但把对话流程换成 Anthropic Messages API：
-    https://docs.anthropic.com/en/api/messages
+Anthropic 协议 Agent 基类（兼容旧 import 路径 ``dumplingsAI.anthropic_agent.AnthropicAgent``）。
+逻辑、bug 修复、瘦身现在只发生在 ``dumplingsAI.agent._AnthropicBase``
+（对外别名 :class:`dumplingsAI.AnthropicAgent`）。
 
-要点（与 OpenAI 协议差异）：
-1. system prompt 不再是 messages 里的第一条，而是顶层 ``system`` 字段。
-2. tools 顶层 schema： ``{name, description, input_schema}`` ，
-   不再嵌套在 ``function`` 字段。
-3. 工具调用通过 content blocks（``tool_use`` / ``tool_result``）往返：
-   助手消息携带 ``tool_use`` 块 → 我们执行 → 用户消息携带 ``tool_result`` 块。
-4. 流式事件是 ``message_start`` / ``content_block_start`` /
-   ``content_block_delta`` / ``content_block_stop`` / ``message_delta`` /
-   ``message_stop`` 序列，不是 OpenAI 的 ``chunk.choices``。
-5. 多模态使用 ``{"type":"image","source":{...}}`` 块。
+新代码请直接用::
+
+    from dumplingsAI import AnthropicAgent          # 推荐
+    from dumplingsAI.anthropic_agent import AnthropicAgent  # 旧路径，本文件抛 DeprecationWarning
+
+import 本文件时打印一次 ``DeprecationWarning``；alias re-export 指向 ``dumplingsAI.agent._AnthropicBase``，
+保证旧路径下所有行为 = 新实现（含 P3-P8 瘦身后的 helper）。
 """
+import warnings as _warnings
+
+_warnings.warn(
+    "dumplingsAI.anthropic_agent 已弃用；新代码请用 dumplingsAI.AnthropicAgent "
+    "（实现在 dumplingsAI.agent._AnthropicBase）。本路径将在 v0.6.0 删除。",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+# Re-export 新实现（行为 / 性能 / 与 OpenAI Agent 对称性都集中在 agent.py 维护）
+from .agent import AnthropicAgent  # noqa: E402, F401  (legacy alias)
 import json
 import os
 import platform
