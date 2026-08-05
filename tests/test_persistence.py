@@ -18,7 +18,7 @@ Persistence 模块单测（v0.3.2+）。
   - FC 模式递归调用不会重复保存
   - ``key_strategy="name"`` 用 agent.name
   - 持久化失败不应阻塞对话
-- **环境变量**：`DUMPLINGS_PERSISTENCE=on` 等通过 ``_read_env_config()`` 启用
+- **环境变量**：`TANGYUAN_PERSISTENCE=on` 等通过 ``_read_env_config()`` 启用
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Iterator
 
 import pytest
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     activate_template,
     agent_list,
@@ -38,7 +38,7 @@ from dumplingsAI import (
     template_agent,
     tool_registry,
 )
-from dumplingsAI.persistence import (
+from tangyuanAI.persistence import (
     AgentNotFoundError,
     FileBackend,
     FormatError,
@@ -129,7 +129,7 @@ def test_export_state_string_human_readable(_clean_globals, tmp_session_dir):
     text = export_state_string(agent)
 
     # 注释 / 头 / 各 section
-    assert "# dumplingsAI Agent State File" in text
+    assert "# tangyuanAI Agent State File" in text
     assert "[META]" in text
     assert "[CONFIG]" in text
     assert "[STATE]" in text
@@ -142,14 +142,14 @@ def test_export_state_string_human_readable(_clean_globals, tmp_session_dir):
     assert "model_name = test-model" in text
 
 
-def test_schema_version_auto_read_from_dumplingsai_version(_clean_globals, tmp_session_dir):
-    """schema_version 不硬编码，自动从 dumplingsAI.__version__ 读取"""
+def test_schema_version_auto_read_from_tangyuanai_version(_clean_globals, tmp_session_dir):
+    """schema_version 不硬编码，自动从 tangyuanAI.__version__ 读取"""
     agent = _make_test_agent(_uuid.uuid4().hex)
     text = export_state_string(agent)
     parsed = parse_state_string(text)
-    # 应当等于 dumplingsAI.__version__（不是硬编码字符串）
-    import dumplingsAI
-    assert parsed["_meta"]["schema_version"] == dumplingsAI.__version__
+    # 应当等于 tangyuanAI.__version__（不是硬编码字符串）
+    import tangyuanAI
+    assert parsed["_meta"]["schema_version"] == tangyuanAI.__version__
 
 
 def test_parse_state_string_roundtrip(_clean_globals, tmp_session_dir):
@@ -298,7 +298,7 @@ def test_get_unknown_backend_raises():
 
 
 def test_set_default_unknown_raises():
-    from dumplingsAI.persistence import set_default_backend
+    from tangyuanAI.persistence import set_default_backend
     with pytest.raises(KeyError, match="not registered"):
         set_default_backend("nope")
 
@@ -407,16 +407,16 @@ def test_configure_rebuilds_sqlite_backend_with_new_path(tmp_path):
 
 
 def test_env_var_enables_persistence(_clean_globals, tmp_path, monkeypatch):
-    """env var ``DUMPLINGS_PERSISTENCE=on`` 启用自动保存"""
-    monkeypatch.setenv("DUMPLINGS_PERSISTENCE", "on")
-    monkeypatch.setenv("DUMPLINGS_PERSISTENCE_DIR", str(tmp_path / "env-sessions"))
+    """env var ``TANGYUAN_PERSISTENCE=on`` 启用自动保存"""
+    monkeypatch.setenv("TANGYUAN_PERSISTENCE", "on")
+    monkeypatch.setenv("TANGYUAN_PERSISTENCE_DIR", str(tmp_path / "env-sessions"))
     _read_env_config()  # 显式触发（import 时已调过，但 env 变了要重读）
     assert is_enabled() is True
     assert backends.backends["file"].base_dir == tmp_path / "env-sessions"
 
 
 def test_env_var_default_is_disabled(monkeypatch):
-    monkeypatch.delenv("DUMPLINGS_PERSISTENCE", raising=False)
+    monkeypatch.delenv("TANGYUAN_PERSISTENCE", raising=False)
     _read_env_config()
     assert is_enabled() is False
 
@@ -432,9 +432,9 @@ def test_auto_save_writes_to_default_backend(_clean_globals, tmp_session_dir):
     result = auto_save(agent)
     assert result is True
     # 文件应被写出
-    files = list(tmp_session_dir.glob("*.duas"))
+    files = list(tmp_session_dir.glob("*.tas"))
     assert len(files) == 1
-    assert files[0].name == f"{agent.uuid}.duas"
+    assert files[0].name == f"{agent.uuid}.tas"
 
 
 def test_auto_save_disabled_does_nothing(_clean_globals, tmp_session_dir):
@@ -444,7 +444,7 @@ def test_auto_save_disabled_does_nothing(_clean_globals, tmp_session_dir):
     agent = _make_test_agent(_uuid.uuid4().hex)
     result = auto_save(agent)
     assert result is False
-    assert list(tmp_session_dir.glob("*.duas")) == []
+    assert list(tmp_session_dir.glob("*.tas")) == []
 
 
 def test_auto_save_key_strategy_name(_clean_globals, tmp_session_dir):
@@ -454,9 +454,9 @@ def test_auto_save_key_strategy_name(_clean_globals, tmp_session_dir):
 
     agent = _make_test_agent(_uuid.uuid4().hex, name="weather")
     auto_save(agent)
-    files = list(tmp_session_dir.glob("*.duas"))
+    files = list(tmp_session_dir.glob("*.tas"))
     assert len(files) == 1
-    assert files[0].name == "weather.duas"
+    assert files[0].name == "weather.tas"
 
 
 def test_auto_save_failure_doesnt_raise(_clean_globals, tmp_session_dir):
@@ -526,8 +526,8 @@ def test_conversation_with_tool_auto_saves_on_exit(_clean_globals, tmp_session_d
         out = agent.conversation_with_tool("hello")
         assert out == "hi back"
 
-        # 自动保存应已触发：file 下应有 {uuid}.duas
-        expected_file = tmp_session_dir / f"{uuid_str}.duas"
+        # 自动保存应已触发：file 下应有 {uuid}.tas
+        expected_file = tmp_session_dir / f"{uuid_str}.tas"
         assert expected_file.exists()
         # 验证内容包含对话历史（[HISTORY] section + LLM 回复的字符）
         text = expected_file.read_text(encoding="utf-8")
@@ -576,7 +576,7 @@ def test_conversation_with_tool_no_auto_save_when_disabled(_clean_globals, tmp_s
         state.queue(lambda _b: anthropic_text_response("hi"))
         agent.conversation_with_tool("hello")
         # 没启用 → 不应有文件
-        assert not (tmp_session_dir / f"{uuid_str}.duas").exists()
+        assert not (tmp_session_dir / f"{uuid_str}.tas").exists()
     finally:
         server.shutdown()
         server.server_close()
@@ -636,9 +636,9 @@ def test_auto_save_does_not_double_save_on_recursive_call(_clean_globals, tmp_se
         assert out == "finished"
 
         # 只应有 1 个文件（不是 2 个）
-        files = list(tmp_session_dir.glob("*.duas"))
+        files = list(tmp_session_dir.glob("*.tas"))
         assert len(files) == 1
-        assert files[0].name == f"{uuid_str}.duas"
+        assert files[0].name == f"{uuid_str}.tas"
     finally:
         server.shutdown()
         server.server_close()
@@ -692,7 +692,7 @@ def test_new_load_false_preserves_history_on_reinstantiation(tmp_session_dir):
     backends.default_name = "file"
     configure(enabled=False)  # 关闭自动保存，本测试显式控制
 
-    from dumplingsAI.anthropic_agent import AnthropicAgent
+    from tangyuanAI.anthropic_agent import AnthropicAgent
 
     # 第一次实例化
     @template_agent("new-load-test", uuid=_uuid.uuid4().hex, description="test")
@@ -737,7 +737,7 @@ def test_user_persists_and_reloads_preserves_history(tmp_session_dir):
     backends.default_name = "file"
     configure(enabled=False)
 
-    from dumplingsAI.anthropic_agent import AnthropicAgent
+    from tangyuanAI.anthropic_agent import AnthropicAgent
 
     # 1. 跑一轮对话
     @template_agent("persist-reload", uuid=_uuid.uuid4().hex, description="test")

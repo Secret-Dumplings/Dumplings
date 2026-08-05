@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Dumplings 中央 HTTP 客户端（基于 httpx）
+Tangyuan 中央 HTTP 客户端（基于 httpx）
 ========================================
 
 httpx 同时提供同步 ``Client`` 和 ``AsyncClient``，是 ``requests`` 的现代替代：
@@ -36,10 +36,10 @@ from .errors import (
     classify,
 )
 from .errors import (
-    ConnectionError as DumplingsConnectionError,
+    ConnectionError as TangyuanConnectionError,
 )
 from .errors import (
-    TimeoutError as DumplingsTimeoutError,
+    TimeoutError as TangyuanTimeoutError,
 )
 from .logging_config import logger
 
@@ -127,7 +127,7 @@ class HTTPClient:
                     timeout=eff_timeout,
                 )
             except httpx.TimeoutException as e:
-                last_exc = DumplingsTimeoutError(
+                last_exc = TangyuanTimeoutError(
                     f"HTTP timeout after {eff_timeout}s: {e}",
                     status_code=None,
                 )
@@ -135,7 +135,7 @@ class HTTPClient:
                     f"http_utils: timeout (attempt {attempt+1}/{attempts+1}) url={url}"
                 )
             except httpx.ConnectError as e:
-                last_exc = DumplingsConnectionError(
+                last_exc = TangyuanConnectionError(
                     f"HTTP connection error: {e}",
                     status_code=None,
                 )
@@ -183,12 +183,12 @@ class HTTPClient:
                     timeout=eff_timeout,
                 )
             except httpx.TimeoutException as e:
-                last_exc = DumplingsTimeoutError(
+                last_exc = TangyuanTimeoutError(
                     f"HTTP timeout after {eff_timeout}s: {e}", status_code=None,
                 )
                 logger.warning(f"http_utils: GET timeout (attempt {attempt+1})")
             except httpx.ConnectError as e:
-                last_exc = DumplingsConnectionError(
+                last_exc = TangyuanConnectionError(
                     f"HTTP connection error: {e}", status_code=None,
                 )
                 logger.warning(f"http_utils: GET connect error (attempt {attempt+1})")
@@ -288,7 +288,7 @@ class AsyncHTTPClient:
                     timeout=eff_timeout,
                 )
             except httpx.TimeoutException as e:
-                last_exc = DumplingsTimeoutError(
+                last_exc = TangyuanTimeoutError(
                     f"HTTP timeout after {eff_timeout}s: {e}",
                     status_code=None,
                 )
@@ -296,7 +296,7 @@ class AsyncHTTPClient:
                     f"http_utils[async]: timeout (attempt {attempt+1}/{attempts+1}) url={url}"
                 )
             except httpx.ConnectError as e:
-                last_exc = DumplingsConnectionError(
+                last_exc = TangyuanConnectionError(
                     f"HTTP connection error: {e}",
                     status_code=None,
                 )

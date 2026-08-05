@@ -5,7 +5,7 @@ Agent 状态持久化 —— 可插拔后端架构。
 设计目标：
 
 1. **可读 / 可 diff / 可手编**：默认 ``FileBackend`` 用 INI 头 + JSONL 体的
-   自定义格式（扩展名 ``.duas``），高级用户可直接 ``cat`` 看 / ``git diff`` 跟 /
+   自定义格式（扩展名 ``.tas``，v0.4.0–v0.4.x 旧版用 ``.duas``，v1.0.0 起仍可读），高级用户可直接 ``cat`` 看 / ``git diff`` 跟 /
    手动改 ``[CONFIG]`` 切模型。
 2. **可插拔后端**：通过 :class:`PersistenceBackend` 协议接入任意存储
    （SQLite / Redis / Postgres / S3 ...）。框架内置 :class:`FileBackend`（默认）
@@ -24,15 +24,15 @@ Agent 状态持久化 —— 可插拔后端架构。
 
 插件注册::
 
-    from dumplingsAI.persistence import register_backend, FileBackend, SQLiteBackend
+    from tangyuanAI.persistence import register_backend, FileBackend, SQLiteBackend
 
     register_backend("file", FileBackend(), set_as_default=True)
     register_backend("sqlite", SQLiteBackend("sessions.db"), set_as_default=False)
 
     # 顶层 API
-    import dumplingsAI
-    dumplingsAI.save_state(agent, "weather-session", backend="sqlite")
-    agent2 = dumplingsAI.load_state("weather-session", backend="sqlite")
+    import tangyuanAI
+    tangyuanAI.save_state(agent, "weather-session", backend="sqlite")
+    agent2 = tangyuanAI.load_state("weather-session", backend="sqlite")
 """
 from __future__ import annotations
 
@@ -46,9 +46,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Protocol
 
-FORMAT_NAME = "duagent-state"
+FORMAT_NAME = "tangyuan-state"
 FORMAT_VERSION = 1
-# schema_version 不硬编码 —— export 时从 dumplingsAI.__version__ 自动读取，
+# 状态文件扩展名：v1.0.0 起用 .tas（T-Agent-State）；旧 .duas（基于 dumplingsAI 缩写）仍识别。
+CURRENT_EXT = ".tas"
+LEGACY_EXT = ".duas"
+# schema_version 不硬编码 —— export 时从 tangyuanAI.__version__ 自动读取，
 # 保证 pyproject.toml bump 后状态文件自动带上新版本号。fallback 用 "0.0.0+unknown"。
 SCHEMA_VERSION_FALLBACK = "0.0.0+unknown"
 
@@ -56,11 +59,11 @@ from .logging_config import logger  # noqa: E402  (与 FileBackend 段一起使�
 
 
 def _get_schema_version() -> str:
-    """读 dumplingsAI.__version__；持久化模块被 import 时 dumplingsAI.__init__ 还没跑完，
+    """读 tangyuanAI.__version__；持久化模块被 import 时 tangyuanAI.__init__ 还没跑完，
     所以必须延迟 import（在函数内 import）避免循环依赖。"""
     try:
-        import dumplingsAI  # noqa: PLC0415 - 延迟 import 防循环
-        v = getattr(dumplingsAI, "__version__", None)
+        import tangyuanAI  # noqa: PLC0415 - 延迟 import 防循环
+        v = getattr(tangyuanAI, "__version__", None)
         if v:
             return v
     except (ImportError, AttributeError):
@@ -184,7 +187,7 @@ def configure(
 ) -> None:
     """配置全局自动持久化。
 
-    在程序启动早期（import dumplingsAI 之后、第一次 conversation 之前）调用一次，
+    在程序启动早期（import tangyuanAI 之后、第一次 conversation 之前）调用一次，
     之后所有 agent 的 ``conversation_with_tool`` / ``aconversation_with_tool``
     调用都会在返回时自动保存当前状态。
 
@@ -200,11 +203,11 @@ def configure(
 
     环境变量等价（import 时自动读取）：
 
-    - ``DUMPLINGS_PERSISTENCE=on|off``  → 启用/关闭
-    - ``DUMPLINGS_PERSISTENCE_BACKEND=file|sqlite``
-    - ``DUMPLINGS_PERSISTENCE_DIR=./sessions`` （file 后端）
-    - ``DUMPLINGS_PERSISTENCE_DB=./sessions.db`` （sqlite 后端）
-    - ``DUMPLINGS_PERSISTENCE_KEY=uuid|name``
+    - ``TANGYUAN_PERSISTENCE=on|off``  → 启用/关闭
+    - ``TANGYUAN_PERSISTENCE_BACKEND=file|sqlite``
+    - ``TANGYUAN_PERSISTENCE_DIR=./sessions`` （file 后端）
+    - ``TANGYUAN_PERSISTENCE_DB=./sessions.db`` （sqlite 后端）
+    - ``TANGYUAN_PERSISTENCE_KEY=uuid|name``
     """
     if enabled is not None:
         backends.enabled = bool(enabled)
@@ -237,15 +240,15 @@ def disable() -> None:
 
 
 def _read_env_config() -> None:
-    """在 dumplingsAI/__init__.py 顶部调用，读取环境变量。"""
-    flag = os.environ.get("DUMPLINGS_PERSISTENCE", "").strip().lower()
+    """在 tangyuanAI/__init__.py 顶部调用，读取环境变量。"""
+    flag = os.environ.get("TANGYUAN_PERSISTENCE", "").strip().lower()
     if flag not in {"on", "true", "1", "yes"}:
         return
 
-    backend_name = os.environ.get("DUMPLINGS_PERSISTENCE_BACKEND", "").strip().lower() or "file"
-    base_dir = os.environ.get("DUMPLINGS_PERSISTENCE_DIR", "./.dumplingsAI_sessions")
-    db_path = os.environ.get("DUMPLINGS_PERSISTENCE_DB", "./.dumplingsAI_sessions.db")
-    key_strategy = os.environ.get("DUMPLINGS_PERSISTENCE_KEY", "uuid").strip().lower()
+    backend_name = os.environ.get("TANGYUAN_PERSISTENCE_BACKEND", "").strip().lower() or "file"
+    base_dir = os.environ.get("TANGYUAN_PERSISTENCE_DIR", "./.tangyuanAI_sessions")
+    db_path = os.environ.get("TANGYUAN_PERSISTENCE_DB", "./.tangyuanAI_sessions.db")
+    key_strategy = os.environ.get("TANGYUAN_PERSISTENCE_KEY", "uuid").strip().lower()
 
     # 应用到已注册的 backend 上
     if backend_name in backends.backends:
@@ -393,8 +396,8 @@ def _agent_protocol(agent: Any) -> str:
     proto = getattr(type(agent), "protocol", None)
     if proto:
         return str(proto)
-    import dumplingsAI  # 延迟 import 避免循环
-    if isinstance(agent, getattr(dumplingsAI, "AnthropicAgent", ())):
+    import tangyuanAI  # 延迟 import 避免循环
+    if isinstance(agent, getattr(tangyuanAI, "AnthropicAgent", ())):
         return "anthropic"
     return "openai"
 
@@ -494,9 +497,9 @@ def export_state_string(agent: Any) -> str:
     """agent → 字符串（INI 头 + JSONL 体）。"""
     s = export_state_dict(agent)
     comments = [
-        "# dumplingsAI Agent State File",
+        "# tangyuanAI Agent State File",
         f"# format: {FORMAT_NAME}/{FORMAT_VERSION}.0",
-        "# https://github.com/Secret-Dumplings/dumplingsAI",
+        "# https://github.com/secret-tangyuan/tangyuanAI",
         "# ===== DO NOT EDIT UNLESS YOU KNOW WHAT YOU'RE DOING =====",
         "",
     ]
@@ -553,9 +556,9 @@ def _resolve_class(meta: Dict[str, str]) -> type:
     # Fallback 1: agent_list[uuid]
     uuid_str = meta.get("agent_uuid", "")
     if uuid_str:
-        import dumplingsAI
-        if uuid_str in dumplingsAI.agent_list:
-            return type(dumplingsAI.agent_list[uuid_str])
+        import tangyuanAI
+        if uuid_str in tangyuanAI.agent_list:
+            return type(tangyuanAI.agent_list[uuid_str])
 
     msg = (
         f"无法解析 agent class：路径 {class_path!r} import 失败"
@@ -624,7 +627,7 @@ def load_state_string(text: str) -> Any:
     if fmt_v > FORMAT_VERSION:
         raise FormatError(
             f"state file format_version={fmt_v} > supported {FORMAT_VERSION}; "
-            f"需要更新 dumplingsAI"
+            f"需要更新 tangyuanAI"
         )
 
     # 1. 解析类
@@ -638,8 +641,8 @@ def load_state_string(text: str) -> Any:
     _apply_api_key_env(cls, config.get("api_key_env", ""))
 
     # 4. 还原 headers（OpenAI 默认用 Bearer；Anthropic 用 x-api-key + anthropic-version）
-    import dumplingsAI
-    is_anthropic = isinstance(agent, getattr(dumplingsAI, "AnthropicAgent", ()))
+    import tangyuanAI
+    is_anthropic = isinstance(agent, getattr(tangyuanAI, "AnthropicAgent", ()))
     if is_anthropic:
         agent._build_system_prompt()
         agent.headers = {
@@ -725,19 +728,23 @@ def list_states(*, backend: Optional[str] = None) -> List[str]:
 # ============================================================================
 
 class FileBackend:
-    """默认后端：每个 key 一个 ``.duas`` 文件。"""
+    """默认后端：每个 key 一个 ``.tas`` 文件（兼容旧 ``.duas``）。"""
 
     name = "file"
 
-    def __init__(self, base_dir: str = "./.dumplingsAI_sessions"):
+    def __init__(self, base_dir: str = "./.tangyuanAI_sessions"):
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def _path_for(self, key: str) -> Path:
-        # key 中不能含 .. 也不能含路径分隔符
         if "/" in key or "\\" in key or ".." in key.split("/"):
             raise ValueError(f"invalid key: {key!r}")
-        return self.base_dir / f"{key}.duas"
+        # v1.0.0：默认扩展名 .tas（旧 .duas 文件仍识别加载，向后兼容）。
+        new = self.base_dir / f"{key}{CURRENT_EXT}"
+        legacy = self.base_dir / f"{key}{LEGACY_EXT}"
+        if legacy.exists() and not new.exists():
+            return legacy
+        return new
 
     def save(self, key: str, state: Dict[str, Any]) -> None:
         sections = {
@@ -746,7 +753,7 @@ class FileBackend:
             "STATE": state.get("_state", {}),
         }
         comments = [
-            "# dumplingsAI Agent State File",
+            "# tangyuanAI Agent State File",
             f"# format: {FORMAT_NAME}/{FORMAT_VERSION}.0",
             f"# saved_at: {state.get('_meta', {}).get('saved_at', _now_iso())}",
             "",
@@ -777,7 +784,7 @@ class FileBackend:
         return False
 
     def list_keys(self) -> List[str]:
-        return sorted(p.stem for p in self.base_dir.glob("*.duas"))
+        return sorted(p.stem for p in self.base_dir.glob(f"*{CURRENT_EXT}"))
 
 
 class SQLiteBackend:
@@ -799,7 +806,7 @@ class SQLiteBackend:
 
     name = "sqlite"
 
-    def __init__(self, db_path: str = "./.dumplingsAI_sessions.db"):
+    def __init__(self, db_path: str = "./.tangyuanAI_sessions.db"):
         self.db_path = db_path
         self._ensure_schema()
 

@@ -57,7 +57,7 @@ const linkOf = (file: string) => (file === 'index' ? '/' : `/${file}`)
 const sidebarItems = docs.map((d) => ({ text: d.title, link: linkOf(d.file) }))
 
 export default defineConfig({
-  title: 'dumplingsAI',
+  title: 'tangyuanAI',
   description: '轻量、模块化的多智能体协作框架',
 
   // srcDir 指向构建目录 docs-build/（构建前由 scripts/sync-docs.mjs 从 ../docs 同步），
@@ -74,7 +74,7 @@ export default defineConfig({
     logo: '/logo.svg',
     nav: [
       { text: '首页', link: '/' },
-      { text: 'GitHub', link: 'https://github.com/Secret-Dumplings/dumplingsAI' },
+      { text: 'GitHub', link: 'https://github.com/secret-tangyuan/tangyuanAI' },
     ],
     sidebar: [
       {

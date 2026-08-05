@@ -1,6 +1,6 @@
 # 日志级别使用规范
 
-本文档规范 dumplingsAI 项目中日志级别的使用，避免日志滥用导致的信息过载或敏感信息泄露。
+本文档规范 tangyuanAI 项目中日志级别的使用，避免日志滥用导致的信息过载或敏感信息泄露。
 
 ## 日志级别定义
 
@@ -93,7 +93,7 @@ export LOGURU_LEVEL=TRACE
 ### 通过代码
 
 ```python
-from dumplingsAI.logging_config import setup_logging
+from tangyuanAI.logging_config import setup_logging
 
 # 开发环境
 logger = setup_logging(level="DEBUG")

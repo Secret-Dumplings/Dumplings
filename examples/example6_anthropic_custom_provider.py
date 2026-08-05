@@ -25,15 +25,20 @@ Anthropic Messages API 的服务。
 """
 import os
 
-import dumplingsAI
+import tangyuanAI
 from dotenv import load_dotenv
-from dumplingsAI import AnthropicAgent
+from tangyuanAI import AnthropicAgent
+from tangyuanAI.Agent_list import activate_template
 
 load_dotenv()
 
 
 # ---------- 场景 1：官方 Anthropic API ----------
-@dumplingsAI.register_agent("official-anthropic-uuid", "official_agent")
+@tangyuanAI.template_agent(
+    "official_agent",
+    uuid="official-anthropic-uuid",
+    description="官方 Anthropic API Agent 模板",
+)
 class OfficialAgent(AnthropicAgent):
     """走官方 api.anthropic.com —— 必须显式写 api_provider（v0.2.2+ 不留默认）"""
     prompt = "你是一个简洁的助手。"
@@ -43,7 +48,11 @@ class OfficialAgent(AnthropicAgent):
 
 
 # ---------- 场景 2：自家代理 / 加速网关 ----------
-@dumplingsAI.register_agent("proxy-anthropic-uuid", "proxy_agent")
+@tangyuanAI.template_agent(
+    "proxy_agent",
+    uuid="proxy-anthropic-uuid",
+    description="第三方 Anthropic 兼容代理 Agent 模板",
+)
 class ProxyAgent(AnthropicAgent):
     """走你自己的 Anthropic 兼容代理"""
     prompt = "你是一个简洁的助手。"
@@ -53,7 +62,11 @@ class ProxyAgent(AnthropicAgent):
 
 
 # ---------- 场景 3：直接填完整 endpoint URL ----------
-@dumplingsAI.register_agent("full-url-uuid", "full_url_agent")
+@tangyuanAI.template_agent(
+    "full_url_agent",
+    uuid="full-url-uuid",
+    description="完整 endpoint URL Agent 模板（不重复拼 /v1/messages）",
+)
 class FullUrlAgent(AnthropicAgent):
     """如果你已经拿到完整的 messages URL，直接填进去即可（不会重复拼）"""
     prompt = "你是一个简洁的助手。"
@@ -63,7 +76,11 @@ class FullUrlAgent(AnthropicAgent):
 
 
 # ---------- 场景 4：网关要求额外 header ----------
-@dumplingsAI.register_agent("custom-header-uuid", "custom_header_agent")
+@tangyuanAI.template_agent(
+    "custom_header_agent",
+    uuid="custom-header-uuid",
+    description="自定义 HTTP header Agent 模板（网关要求 X-Tenant-Id 等）",
+)
 class CustomHeaderAgent(AnthropicAgent):
     """如果网关需要额外 header（如 Authorization bearer / X-Tenant-Id），
     在 __init__ 里覆盖 self.headers 即可。"""
@@ -83,6 +100,7 @@ class CustomHeaderAgent(AnthropicAgent):
 
 
 if __name__ == "__main__":
-    agent = dumplingsAI.agent_list["proxy_agent"]
+    activate_template("proxy_agent")
+    agent = tangyuanAI.agent_list["proxy_agent"]
     print(f"Agent 走 endpoint：{agent._endpoint()}")
     # agent.conversation_with_tool("你好")

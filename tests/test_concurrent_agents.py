@@ -22,13 +22,13 @@ from _llm_mock import (
     anthropic_text_response,
     anthropic_tool_use_response,
 )
-from dumplingsAI import (
+from tangyuanAI import (
     activate_template,
     agent_list,
     template_agent,
     tool_registry,
 )
-from dumplingsAI.agent import AnthropicAgent  # v0.4.2+ 新合并实现
+from tangyuanAI.agent import AnthropicAgent  # v0.4.2+ 新合并实现
 
 
 @pytest.fixture(autouse=True)

@@ -26,10 +26,10 @@ icon: SWAP_HORIZ_OUTLINED
 不直接选 `BaseAgent` / `AnthropicAgent`，而是选 `Agent` + `protocol` 字段：
 
 ```python
-import dumplingsAI
+import tangyuanAI
 
-@dumplingsAI.template_agent("chat", uuid="chat-uuid", description="chat agent")
-class ChatAgent(dumplingsAI.Agent):
+@tangyuanAI.template_agent("chat", uuid="chat-uuid", description="chat agent")
+class ChatAgent(tangyuanAI.Agent):
     protocol = "openai"  # 或 "anthropic"
     prompt = "..."
     model_name = "..."
@@ -66,7 +66,7 @@ class ChatAgent(dumplingsAI.Agent):
 `AnthropicAgent.api_provider` **没有默认值**（v0.2.2+ 起强制显式设置），避免"忘记设置 endpoint 误走到官方 API"的隐性 bug。可指向任意兼容 Anthropic Messages API 的服务：
 
 ```python
-class MyAgent(dumplingsAI.AnthropicAgent):
+class MyAgent(tangyuanAI.AnthropicAgent):
     api_provider = "https://api.anthropic.com"           # 官方
     # api_provider = "https://your-proxy.example.com"   # 第三方代理
     # api_provider = "https://your-proxy.com/v1/messages" # 完整 endpoint

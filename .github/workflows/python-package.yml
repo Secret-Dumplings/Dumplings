@@ -1,4 +1,4 @@
-# dumplingsAI 包测试 + lint CI
+# tangyuanAI 包测试 + lint CI
 # 使用 uv 管理依赖；lint 用 ruff；test 用 pytest。
 name: Python package
 

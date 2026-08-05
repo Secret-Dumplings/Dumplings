@@ -22,7 +22,7 @@ from _llm_mock import (
     openai_text_response,
     openai_tool_call_response,
 )
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     BaseAgent,
     activate_template,
@@ -30,7 +30,7 @@ from dumplingsAI import (
     template_agent,
     tool_registry,
 )
-from dumplingsAI.Agent_list import (
+from tangyuanAI.Agent_list import (
     agent_template_pool,
 )
 
@@ -160,7 +160,7 @@ def test_base_agent_get_all_available_tools(openai_state):
 
 
 def test_base_agent_pack_constructs_envelope():
-    from dumplingsAI import BaseAgent
+    from tangyuanAI import BaseAgent
     captured = []
     inst = object.__new__(BaseAgent)
     inst.uuid = "u-oa"

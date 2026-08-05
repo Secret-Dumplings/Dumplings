@@ -5,14 +5,19 @@
 """
 import os
 
-import dumplingsAI
+import tangyuanAI
 from dotenv import load_dotenv
+from tangyuanAI.Agent_list import activate_template
 
 load_dotenv()
 
 
-@dumplingsAI.register_agent("mcp-agent", "mcp_agent")
-class MCPAgent(dumplingsAI.BaseAgent):
+@tangyuanAI.template_agent(
+    "mcp_agent",
+    uuid="mcp-agent",
+    description="MCP 工具调用 Agent 模板",
+)
+class MCPAgent(tangyuanAI.BaseAgent):
     """可以使用 MCP 服务器工具的 Agent"""
     prompt = "你是一个可以使用 MCP 服务器工具的助手"
     api_provider = "https://api.example.com/v1/chat/completions"
@@ -21,9 +26,11 @@ class MCPAgent(dumplingsAI.BaseAgent):
 
 
 if __name__ == "__main__":
+    activate_template("mcp_agent")
+
     # 注册 MCP 服务器的所有工具
     # 注意：需要修改为实际的 MCP 服务器路径
-    # dumplingsAI.register_mcp_tools(
+    # tangyuanAI.register_mcp_tools(
     #     server_path="path/to/mcp_server.py",
     #     register_resources=True,
     #     allowed_agents=["mcp_agent"]

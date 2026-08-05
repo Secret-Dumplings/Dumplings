@@ -1,4 +1,4 @@
-"""dumplingsAI 文档站 FastAPI 后端（开发期动态拉取 docs/*.md）。
+"""tangyuanAI 文档站 FastAPI 后端（开发期动态拉取 docs/*.md）。
 
 设计上与 VitePress 侧栏共用同一份 frontmatter 解析逻辑（见 docs_loader.py）。
 生产环境建议直接用 VitePress 静态构建，本后端主要用于 dev 期的热加载演示。
@@ -11,9 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from .docs_loader import load_doc, load_docs, search_docs
 
 app = FastAPI(
-    title="dumplingsAI Docs API",
+    title="tangyuanAI Docs API",
     version="0.1.0",
-    description="Dumplings/docs/*.md 的动态加载后端，frontmatter 驱动。",
+    description="Tangyuan/docs/*.md 的动态加载后端，frontmatter 驱动。",
 )
 
 app.add_middleware(
@@ -26,7 +26,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "source": "Dumplings/docs/"}
+    return {"status": "ok", "source": "Tangyuan/docs/"}
 
 
 @app.get("/api/docs/list")

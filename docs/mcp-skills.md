@@ -73,7 +73,7 @@ allowed_agents: [weather]
 ### 编程注册
 
 ```python
-from dumplingsAI.skill import skill_registry
+from tangyuanAI.skill import skill_registry
 
 # 函数式注册（path 指向包含 SKILL.md 的目录）
 skill_registry.register_skill(skill_dir=Path(".claude/skills/weather_query"))
@@ -119,10 +119,10 @@ rendered = skill.render(arguments={"city": "北京"})
 ## MCP 协议桥接
 
 ```python
-import dumplingsAI
+import tangyuanAI
 
 # 自动拉起 MCP 服务器（stdin/stdout JSON-RPC），注册其所有工具
-dumplingsAI.register_mcp_tools(
+tangyuanAI.register_mcp_tools(
     server_path="mcp/weather_mcp/weather_server.py",
     allowed_agents=["weather"],
 )
@@ -133,22 +133,22 @@ dumplingsAI.register_mcp_tools(
 ### 会话管理
 
 ```python
-from dumplingsAI.mcp_bridge import MCPSessionPool
+from tangyuanAI.mcp_bridge import MCPSessionPool
 
 pool = MCPSessionPool.get_global()
 session = pool.get_or_create(server_path="mcp/.../server.py")
 tools = session.list_tools()  # MCP 协议级 list
 
 # 关闭
-dumplingsAI.close_mcp_session("mcp/.../server.py")
-dumplingsAI.close_all_mcp_sessions()
+tangyuanAI.close_mcp_session("mcp/.../server.py")
+tangyuanAI.close_all_mcp_sessions()
 ```
 
 ### 健康检查
 
 ```python
-dumplingsAI.start_health_check(interval=300)  # 5 分钟一次
-dumplingsAI.stop_health_check()
+tangyuanAI.start_health_check(interval=300)  # 5 分钟一次
+tangyuanAI.stop_health_check()
 ```
 
 ### 已知限制

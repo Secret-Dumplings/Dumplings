@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-dumplingsAI Agent 统一实现（v0.4.2+）。
+tangyuanAI Agent 统一实现（v0.4.2+）。
 
 之前 OpenAI / Anthropic 两个 Agent 类在 ``Agent_Base_.py`` 和
 ``anthropic_agent.py``，~2000 行大量重复。v0.4.2 合并为单一 ``agent.py``，
@@ -8,10 +8,10 @@ dumplingsAI Agent 统一实现（v0.4.2+）。
 
 公开 API（向后兼容）：
 
-- ``dumplingsAI.Agent``（占位类，``protocol`` 字段决定继承）
-- ``dumplingsAI.agent``（小写别名，继承中转）
-- ``dumplingsAI.BaseAgent``（OpenAI 协议）
-- ``dumplingsAI.anthropic_agent.AnthropicAgent``（Anthropic 协议）
+- ``tangyuanAI.Agent``（占位类，``protocol`` 字段决定继承）
+- ``tangyuanAI.agent``（小写别名，继承中转）
+- ``tangyuanAI.BaseAgent``（OpenAI 协议）
+- ``tangyuanAI.anthropic_agent.AnthropicAgent``（Anthropic 协议）
 - ``register_protocol(name, base_cls)``（第三方扩展）
 
 设计要点（v0.4.2+ 瘦身版）：
@@ -110,8 +110,8 @@ class Agent(metaclass=_ProtocolMeta):
 
     通过类属性 ``protocol`` 决定实际继承 ``BaseAgent`` 或 ``AnthropicAgent``::
 
-        @dumplingsAI.template_agent("my_agent", uuid="uuid-1")
-        class MyAgent(dumplingsAI.Agent):
+        @tangyuanAI.template_agent("my_agent", uuid="uuid-1")
+        class MyAgent(tangyuanAI.Agent):
             protocol = "anthropic"
             ...
         # MyAgent 实际是 AnthropicAgent 的子类。
@@ -154,7 +154,7 @@ class _AgentCommon:
         _builtin_promote_overrides(cls)
         if cls.pack is not _AgentCommon.pack and cls.out is _AgentCommon.out:
             logger.warning(
-                "[dumplingsAI] 检测到子类 {} 覆写了 pack() 但没有覆写 out()。"
+                "[tangyuanAI] 检测到子类 {} 覆写了 pack() 但没有覆写 out()。"
                 "请覆写 out(content) 而不是 pack()。".format(cls.__name__)
             )
 
@@ -267,7 +267,7 @@ class _AgentCommon:
     @builtin_tool(
         description="请求其他Agent帮助，调用另一个Agent完成子任务并把它的回复作为工具结果返回。",
         params={
-            "agent_id": "目标Agent的UUID或名称（已在 dumplingsAI.agent_list 中注册）",
+            "agent_id": "目标Agent的UUID或名称（已在 tangyuanAI.agent_list 中注册）",
             "message": "要发送给目标Agent的内容",
         },
     )
@@ -335,14 +335,14 @@ class _AgentCommon:
         if not items:
             return (
                 "模板注册请在 Python 代码侧完成："
-                "from dumplingsAI.Agent_list import register_template;"
+                "from tangyuanAI.Agent_list import register_template;"
                 "register_template(MyAgent, name='my_agent'。"
                 "当前 agent_template_pool 为空。"
             )
         names = "、".join(it["name"] for it in items)
         return (
             "模板注册请在 Python 代码侧完成："
-            "from dumplingsAI.Agent_list import register_template;"
+            "from tangyuanAI.Agent_list import register_template;"
             "register_template(MyAgent, name='my_agent'。"
             f"当前 agent_template_pool 内的模板：{names}。"
         )
@@ -1151,10 +1151,10 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
 # ============================================================================
 #
 # 用法：
-#     from dumplingsAI import OPENAI, ANTHROPIC, openai
+#     from tangyuanAI import OPENAI, ANTHROPIC, openai
 #     agent.protocol = OPENAI                # 大写常量
 #     agent.protocol = "anthropic"           # 也行（兼容打引号）
-#     agent.protocol = openai                # 小写别名（推荐 ``from dumplingsAI import openai``）
+#     agent.protocol = openai                # 小写别名（推荐 ``from tangyuanAI import openai``）
 
 OPENAI = "openai"
 ANTHROPIC = "anthropic"

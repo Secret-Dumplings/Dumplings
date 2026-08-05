@@ -20,7 +20,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dumplingsAI.skill import Skill, skill_registry
+from tangyuanAI.skill import Skill, skill_registry
 
 # ---------------------------------------------------------------------------
 # fixtures

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Dumplings 异常类型体系
+Tangyuan 异常类型体系
 ======================
 
 对齐官方 openai-python / anthropic-sdk-python 的错误体系：
 
-- ``DumplingsError``        — 框架层基类
+- ``TangyuanError``        — 框架层基类
 - ``APIError``              — HTTP API 通用错误
 - ``BadRequestError``       — HTTP 400
 - ``AuthenticationError``   — HTTP 401
@@ -24,14 +24,41 @@ Dumplings 异常类型体系
 """
 from __future__ import annotations
 
+import warnings as _warnings
 from typing import Any, Optional
 
 
-class DumplingsError(Exception):
-    """所有 Dumplings 异常的基类。"""
+class TangyuanError(Exception):
+    """所有 TangyuanAI 异常的基类。"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
-class APIError(DumplingsError):
+TangyuanError = TangyuanError  # noqa: F811
+_OLD_NAME_USED = {"__init__"}
+
+
+def __getattr__(name):
+    """Handle legacy ``TangyuanConnectionError`` / ``TangyuanTimeoutError`` 别名。"""
+    if name in ("TangyuanConnectionError",):
+        from .http_utils import TangyuanConnectionError  # noqa: F401  local import 防止循环
+        _warnings.warn(
+            "TangyuanConnectionError 已弃用；新代码请用 TangyuanConnectionError。",
+            DeprecationWarning, stacklevel=2,
+        )
+        return TangyuanConnectionError
+    if name in ("TangyuanTimeoutError",):
+        from .http_utils import TangyuanTimeoutError
+        _warnings.warn(
+            "TangyuanTimeoutError 已弃用；新代码请用 TangyuanTimeoutError。",
+            DeprecationWarning, stacklevel=2,
+        )
+        return TangyuanTimeoutError
+    raise AttributeError(f"module 'errors' has no attribute {name!r}")
+
+
+class APIError(TangyuanError):
     """HTTP API 错误基类，承载 status_code / body / headers。"""
 
     def __init__(

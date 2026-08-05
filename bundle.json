@@ -1,0 +1,3439 @@
+{
+  "kind": "better-harness.evidence-bundle",
+  "schemaVersion": 2,
+  "status": "complete",
+  "context": {
+    "workspace": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+    "provider": "claude",
+    "language": "zh-CN",
+    "depth": "normal",
+    "window": {
+      "since": "2026-07-02T08:19:44.819Z",
+      "until": "2026-08-01T08:19:44.819Z"
+    },
+    "evidenceLimit": 5,
+    "authority": {
+      "includeUserHome": false,
+      "includeMemories": false
+    },
+    "topology": {
+      "kind": "better-harness.workspace-topology",
+      "schemaVersion": 1,
+      "status": "complete",
+      "requestedWorkspace": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+      "gitRoot": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+      "target": {
+        "kind": "repo-root",
+        "route": ".",
+        "memberRoute": null,
+        "memberMatch": "none"
+      },
+      "members": {
+        "items": [],
+        "total": 0,
+        "omitted": 0,
+        "truncated": false
+      },
+      "instructionScopes": {
+        "items": [],
+        "total": 0,
+        "omitted": 0,
+        "truncated": false
+      },
+      "discovery": {
+        "inventoryMode": "git",
+        "ignoreMode": "git-index",
+        "tracked": 64,
+        "untracked": 4,
+        "scanned": 68,
+        "omitted": 0,
+        "truncated": false,
+        "warnings": []
+      }
+    },
+    "analysisScope": {
+      "kind": "repo",
+      "route": ".",
+      "pathspecs": []
+    }
+  },
+  "lanes": {
+    "sessionEvidence": {
+      "status": "available",
+      "data": {
+        "schemaVersion": 3,
+        "kind": "session-core-facts",
+        "scope": {
+          "platform": "claude",
+          "workspace": "Dumplings",
+          "until": "2026-08-01T08:19:44.819Z",
+          "selection": "all-eligible",
+          "eligibleSessions": 0,
+          "selectedSessions": 0,
+          "sampled": false
+        },
+        "candidateSelection": {
+          "strategy": "agent-work-loop-portfolio-v1",
+          "availableClasses": {},
+          "emittedClasses": {}
+        },
+        "admission": {
+          "taskEpisodes": 0,
+          "candidateEpisodes": 0,
+          "distinctRequests": 0,
+          "emittedCandidates": 0
+        },
+        "populationCoverage": {
+          "withChanges": 0,
+          "withChecks": 0,
+          "withReviewedRelevantCheck": 0,
+          "withResultSignal": 0,
+          "withAssistantHandoff": 0,
+          "withStructuredCompletion": 0,
+          "withUserCorrection": 0,
+          "withExecutionFriction": 0,
+          "withFrictionConsequence": 0
+        },
+        "observationCoverage": {
+          "withChanges": 0,
+          "withChecks": 0,
+          "withReviewedRelevantCheck": 0,
+          "withResultSignal": 0,
+          "withAssistantHandoff": 0,
+          "withStructuredCompletion": 0,
+          "withUserCorrection": 0,
+          "withExecutionFriction": 0,
+          "withFrictionConsequence": 0
+        },
+        "admissionSupport": {
+          "semanticGuardrails": [
+            "occurrences-not-distinct-episodes",
+            "coverage-not-suggestion",
+            "omitted-details-not-signal-evidence",
+            "project-capability-inventory-unobserved"
+          ],
+          "sharedFrictionConsequences": []
+        },
+        "candidates": [],
+        "omitted": {
+          "noRequest": 0,
+          "selfAnalysis": 0,
+          "lowSignal": 0,
+          "duplicateRequests": 0,
+          "candidateBudget": 0,
+          "checkBudget": 0,
+          "activeSessions": 0,
+          "homeSessionOnly": 0
+        },
+        "warningCodes": [
+          "missing-required-root",
+          "missing-optional-root"
+        ],
+        "excludes": [
+          "assistantText",
+          "rawPrompts",
+          "commands",
+          "toolOutput",
+          "paths",
+          "rawIds",
+          "secrets"
+        ],
+        "diagnosticFlags": [
+          "no-change-evidence",
+          "no-reviewed-relevant-check-evidence",
+          "no-result-evidence"
+        ],
+        "cost": {
+          "serializedBytes": 1597,
+          "estimatedTokens": 400
+        },
+        "sessionWorkspaceMatch": {
+          "kind": "better-harness.session-workspace-match",
+          "schemaVersion": 1,
+          "preflight": {
+            "basis": "workspace-match-aggregate",
+            "sessions": 0,
+            "qualified": {
+              "directCwd": 0,
+              "rootCwd": 0
+            },
+            "omitted": {
+              "unmatchedCwd": 0,
+              "noTargetActivity": 0,
+              "mixedActivity": 0,
+              "ambiguousActivity": 0,
+              "truncatedPreflight": 0
+            }
+          },
+          "hydration": {
+            "basis": "workspace-match-aggregate",
+            "sessions": 0,
+            "qualified": {
+              "directCwd": 0,
+              "rootCwd": 0
+            },
+            "omitted": {
+              "unmatchedCwd": 0,
+              "noTargetActivity": 0,
+              "mixedActivity": 0,
+              "ambiguousActivity": 0,
+              "truncatedPreflight": 0
+            }
+          }
+        },
+        "populationBinding": {
+          "schemaVersion": 1,
+          "kind": "session-population-binding",
+          "scopeFingerprint": "d288b49f41f13984",
+          "policyFingerprint": "abe9b091df6343fc",
+          "omission": {
+            "exactIdentityAvailable": false,
+            "activeSessions": 0,
+            "homeSessionOnly": 0,
+            "recencyInference": "disabled-frozen-until"
+          },
+          "eligible": {
+            "count": 0,
+            "fingerprint": "4f53cda18c2baa0c"
+          }
+        },
+        "selectionBinding": {
+          "schemaVersion": 1,
+          "kind": "session-selection-binding",
+          "parentPopulationFingerprint": "4f53cda18c2baa0c",
+          "strategy": "all-eligible",
+          "selected": {
+            "count": 0,
+            "fingerprint": "4f53cda18c2baa0c"
+          },
+          "projectionPolicyFingerprint": "efaf47eb0decc0c8"
+        },
+        "admissionBinding": {
+          "schemaVersion": 1,
+          "kind": "session-admission-binding",
+          "projectionPolicyFingerprint": "efaf47eb0decc0c8",
+          "taskEpisodes": 0,
+          "candidateEpisodes": 0,
+          "distinctRequests": 0,
+          "emittedCandidates": 0,
+          "noRequest": 0,
+          "selfAnalysis": 0,
+          "lowSignal": 0,
+          "duplicateRequests": 0,
+          "candidateBudget": 0
+        }
+      }
+    },
+    "projectHarness": {
+      "status": "available",
+      "data": {
+        "schemaVersion": 2,
+        "kind": "core-change-watch-evidence-pack",
+        "status": "ok",
+        "repoRoot": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+        "analysisScope": {
+          "kind": "repo",
+          "route": ".",
+          "pathspecs": []
+        },
+        "generatedAt": "2026-08-01T08:19:45.280Z",
+        "summary": {
+          "reviewRecommended": false,
+          "attentionRequired": false,
+          "diffStatus": "ok",
+          "diffSeverity": "critical",
+          "diffScore": 100,
+          "topLanguages": [
+            "python"
+          ],
+          "projectInfo": {
+            "name": "dumplingsAI",
+            "description": "",
+            "readmeTitle": "dumplingsAI",
+            "identityEvidence": [
+              "README.md:h1"
+            ],
+            "primaryLanguages": [
+              {
+                "language": "python",
+                "sourceFiles": 17,
+                "testFiles": 19
+              }
+            ],
+            "frameworks": [],
+            "sourceFiles": 17,
+            "testFiles": 19,
+            "measuredSourceLines": null,
+            "sourceLineStatus": "skipped",
+            "sourceLineMethod": "not measured by default; use --measure-source-lines to count tracked readable primary source files only",
+            "sourceRoots": [
+              {
+                "path": "__init__.py",
+                "files": 1
+              },
+              {
+                "path": "_banner.py",
+                "files": 1
+              },
+              {
+                "path": "Agent_Base_.py",
+                "files": 1
+              },
+              {
+                "path": "Agent_list.py",
+                "files": 1
+              },
+              {
+                "path": "agent_queue.py",
+                "files": 1
+              },
+              {
+                "path": "agent_tool.py",
+                "files": 1
+              },
+              {
+                "path": "anthropic_agent.py",
+                "files": 1
+              },
+              {
+                "path": "cli.py",
+                "files": 1
+              }
+            ],
+            "entryCandidates": []
+          },
+          "agentInstructions": {
+            "status": "missing",
+            "count": 0,
+            "rootCount": 0,
+            "nestedCount": 0,
+            "suggestedMinimum": 1,
+            "suggestedAdditional": 1,
+            "sourceFilesPerInstruction": null,
+            "sourceFilesUnderNestedInstructions": 0,
+            "nestedSourceFileCoveragePercent": 0,
+            "suggestedScopes": [
+              {
+                "path": ".",
+                "sourceFiles": 17
+              }
+            ],
+            "reasons": [
+              "no tracked AGENTS.md files found for a source-bearing repository"
+            ]
+          },
+          "coreCandidates": {
+            "highConfidence": 0,
+            "mediumConfidence": 1,
+            "candidateCount": 1
+          },
+          "changedFiles": 18,
+          "changedLines": 1178,
+          "companionHits": 9,
+          "changeDrift": {
+            "status": "ok",
+            "findingCount": 0,
+            "typeCounts": {}
+          },
+          "historyWindows": [
+            30,
+            90,
+            180
+          ],
+          "historyConfidence": {
+            "confidence": "high",
+            "reasons": [
+              "bounded history has enough commits and time span for hotspot ranking"
+            ]
+          },
+          "frameworks": [],
+          "filtersApplied": false
+        },
+        "filters": {
+          "projectProfile": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "historyProfile": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "coreAnalysis": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "diffImpact": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          }
+        },
+        "evidenceSources": {
+          "boundary": "static-local-git-and-file-analysis",
+          "numericSources": [
+            {
+              "claim": "tracked file, language, manifest, source-root, entrypoint, and framework counts",
+              "source": "projectProfile",
+              "command": "git ls-files -z -- plus local manifest/path inspection"
+            },
+            {
+              "claim": "hot files, hot paths, co-change paths, and history windows",
+              "source": "historyProfile",
+              "command": "git log -500 --numstat --format=commit... --"
+            },
+            {
+              "claim": "changed files, line counts, inferred core candidate hits, hot hits, and companion hits",
+              "source": "diffImpact",
+              "command": "git diff --numstat --no-ext-diff --find-renames HEAD --"
+            },
+            {
+              "claim": "changed API, schema, UI, config, error, and CLI surfaces with missing companion evidence",
+              "source": "changeDrift",
+              "command": "git diff --numstat --no-ext-diff --find-renames HEAD -- plus git ls-files -z --"
+            },
+            {
+              "claim": "history day windows",
+              "source": "summary.historyWindows",
+              "command": "bounded history windows: 30,90,180"
+            }
+          ],
+          "unverifiedClaims": [
+            {
+              "claim": "tests passed",
+              "status": "UNVERIFIED",
+              "reason": "core-change-watch does not run target project tests"
+            },
+            {
+              "claim": "CI status",
+              "status": "UNVERIFIED",
+              "reason": "core-change-watch does not open external CI systems"
+            },
+            {
+              "claim": "runtime behavior",
+              "status": "UNVERIFIED",
+              "reason": "core-change-watch does not execute the target application"
+            }
+          ]
+        },
+        "projectProfile": {
+          "schemaVersion": 2,
+          "kind": "project-profile",
+          "status": "ok",
+          "repoRoot": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+          "analysisScope": {
+            "kind": "repo",
+            "route": ".",
+            "pathspecs": []
+          },
+          "filters": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "projectInfo": {
+            "name": "dumplingsAI",
+            "description": "",
+            "readmeTitle": "dumplingsAI",
+            "evidence": [
+              "README.md:h1"
+            ],
+            "primaryLanguages": [
+              {
+                "language": "python",
+                "sourceFiles": 17,
+                "testFiles": 19
+              }
+            ],
+            "frameworks": [],
+            "sourceFiles": 17,
+            "testFiles": 19,
+            "measuredSourceLines": null,
+            "sourceLineStatus": "skipped",
+            "sourceLineMethod": "not measured by default; use --measure-source-lines to count tracked readable primary source files only",
+            "sourceRoots": [
+              {
+                "path": "__init__.py",
+                "files": 1
+              },
+              {
+                "path": "_banner.py",
+                "files": 1
+              },
+              {
+                "path": "Agent_Base_.py",
+                "files": 1
+              },
+              {
+                "path": "Agent_list.py",
+                "files": 1
+              },
+              {
+                "path": "agent_queue.py",
+                "files": 1
+              },
+              {
+                "path": "agent_tool.py",
+                "files": 1
+              },
+              {
+                "path": "anthropic_agent.py",
+                "files": 1
+              },
+              {
+                "path": "cli.py",
+                "files": 1
+              }
+            ],
+            "entryCandidates": [],
+            "manifests": [
+              {
+                "path": "pyproject.toml",
+                "kind": "toml",
+                "scripts": []
+              }
+            ]
+          },
+          "agentInstructions": {
+            "count": 0,
+            "rootCount": 0,
+            "nestedCount": 0,
+            "files": [],
+            "status": "missing",
+            "suggestedMinimum": 1,
+            "suggestedAdditional": 1,
+            "sourceFilesPerInstruction": null,
+            "sourceFilesUnderNestedInstructions": 0,
+            "nestedSourceFileCoveragePercent": 0,
+            "suggestedScopes": [
+              {
+                "path": ".",
+                "sourceFiles": 17
+              }
+            ],
+            "reasons": [
+              "no tracked AGENTS.md files found for a source-bearing repository"
+            ]
+          },
+          "languages": [
+            {
+              "language": "python",
+              "files": 36,
+              "sourceFiles": 17,
+              "testFiles": 19,
+              "roots": [
+                {
+                  "name": "tests",
+                  "count": 19
+                },
+                {
+                  "name": ".",
+                  "count": 17
+                }
+              ]
+            }
+          ],
+          "manifests": [
+            {
+              "path": "pyproject.toml",
+              "kind": "toml",
+              "scripts": []
+            }
+          ],
+          "frameworks": [],
+          "sourceRoots": [
+            {
+              "path": "__init__.py",
+              "files": 1
+            },
+            {
+              "path": "_banner.py",
+              "files": 1
+            },
+            {
+              "path": "Agent_Base_.py",
+              "files": 1
+            },
+            {
+              "path": "Agent_list.py",
+              "files": 1
+            },
+            {
+              "path": "agent_queue.py",
+              "files": 1
+            },
+            {
+              "path": "agent_tool.py",
+              "files": 1
+            },
+            {
+              "path": "anthropic_agent.py",
+              "files": 1
+            },
+            {
+              "path": "cli.py",
+              "files": 1
+            },
+            {
+              "path": "errors.py",
+              "files": 1
+            },
+            {
+              "path": "http_utils.py",
+              "files": 1
+            },
+            {
+              "path": "llm_transport.py",
+              "files": 1
+            },
+            {
+              "path": "logging_config.py",
+              "files": 1
+            }
+          ],
+          "entryCandidates": [],
+          "corePathHints": [],
+          "totals": {
+            "trackedFiles": 64,
+            "trackedFilesBeforeFilters": 64,
+            "sourceFiles": 17,
+            "testFiles": 19,
+            "generatedOrDependencyFiles": 0,
+            "sourceLines": null,
+            "sourceLineMeasurement": "skipped",
+            "readableSourceFiles": 0,
+            "unreadableSourceFiles": 0
+          }
+        },
+        "historyProfile": {
+          "schemaVersion": 2,
+          "kind": "git-history-profile",
+          "status": "ok",
+          "repoRoot": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+          "analysisScope": {
+            "kind": "repo",
+            "route": ".",
+            "pathspecs": []
+          },
+          "filters": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "range": {
+            "maxCommits": 500,
+            "analyzedCommits": 44,
+            "newest": "7632ce0",
+            "oldest": "d510508"
+          },
+          "confidence": {
+            "confidence": "high",
+            "reasons": [
+              "bounded history has enough commits and time span for hotspot ranking"
+            ]
+          },
+          "historyWindows": [
+            {
+              "days": 30,
+              "since": "2026-07-02T08:19:45.000Z",
+              "analyzedCommits": 18,
+              "trendLabel": "recent-hotspots",
+              "interpretation": "recent window for spotting recent hotspots from bounded git history.",
+              "hotFiles": [
+                {
+                  "path": "anthropic_agent.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 10,
+                  "added": 1182,
+                  "deleted": 178,
+                  "churn": 1360,
+                  "lastTouched": "96106c1"
+                },
+                {
+                  "path": "Agent_Base_.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 9,
+                  "added": 589,
+                  "deleted": 315,
+                  "churn": 904,
+                  "lastTouched": "96106c1"
+                },
+                {
+                  "path": "__init__.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 7,
+                  "added": 276,
+                  "deleted": 159,
+                  "churn": 435,
+                  "lastTouched": "96106c1"
+                },
+                {
+                  "path": "agent_tool.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 4,
+                  "added": 310,
+                  "deleted": 30,
+                  "churn": 340,
+                  "lastTouched": "96106c1"
+                },
+                {
+                  "path": "llm_transport.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 3,
+                  "added": 621,
+                  "deleted": 1,
+                  "churn": 622,
+                  "lastTouched": "82566e7"
+                },
+                {
+                  "path": "Agent_list.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 3,
+                  "added": 322,
+                  "deleted": 29,
+                  "churn": 351,
+                  "lastTouched": "843d17b"
+                },
+                {
+                  "path": "persistence.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 1,
+                  "added": 872,
+                  "deleted": 0,
+                  "churn": 872,
+                  "lastTouched": "402a7aa"
+                },
+                {
+                  "path": "http_utils.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 1,
+                  "added": 365,
+                  "deleted": 0,
+                  "churn": 365,
+                  "lastTouched": "82566e7"
+                },
+                {
+                  "path": "agent_queue.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 1,
+                  "added": 249,
+                  "deleted": 0,
+                  "churn": 249,
+                  "lastTouched": "347ecfa"
+                },
+                {
+                  "path": "cli.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 1,
+                  "added": 205,
+                  "deleted": 0,
+                  "churn": 205,
+                  "lastTouched": "7fb7bfa"
+                }
+              ],
+              "supportingHotFiles": [
+                {
+                  "path": "pyproject.toml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 9,
+                  "added": 37,
+                  "deleted": 17,
+                  "churn": 54,
+                  "lastTouched": "843d17b"
+                },
+                {
+                  "path": "CHANGELOG.md",
+                  "language": null,
+                  "role": "documentation",
+                  "supporting": true,
+                  "commits": 7,
+                  "added": 277,
+                  "deleted": 12,
+                  "churn": 289,
+                  "lastTouched": "ab88388"
+                },
+                {
+                  "path": ".github/workflows/python-publish.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 4,
+                  "added": 86,
+                  "deleted": 47,
+                  "churn": 133,
+                  "lastTouched": "843d17b"
+                },
+                {
+                  "path": "README.md",
+                  "language": null,
+                  "role": "documentation",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 209,
+                  "deleted": 351,
+                  "churn": 560,
+                  "lastTouched": "ab88388"
+                },
+                {
+                  "path": "tests/test_anthropic_agent.py",
+                  "language": "python",
+                  "role": "test",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 393,
+                  "deleted": 10,
+                  "churn": 403,
+                  "lastTouched": "4b8be88"
+                },
+                {
+                  "path": ".github/workflows/python-package.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 22,
+                  "deleted": 22,
+                  "churn": 44,
+                  "lastTouched": "843d17b"
+                },
+                {
+                  "path": "tests/test_persistence.py",
+                  "language": "python",
+                  "role": "test",
+                  "supporting": true,
+                  "commits": 2,
+                  "added": 773,
+                  "deleted": 5,
+                  "churn": 778,
+                  "lastTouched": "402a7aa"
+                },
+                {
+                  "path": ".github/workflows/docs-to-wiki.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 2,
+                  "added": 172,
+                  "deleted": 108,
+                  "churn": 280,
+                  "lastTouched": "c434d33"
+                },
+                {
+                  "path": "tests/test_pydantic_tools.py",
+                  "language": "python",
+                  "role": "test",
+                  "supporting": true,
+                  "commits": 2,
+                  "added": 226,
+                  "deleted": 0,
+                  "churn": 226,
+                  "lastTouched": "82566e7"
+                },
+                {
+                  "path": "tests/test_base_agent_parity.py",
+                  "language": "python",
+                  "role": "test",
+                  "supporting": true,
+                  "commits": 2,
+                  "added": 181,
+                  "deleted": 2,
+                  "churn": 183,
+                  "lastTouched": "4b8be88"
+                }
+              ],
+              "hotPaths": [
+                {
+                  "path": ".",
+                  "commits": 13
+                }
+              ]
+            },
+            {
+              "days": 90,
+              "since": "2026-05-03T08:19:45.000Z",
+              "analyzedCommits": 27,
+              "trendLabel": "sustained-hotspots",
+              "interpretation": "sustained window for spotting sustained hotspots from bounded git history.",
+              "hotFiles": [
+                {
+                  "path": "Agent_Base_.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 11,
+                  "added": 596,
+                  "deleted": 327,
+                  "churn": 923,
+                  "lastTouched": "abccaed"
+                },
+                {
+                  "path": "anthropic_agent.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 10,
+                  "added": 1182,
+                  "deleted": 178,
+                  "churn": 1360,
+                  "lastTouched": "96106c1"
+                },
+                {
+                  "path": "__init__.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 8,
+                  "added": 297,
+                  "deleted": 180,
+                  "churn": 477,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": "agent_tool.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 4,
+                  "added": 310,
+                  "deleted": 30,
+                  "churn": 340,
+                  "lastTouched": "96106c1"
+                },
+                {
+                  "path": "llm_transport.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 3,
+                  "added": 621,
+                  "deleted": 1,
+                  "churn": 622,
+                  "lastTouched": "82566e7"
+                },
+                {
+                  "path": "Agent_list.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 3,
+                  "added": 322,
+                  "deleted": 29,
+                  "churn": 351,
+                  "lastTouched": "843d17b"
+                },
+                {
+                  "path": "skill.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 2,
+                  "added": 6,
+                  "deleted": 7,
+                  "churn": 13,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": "mcp_bridge.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 2,
+                  "added": 6,
+                  "deleted": 5,
+                  "churn": 11,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": "logging_config.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 2,
+                  "added": 3,
+                  "deleted": 3,
+                  "churn": 6,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": "persistence.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 1,
+                  "added": 872,
+                  "deleted": 0,
+                  "churn": 872,
+                  "lastTouched": "402a7aa"
+                }
+              ],
+              "supportingHotFiles": [
+                {
+                  "path": "pyproject.toml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 10,
+                  "added": 74,
+                  "deleted": 19,
+                  "churn": 93,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": "CHANGELOG.md",
+                  "language": null,
+                  "role": "documentation",
+                  "supporting": true,
+                  "commits": 7,
+                  "added": 277,
+                  "deleted": 12,
+                  "churn": 289,
+                  "lastTouched": "ab88388"
+                },
+                {
+                  "path": "README.md",
+                  "language": null,
+                  "role": "documentation",
+                  "supporting": true,
+                  "commits": 5,
+                  "added": 253,
+                  "deleted": 403,
+                  "churn": 656,
+                  "lastTouched": "56d2fa9"
+                },
+                {
+                  "path": ".github/workflows/python-publish.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 5,
+                  "added": 156,
+                  "deleted": 47,
+                  "churn": 203,
+                  "lastTouched": "fce2040"
+                },
+                {
+                  "path": ".github/workflows/python-package.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 5,
+                  "added": 65,
+                  "deleted": 25,
+                  "churn": 90,
+                  "lastTouched": "8ca3333"
+                },
+                {
+                  "path": "tests/test_anthropic_agent.py",
+                  "language": "python",
+                  "role": "test",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 393,
+                  "deleted": 10,
+                  "churn": 403,
+                  "lastTouched": "4b8be88"
+                },
+                {
+                  "path": ".github/workflows/publish.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 79,
+                  "deleted": 79,
+                  "churn": 158,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": ".github/workflows/ci.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 66,
+                  "deleted": 66,
+                  "churn": 132,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": "examples/example3_multi_agent.py",
+                  "language": "python",
+                  "role": "fixture",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 11,
+                  "deleted": 10,
+                  "churn": 21,
+                  "lastTouched": "418170b"
+                },
+                {
+                  "path": "examples/example2_custom_tools.py",
+                  "language": "python",
+                  "role": "fixture",
+                  "supporting": true,
+                  "commits": 3,
+                  "added": 9,
+                  "deleted": 8,
+                  "churn": 17,
+                  "lastTouched": "418170b"
+                }
+              ],
+              "hotPaths": [
+                {
+                  "path": ".",
+                  "commits": 15
+                }
+              ]
+            },
+            {
+              "days": 180,
+              "since": "2026-02-02T08:19:45.000Z",
+              "analyzedCommits": 44,
+              "trendLabel": "legacy-or-long-range-hotspots",
+              "interpretation": "long-range window for spotting legacy or long range hotspots from bounded git history.",
+              "hotFiles": [
+                {
+                  "path": "Agent_Base_.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 18,
+                  "added": 1389,
+                  "deleted": 371,
+                  "churn": 1760,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "anthropic_agent.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 10,
+                  "added": 1182,
+                  "deleted": 178,
+                  "churn": 1360,
+                  "lastTouched": "96106c1"
+                },
+                {
+                  "path": "__init__.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 10,
+                  "added": 517,
+                  "deleted": 180,
+                  "churn": 697,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "Agent_list.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 6,
+                  "added": 361,
+                  "deleted": 31,
+                  "churn": 392,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "agent_tool.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 5,
+                  "added": 495,
+                  "deleted": 30,
+                  "churn": 525,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "logging_config.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 4,
+                  "added": 140,
+                  "deleted": 4,
+                  "churn": 144,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "llm_transport.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 3,
+                  "added": 621,
+                  "deleted": 1,
+                  "churn": 622,
+                  "lastTouched": "82566e7"
+                },
+                {
+                  "path": "mcp_bridge.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 3,
+                  "added": 588,
+                  "deleted": 5,
+                  "churn": 593,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "skill.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 3,
+                  "added": 544,
+                  "deleted": 7,
+                  "churn": 551,
+                  "lastTouched": "4a4e78e"
+                },
+                {
+                  "path": "skill_bridge.py",
+                  "language": "python",
+                  "role": "source",
+                  "supporting": false,
+                  "commits": 2,
+                  "added": 103,
+                  "deleted": 1,
+                  "churn": 104,
+                  "lastTouched": "4a4e78e"
+                }
+              ],
+              "supportingHotFiles": [
+                {
+                  "path": "pyproject.toml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 13,
+                  "added": 98,
+                  "deleted": 21,
+                  "churn": 119,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "README.md",
+                  "language": null,
+                  "role": "documentation",
+                  "supporting": true,
+                  "commits": 8,
+                  "added": 722,
+                  "deleted": 404,
+                  "churn": 1126,
+                  "lastTouched": "d510508"
+                },
+                {
+                  "path": "CHANGELOG.md",
+                  "language": null,
+                  "role": "documentation",
+                  "supporting": true,
+                  "commits": 7,
+                  "added": 277,
+                  "deleted": 12,
+                  "churn": 289,
+                  "lastTouched": "ab88388"
+                },
+                {
+                  "path": ".github/workflows/python-publish.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 5,
+                  "added": 156,
+                  "deleted": 47,
+                  "churn": 203,
+                  "lastTouched": "fce2040"
+                },
+                {
+                  "path": ".github/workflows/python-package.yml",
+                  "language": null,
+                  "role": "configuration",
+                  "supporting": true,
+                  "commits": 5,
+                  "added": 65,
+                  "deleted": 25,
+                  "churn": 90,
+                  "lastTouched": "8ca3333"
+                },
+                {
+                  "path": "examples/example2_custom_tools.py",
+                  "language": "python",
+                  "role": "fixture",
+                  "supporting": true,
+                  "commits": 4,
+                  "added": 82,
+                  "deleted": 8,
+                  "churn": 90,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "examples/example3_multi_agent.py",
+                  "language": "python",
+                  "role": "fixture",
+                  "supporting": true,
+                  "commits": 4,
+                  "added": 61,
+                  "deleted": 10,
+                  "churn": 71,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "examples/example5_custom_output.py",
+                  "language": "python",
+                  "role": "fixture",
+                  "supporting": true,
+                  "commits": 4,
+                  "added": 46,
+                  "deleted": 6,
+                  "churn": 52,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "examples/example4_mcp.py",
+                  "language": "python",
+                  "role": "fixture",
+                  "supporting": true,
+                  "commits": 4,
+                  "added": 39,
+                  "deleted": 6,
+                  "churn": 45,
+                  "lastTouched": "9fe8988"
+                },
+                {
+                  "path": "examples/example1_basic.py",
+                  "language": "python",
+                  "role": "fixture",
+                  "supporting": true,
+                  "commits": 4,
+                  "added": 35,
+                  "deleted": 6,
+                  "churn": 41,
+                  "lastTouched": "9fe8988"
+                }
+              ],
+              "hotPaths": [
+                {
+                  "path": ".",
+                  "commits": 23
+                }
+              ]
+            }
+          ],
+          "languageTouchCounts": [
+            {
+              "language": "python",
+              "touches": 71
+            }
+          ],
+          "hotFiles": [
+            {
+              "path": "Agent_Base_.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 18,
+              "added": 1389,
+              "deleted": 371,
+              "churn": 1760,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "anthropic_agent.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 10,
+              "added": 1182,
+              "deleted": 178,
+              "churn": 1360,
+              "lastTouched": "96106c1"
+            },
+            {
+              "path": "__init__.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 10,
+              "added": 517,
+              "deleted": 180,
+              "churn": 697,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "Agent_list.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 6,
+              "added": 361,
+              "deleted": 31,
+              "churn": 392,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "agent_tool.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 5,
+              "added": 495,
+              "deleted": 30,
+              "churn": 525,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "logging_config.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 4,
+              "added": 140,
+              "deleted": 4,
+              "churn": 144,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "llm_transport.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 3,
+              "added": 621,
+              "deleted": 1,
+              "churn": 622,
+              "lastTouched": "82566e7"
+            },
+            {
+              "path": "mcp_bridge.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 3,
+              "added": 588,
+              "deleted": 5,
+              "churn": 593,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "skill.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 3,
+              "added": 544,
+              "deleted": 7,
+              "churn": 551,
+              "lastTouched": "4a4e78e"
+            },
+            {
+              "path": "skill_bridge.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 2,
+              "added": 103,
+              "deleted": 1,
+              "churn": 104,
+              "lastTouched": "4a4e78e"
+            },
+            {
+              "path": "persistence.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 1,
+              "added": 872,
+              "deleted": 0,
+              "churn": 872,
+              "lastTouched": "402a7aa"
+            },
+            {
+              "path": "http_utils.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 1,
+              "added": 365,
+              "deleted": 0,
+              "churn": 365,
+              "lastTouched": "82566e7"
+            },
+            {
+              "path": "agent_queue.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 1,
+              "added": 249,
+              "deleted": 0,
+              "churn": 249,
+              "lastTouched": "347ecfa"
+            },
+            {
+              "path": "cli.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 1,
+              "added": 205,
+              "deleted": 0,
+              "churn": 205,
+              "lastTouched": "7fb7bfa"
+            },
+            {
+              "path": "tool_runner.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 1,
+              "added": 204,
+              "deleted": 0,
+              "churn": 204,
+              "lastTouched": "82566e7"
+            },
+            {
+              "path": "errors.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 1,
+              "added": 125,
+              "deleted": 0,
+              "churn": 125,
+              "lastTouched": "82566e7"
+            },
+            {
+              "path": "_banner.py",
+              "language": "python",
+              "role": "source",
+              "supporting": false,
+              "commits": 1,
+              "added": 62,
+              "deleted": 0,
+              "churn": 62,
+              "lastTouched": "7fb7bfa"
+            }
+          ],
+          "supportingHotFiles": [
+            {
+              "path": "pyproject.toml",
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "commits": 13,
+              "added": 98,
+              "deleted": 21,
+              "churn": 119,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "README.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 8,
+              "added": 722,
+              "deleted": 404,
+              "churn": 1126,
+              "lastTouched": "d510508"
+            },
+            {
+              "path": "CHANGELOG.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 7,
+              "added": 277,
+              "deleted": 12,
+              "churn": 289,
+              "lastTouched": "ab88388"
+            },
+            {
+              "path": ".github/workflows/python-publish.yml",
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "commits": 5,
+              "added": 156,
+              "deleted": 47,
+              "churn": 203,
+              "lastTouched": "fce2040"
+            },
+            {
+              "path": ".github/workflows/python-package.yml",
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "commits": 5,
+              "added": 65,
+              "deleted": 25,
+              "churn": 90,
+              "lastTouched": "8ca3333"
+            },
+            {
+              "path": "examples/example2_custom_tools.py",
+              "language": "python",
+              "role": "fixture",
+              "supporting": true,
+              "commits": 4,
+              "added": 82,
+              "deleted": 8,
+              "churn": 90,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "examples/example3_multi_agent.py",
+              "language": "python",
+              "role": "fixture",
+              "supporting": true,
+              "commits": 4,
+              "added": 61,
+              "deleted": 10,
+              "churn": 71,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "examples/example5_custom_output.py",
+              "language": "python",
+              "role": "fixture",
+              "supporting": true,
+              "commits": 4,
+              "added": 46,
+              "deleted": 6,
+              "churn": 52,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "examples/example4_mcp.py",
+              "language": "python",
+              "role": "fixture",
+              "supporting": true,
+              "commits": 4,
+              "added": 39,
+              "deleted": 6,
+              "churn": 45,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "examples/example1_basic.py",
+              "language": "python",
+              "role": "fixture",
+              "supporting": true,
+              "commits": 4,
+              "added": 35,
+              "deleted": 6,
+              "churn": 41,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "tests/test_anthropic_agent.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 3,
+              "added": 393,
+              "deleted": 10,
+              "churn": 403,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "LICENSE",
+              "language": null,
+              "role": "other",
+              "supporting": true,
+              "commits": 3,
+              "added": 203,
+              "deleted": 2,
+              "churn": 205,
+              "lastTouched": "d510508"
+            },
+            {
+              "path": ".github/workflows/publish.yml",
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "commits": 3,
+              "added": 79,
+              "deleted": 79,
+              "churn": 158,
+              "lastTouched": "418170b"
+            },
+            {
+              "path": ".github/workflows/ci.yml",
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "commits": 3,
+              "added": 66,
+              "deleted": 66,
+              "churn": 132,
+              "lastTouched": "418170b"
+            },
+            {
+              "path": "uv.lock",
+              "language": null,
+              "role": "other",
+              "supporting": true,
+              "commits": 2,
+              "added": 1303,
+              "deleted": 1303,
+              "churn": 2606,
+              "lastTouched": "98a6174"
+            },
+            {
+              "path": "tests/test_persistence.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 2,
+              "added": 773,
+              "deleted": 5,
+              "churn": 778,
+              "lastTouched": "402a7aa"
+            },
+            {
+              "path": ".github/workflows/docs-to-wiki.yml",
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "commits": 2,
+              "added": 172,
+              "deleted": 108,
+              "churn": 280,
+              "lastTouched": "c434d33"
+            },
+            {
+              "path": "tests/test_pydantic_tools.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 2,
+              "added": 226,
+              "deleted": 0,
+              "churn": 226,
+              "lastTouched": "82566e7"
+            },
+            {
+              "path": "tests/test_base_agent_parity.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 2,
+              "added": 181,
+              "deleted": 2,
+              "churn": 183,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "LOGGING_GUIDELINES.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 2,
+              "added": 130,
+              "deleted": 2,
+              "churn": 132,
+              "lastTouched": "edc2567"
+            },
+            {
+              "path": "examples/example6_anthropic_custom_provider.py",
+              "language": "python",
+              "role": "fixture",
+              "supporting": true,
+              "commits": 2,
+              "added": 95,
+              "deleted": 7,
+              "churn": 102,
+              "lastTouched": "7fb7bfa"
+            },
+            {
+              "path": "examples/README.md",
+              "language": null,
+              "role": "fixture",
+              "supporting": true,
+              "commits": 2,
+              "added": 89,
+              "deleted": 5,
+              "churn": 94,
+              "lastTouched": "9fe8988"
+            },
+            {
+              "path": "docs/index.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 2,
+              "added": 52,
+              "deleted": 0,
+              "churn": 52,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "tests/test_internet.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 492,
+              "deleted": 0,
+              "churn": 492,
+              "lastTouched": "c434d33"
+            },
+            {
+              "path": "tests/_llm_mock.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 430,
+              "deleted": 0,
+              "churn": 430,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "tests/test_template_pool.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 407,
+              "deleted": 0,
+              "churn": 407,
+              "lastTouched": "06f83a5"
+            },
+            {
+              "path": "docs/persistence.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 1,
+              "added": 295,
+              "deleted": 0,
+              "churn": 295,
+              "lastTouched": "402a7aa"
+            },
+            {
+              "path": "tests/test_event_bus.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 284,
+              "deleted": 0,
+              "churn": 284,
+              "lastTouched": "c434d33"
+            },
+            {
+              "path": "tests/test_acl.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 263,
+              "deleted": 0,
+              "churn": 263,
+              "lastTouched": "c434d33"
+            },
+            {
+              "path": "tests/test_skill.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 248,
+              "deleted": 0,
+              "churn": 248,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "tests/test_agent_queue.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 180,
+              "deleted": 0,
+              "churn": 180,
+              "lastTouched": "347ecfa"
+            },
+            {
+              "path": "tests/test_skill_watchdog.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 180,
+              "deleted": 0,
+              "churn": 180,
+              "lastTouched": "c434d33"
+            },
+            {
+              "path": "tests/test_xml_protocol.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 176,
+              "deleted": 0,
+              "churn": 176,
+              "lastTouched": "c434d33"
+            },
+            {
+              "path": "tests/test_http_utils.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 167,
+              "deleted": 0,
+              "churn": 167,
+              "lastTouched": "82566e7"
+            },
+            {
+              "path": "docs/mcp-skills.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 1,
+              "added": 158,
+              "deleted": 0,
+              "churn": 158,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "docs/TODO.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 1,
+              "added": 132,
+              "deleted": 0,
+              "churn": 132,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "docs/tools.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 1,
+              "added": 122,
+              "deleted": 0,
+              "churn": 122,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "tests/test_tool_runner.py",
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "commits": 1,
+              "added": 120,
+              "deleted": 0,
+              "churn": 120,
+              "lastTouched": "82566e7"
+            },
+            {
+              "path": "docs/agent-registration.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 1,
+              "added": 117,
+              "deleted": 0,
+              "churn": 117,
+              "lastTouched": "4b8be88"
+            },
+            {
+              "path": "RELEASING.md",
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "commits": 1,
+              "added": 109,
+              "deleted": 0,
+              "churn": 109,
+              "lastTouched": "7fb7bfa"
+            }
+          ],
+          "hotPaths": [
+            {
+              "path": ".",
+              "commits": 23
+            }
+          ],
+          "supportingHotPaths": [
+            {
+              "path": ".",
+              "commits": 37
+            },
+            {
+              "path": "examples",
+              "commits": 25
+            },
+            {
+              "path": "tests",
+              "commits": 24
+            },
+            {
+              "path": ".github/workflows",
+              "commits": 18
+            },
+            {
+              "path": "docs",
+              "commits": 11
+            }
+          ],
+          "coChangePaths": []
+        },
+        "coreAnalysis": {
+          "schemaVersion": 2,
+          "kind": "core-candidates",
+          "status": "ok",
+          "repoRoot": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+          "analysisScope": {
+            "kind": "repo",
+            "route": ".",
+            "pathspecs": []
+          },
+          "filters": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "candidates": [
+            {
+              "path": ".",
+              "score": 55,
+              "confidence": "medium",
+              "files": 17,
+              "languages": [
+                {
+                  "language": "python",
+                  "files": 17
+                }
+              ],
+              "reasons": [
+                "package/root with multiple source files",
+                "hot path in git history (23 commits)"
+              ],
+              "evidence": {
+                "sourceFiles": [
+                  "Agent_Base_.py",
+                  "Agent_list.py",
+                  "__init__.py",
+                  "_banner.py",
+                  "agent_queue.py",
+                  "agent_tool.py",
+                  "anthropic_agent.py",
+                  "cli.py",
+                  "errors.py",
+                  "http_utils.py"
+                ],
+                "hotFiles": [],
+                "manifests": [
+                  {
+                    "path": "pyproject.toml",
+                    "kind": "toml",
+                    "scripts": []
+                  }
+                ]
+              }
+            }
+          ],
+          "summary": {
+            "highConfidence": 0,
+            "mediumConfidence": 1,
+            "candidateCount": 1
+          }
+        },
+        "diffImpact": {
+          "schemaVersion": 2,
+          "kind": "diff-impact",
+          "status": "ok",
+          "repoRoot": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+          "analysisScope": {
+            "kind": "repo",
+            "route": ".",
+            "pathspecs": []
+          },
+          "baseRef": "HEAD",
+          "filters": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "score": 100,
+          "severity": "critical",
+          "reviewRecommended": false,
+          "attentionRequired": false,
+          "reasons": [
+            "changed supporting hot file .github/workflows/python-package.yml",
+            "changed supporting hot file docs/TODO.md",
+            "changed supporting hot file docs/agent-registration.md",
+            "changed supporting hot file docs/index.md",
+            "changed supporting hot file docs/mcp-skills.md",
+            "changed supporting hot file docs/persistence.md",
+            "changed supporting hot file docs/tools.md",
+            "changed supporting hot file pyproject.toml",
+            "changed supporting hot file tests/test_internet.py",
+            "wide file change count 18",
+            "large changed-line count 1178"
+          ],
+          "changedFiles": [
+            {
+              "path": ".github/workflows/python-package.yml",
+              "added": 2,
+              "deleted": 1,
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/TODO.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/agent-registration.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/builtin-tools.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/getting-started.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/index.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/mcp-skills.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/output-and-hooks.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/persistence.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/protocols.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "docs/tools.md",
+              "added": 7,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "pyproject.toml",
+              "added": 5,
+              "deleted": 1,
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "tests/conftest.py",
+              "added": 107,
+              "deleted": 1,
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "tests/test_internet.py",
+              "added": 2,
+              "deleted": 2,
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "untracked": false
+            },
+            {
+              "path": "bundle.json",
+              "added": 0,
+              "deleted": 0,
+              "language": null,
+              "role": "configuration",
+              "supporting": true,
+              "untracked": true
+            },
+            {
+              "path": "docs/README.md",
+              "added": 96,
+              "deleted": 0,
+              "language": null,
+              "role": "documentation",
+              "supporting": true,
+              "untracked": true
+            },
+            {
+              "path": "docs/app.py",
+              "added": 665,
+              "deleted": 0,
+              "language": "python",
+              "role": "documentation",
+              "supporting": true,
+              "untracked": true
+            },
+            {
+              "path": "tests/test_benchmark.py",
+              "added": 226,
+              "deleted": 0,
+              "language": "python",
+              "role": "test",
+              "supporting": true,
+              "untracked": true
+            }
+          ],
+          "coreHits": [],
+          "hotHits": [],
+          "companionHits": [
+            {
+              "path": ".github/workflows/python-package.yml",
+              "role": "configuration",
+              "commits": 5,
+              "churn": 90
+            },
+            {
+              "path": "docs/TODO.md",
+              "role": "documentation",
+              "commits": 1,
+              "churn": 132
+            },
+            {
+              "path": "docs/agent-registration.md",
+              "role": "documentation",
+              "commits": 1,
+              "churn": 117
+            },
+            {
+              "path": "docs/index.md",
+              "role": "documentation",
+              "commits": 2,
+              "churn": 52
+            },
+            {
+              "path": "docs/mcp-skills.md",
+              "role": "documentation",
+              "commits": 1,
+              "churn": 158
+            },
+            {
+              "path": "docs/persistence.md",
+              "role": "documentation",
+              "commits": 1,
+              "churn": 295
+            },
+            {
+              "path": "docs/tools.md",
+              "role": "documentation",
+              "commits": 1,
+              "churn": 122
+            },
+            {
+              "path": "pyproject.toml",
+              "role": "configuration",
+              "commits": 13,
+              "churn": 119
+            },
+            {
+              "path": "tests/test_internet.py",
+              "role": "test",
+              "commits": 1,
+              "churn": 492
+            }
+          ],
+          "metrics": {
+            "changedFiles": 18,
+            "changedLines": 1178,
+            "coreHits": 0,
+            "hotHits": 0,
+            "companionHits": 9
+          }
+        },
+        "changeDrift": {
+          "schemaVersion": 2,
+          "kind": "change-drift",
+          "status": "ok",
+          "repoRoot": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+          "analysisScope": {
+            "kind": "repo",
+            "route": ".",
+            "pathspecs": []
+          },
+          "baseRef": "HEAD",
+          "filters": {
+            "ignorePatterns": [],
+            "ignoredCount": 0,
+            "ignoredSample": []
+          },
+          "summary": {
+            "findingCount": 0,
+            "highConfidenceCount": 0,
+            "typeCounts": {},
+            "changedFiles": 18
+          },
+          "changedFiles": [
+            {
+              "path": ".github/workflows/python-package.yml",
+              "role": "configuration",
+              "language": null,
+              "added": 2,
+              "deleted": 1,
+              "untracked": false
+            },
+            {
+              "path": "docs/TODO.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/agent-registration.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/builtin-tools.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/getting-started.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/index.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/mcp-skills.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/output-and-hooks.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/persistence.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/protocols.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "docs/tools.md",
+              "role": "documentation",
+              "language": null,
+              "added": 7,
+              "deleted": 0,
+              "untracked": false
+            },
+            {
+              "path": "pyproject.toml",
+              "role": "configuration",
+              "language": null,
+              "added": 5,
+              "deleted": 1,
+              "untracked": false
+            },
+            {
+              "path": "tests/conftest.py",
+              "role": "test",
+              "language": "python",
+              "added": 107,
+              "deleted": 1,
+              "untracked": false
+            },
+            {
+              "path": "tests/test_internet.py",
+              "role": "test",
+              "language": "python",
+              "added": 2,
+              "deleted": 2,
+              "untracked": false
+            },
+            {
+              "path": "bundle.json",
+              "role": "configuration",
+              "language": null,
+              "added": 0,
+              "deleted": 0,
+              "untracked": true
+            },
+            {
+              "path": "docs/README.md",
+              "role": "documentation",
+              "language": null,
+              "added": 96,
+              "deleted": 0,
+              "untracked": true
+            },
+            {
+              "path": "docs/app.py",
+              "role": "documentation",
+              "language": "python",
+              "added": 665,
+              "deleted": 0,
+              "untracked": true
+            },
+            {
+              "path": "tests/test_benchmark.py",
+              "role": "test",
+              "language": "python",
+              "added": 226,
+              "deleted": 0,
+              "untracked": true
+            }
+          ],
+          "findings": []
+        },
+        "recommendedReads": [
+          {
+            "path": ".github/workflows/python-package.yml",
+            "language": null,
+            "role": "configuration",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "bundle.json",
+            "language": null,
+            "role": "configuration",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/agent-registration.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/app.py",
+            "language": "python",
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/builtin-tools.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/getting-started.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/index.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/mcp-skills.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/output-and-hooks.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/persistence.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/protocols.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/README.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/TODO.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "docs/tools.md",
+            "language": null,
+            "role": "documentation",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "pyproject.toml",
+            "language": null,
+            "role": "configuration",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "tests/conftest.py",
+            "language": "python",
+            "role": "test",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "tests/test_benchmark.py",
+            "language": "python",
+            "role": "test",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "tests/test_internet.py",
+            "language": "python",
+            "role": "test",
+            "supporting": true,
+            "priority": 100,
+            "reasons": [
+              "changed file"
+            ]
+          },
+          {
+            "path": "Agent_Base_.py",
+            "language": "python",
+            "role": "source",
+            "supporting": false,
+            "priority": 55,
+            "reasons": [
+              "representative source under ."
+            ]
+          },
+          {
+            "path": "Agent_list.py",
+            "language": "python",
+            "role": "source",
+            "supporting": false,
+            "priority": 55,
+            "reasons": [
+              "representative source under ."
+            ]
+          }
+        ],
+        "followUpActions": [
+          {
+            "id": "inspect-primary-core",
+            "type": "inspection",
+            "priority": "high",
+            "title": "Inspect primary core implementation before editing",
+            "reason": "Core candidates combine path, density, and git-history signals.",
+            "files": [
+              {
+                "path": "Agent_Base_.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "Agent_list.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "__init__.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "_banner.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "agent_queue.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "agent_tool.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "anthropic_agent.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "cli.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "errors.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "http_utils.py",
+                "role": "source",
+                "language": "python"
+              }
+            ],
+            "passCheck": "The agent can name the target implementation files and likely callers before making changes."
+          },
+          {
+            "id": "apply-targeted-implementation",
+            "type": "implementation",
+            "priority": "high",
+            "title": "Make the requested behavior change in primary source first",
+            "reason": "Supporting files should follow source behavior, not substitute for the implementation change.",
+            "files": [
+              {
+                "path": "Agent_Base_.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "Agent_list.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "__init__.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "_banner.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "agent_queue.py",
+                "role": "source",
+                "language": "python"
+              },
+              {
+                "path": "agent_tool.py",
+                "role": "source",
+                "language": "python"
+              }
+            ],
+            "passCheck": "The requested behavior is implemented in source code and not only reflected in docs, locale, or fixture files."
+          },
+          {
+            "id": "sync-documentation",
+            "type": "companion-sync",
+            "priority": "medium",
+            "title": "Sync documentation when behavior or workflow changes",
+            "reason": "Documentation hotspots are useful follow-up checks but should not be mistaken for core implementation.",
+            "files": [
+              {
+                "path": "docs/TODO.md",
+                "role": "documentation",
+                "language": null
+              },
+              {
+                "path": "docs/agent-registration.md",
+                "role": "documentation",
+                "language": null
+              },
+              {
+                "path": "docs/index.md",
+                "role": "documentation",
+                "language": null
+              },
+              {
+                "path": "docs/mcp-skills.md",
+                "role": "documentation",
+                "language": null
+              },
+              {
+                "path": "docs/persistence.md",
+                "role": "documentation",
+                "language": null
+              },
+              {
+                "path": "docs/tools.md",
+                "role": "documentation",
+                "language": null
+              },
+              {
+                "path": "README.md",
+                "role": "documentation",
+                "language": null
+              },
+              {
+                "path": "CHANGELOG.md",
+                "role": "documentation",
+                "language": null
+              }
+            ],
+            "passCheck": "Docs that describe the changed behavior are updated, or the agent states why docs are unaffected."
+          },
+          {
+            "id": "validate-impact",
+            "type": "validation",
+            "priority": "medium",
+            "title": "Run focused validation for changed core or hotspot areas",
+            "reason": "Detected tests or fixtures can anchor validation.",
+            "files": [
+              {
+                "path": "examples/example2_custom_tools.py",
+                "role": "fixture",
+                "language": "python"
+              },
+              {
+                "path": "examples/example3_multi_agent.py",
+                "role": "fixture",
+                "language": "python"
+              },
+              {
+                "path": "examples/example5_custom_output.py",
+                "role": "fixture",
+                "language": "python"
+              },
+              {
+                "path": "examples/example4_mcp.py",
+                "role": "fixture",
+                "language": "python"
+              },
+              {
+                "path": "examples/example1_basic.py",
+                "role": "fixture",
+                "language": "python"
+              },
+              {
+                "path": "tests/test_anthropic_agent.py",
+                "role": "test",
+                "language": "python"
+              },
+              {
+                "path": "tests/test_persistence.py",
+                "role": "test",
+                "language": "python"
+              },
+              {
+                "path": "tests/test_pydantic_tools.py",
+                "role": "test",
+                "language": "python"
+              }
+            ],
+            "passCheck": "Relevant focused tests, build, lint, smoke, or caller/API checks pass or failures are reported with exact output."
+          }
+        ],
+        "agentGuidance": {
+          "stance": "Use the pack as an evidence starting point, then inspect source files and rerun narrower analysis when project-specific noise is visible.",
+          "optionalReruns": [
+            {
+              "id": "rerun-with-explicit-ignore",
+              "reason": "Supporting hotspots dominate the raw history; rerun with explicit ignores before writing a core-boundary report if they are not relevant to the task.",
+              "commandArgs": [
+                "--ignore",
+                "pyproject.toml,README.md,CHANGELOG.md,.github/workflows/python-publish.yml,.github/workflows/python-package.yml,examples/**"
+              ],
+              "patterns": [
+                "pyproject.toml",
+                "README.md",
+                "CHANGELOG.md",
+                ".github/workflows/python-publish.yml",
+                ".github/workflows/python-package.yml",
+                "examples/**"
+              ]
+            }
+          ],
+          "reportFiltering": [
+            "Keep primary source candidates and supporting files in separate sections.",
+            "When a locale, docs, fixture, config, or migration file matters, explain it as companion sync or evidence, not as the primary implementation.",
+            "For an affected core chain, review diagnostic coverage through the shared observability rubric. If inspected evidence confirms that a named segment lacks readable logs or correlation, keep the gap and its causal impact as a reader-facing finding; do not infer the gap from logger-call counts or a runtime-only access failure.",
+            "If explicit ignores are used, mention the patterns and do not hide changed files that are directly relevant to the user's request."
+          ],
+          "currentFilters": {
+            "projectProfile": {
+              "ignorePatterns": [],
+              "ignoredCount": 0,
+              "ignoredSample": []
+            },
+            "historyProfile": {
+              "ignorePatterns": [],
+              "ignoredCount": 0,
+              "ignoredSample": []
+            },
+            "coreAnalysis": {
+              "ignorePatterns": [],
+              "ignoredCount": 0,
+              "ignoredSample": []
+            },
+            "diffImpact": {
+              "ignorePatterns": [],
+              "ignoredCount": 0,
+              "ignoredSample": []
+            }
+          },
+          "coreCandidateCount": 1
+        },
+        "reviewMatrix": [
+          {
+            "id": "core-supporting-separation",
+            "title": "Core candidates and supporting hotspots are separated",
+            "status": "ready",
+            "evidence": {
+              "primaryHotFiles": 17,
+              "supportingHotFiles": 40
+            },
+            "note": "Primary hot file lists should not be led by locale, docs, tests, fixtures, config, or migrations."
+          },
+          {
+            "id": "follow-up-edit-readiness",
+            "title": "Analysis can drive implementation work",
+            "status": "ready",
+            "evidence": {
+              "actionIds": [
+                "inspect-primary-core",
+                "apply-targeted-implementation",
+                "sync-documentation",
+                "validate-impact"
+              ]
+            },
+            "note": "For change/fix/optimize requests, convert follow-up actions into edits before final validation."
+          },
+          {
+            "id": "history-window-coverage",
+            "title": "History uses 30/90/180 style windows with confidence notes",
+            "status": "ready",
+            "evidence": {
+              "windows": [
+                30,
+                90,
+                180
+              ],
+              "confidence": "high"
+            },
+            "note": "Low history confidence should downgrade hotspot certainty, not block source inspection."
+          },
+          {
+            "id": "large-repo-safety",
+            "title": "Large git output has explicit bounded handling",
+            "status": "ready",
+            "evidence": {
+              "trackedFiles": 64,
+              "trackedFilesBeforeFilters": 64
+            },
+            "note": "A non-empty tracked-file profile is the first regression guard for large repositories."
+          },
+          {
+            "id": "language-framework-coverage",
+            "title": "Language and framework signals are visible",
+            "status": "ready",
+            "evidence": {
+              "languages": [
+                "python"
+              ],
+              "frameworks": []
+            },
+            "note": "Framework signals guide inspection; they do not replace reading implementation files."
+          },
+          {
+            "id": "static-evidence-boundary",
+            "title": "Runtime, CI, and test claims stay unverified until separately checked",
+            "status": "ready",
+            "evidence": {
+              "boundary": "static-local-git-and-file-analysis",
+              "unverified": [
+                "tests passed",
+                "CI status",
+                "runtime behavior"
+              ]
+            },
+            "note": "Reports should cite commands for local counts and mark non-executed claims as UNVERIFIED."
+          },
+          {
+            "id": "core-diagnostic-coverage",
+            "title": "Affected core chains receive a diagnostic-coverage review",
+            "status": "not-applicable",
+            "evidence": {
+              "affectedCoreFiles": [],
+              "actionId": "review-core-diagnostic-coverage"
+            },
+            "note": "The static pack requests a semantic review; source, executable-route, or captured-output evidence must confirm any missing-log finding."
+          },
+          {
+            "id": "change-drift-companion-coverage",
+            "title": "Changed surfaces have companion evidence checks",
+            "status": "ready",
+            "evidence": {
+              "findingCount": 0,
+              "types": []
+            },
+            "note": "Companion drift findings are advisory; update the companion file or document why it is not needed."
+          },
+          {
+            "id": "agent-report-flexibility",
+            "title": "Agents can rerun or filter instead of accepting noisy defaults",
+            "status": "ready",
+            "evidence": {
+              "filtersApplied": false,
+              "optionalSupportingPatterns": [
+                "pyproject.toml",
+                "README.md",
+                "CHANGELOG.md",
+                ".github/workflows/python-publish.yml",
+                ".github/workflows/python-package.yml",
+                "examples/**"
+              ]
+            },
+            "note": "Optional filters are analysis aids; they should be disclosed when used."
+          }
+        ]
+      }
+    },
+    "agentCustomize": {
+      "status": "available",
+      "data": {
+        "kind": "agent-asset-baseline",
+        "schemaVersion": 1,
+        "status": "complete",
+        "scope": {
+          "provider": "claude",
+          "workspace": "C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings",
+          "includeUserHome": false,
+          "includeMemories": false
+        },
+        "envelopes": {
+          "lint": {
+            "status": "available",
+            "data": {
+              "kind": "agent-lint",
+              "profile": "agent-assets-review",
+              "summary": {
+                "entrypoints": 0,
+                "documents": 0,
+                "links": 0,
+                "references": 0,
+                "missingReferences": 0,
+                "findings": 0,
+                "errors": 0,
+                "warnings": 0,
+                "advisories": 0
+              },
+              "assetInventory": {
+                "provider": "claude",
+                "summary": {
+                  "skills": 0,
+                  "mcps": 0,
+                  "commands": 0,
+                  "hooks": 0,
+                  "rules": 0,
+                  "agents": 0,
+                  "plugins": 0
+                }
+              },
+              "findings": {
+                "items": [],
+                "total": 0,
+                "omitted": 0,
+                "truncated": false
+              }
+            }
+          },
+          "inventory": {
+            "status": "available",
+            "data": {
+              "scope": {
+                "platform": "claude",
+                "includeUserHome": false,
+                "includeMemories": false
+              },
+              "summary": {
+                "projectAssets": 1,
+                "userAssets": 0,
+                "pluginAssets": 0,
+                "sessionSourceHints": 1,
+                "memories": 0
+              },
+              "coverageRows": [],
+              "ownerRoutes": {
+                "items": [
+                  {
+                    "kind": "workflows",
+                    "scope": "project",
+                    "name": "docs-to-wiki.yml",
+                    "route": ".github/workflows/docs-to-wiki.yml"
+                  },
+                  {
+                    "kind": "workflows",
+                    "scope": "project",
+                    "name": "python-package.yml",
+                    "route": ".github/workflows/python-package.yml"
+                  },
+                  {
+                    "kind": "workflows",
+                    "scope": "project",
+                    "name": "python-publish.yml",
+                    "route": ".github/workflows/python-publish.yml"
+                  }
+                ],
+                "total": 3,
+                "omitted": 0,
+                "truncated": false
+              },
+              "memories": {
+                "included": false,
+                "contentPolicy": "raw-memory-content-not-read",
+                "categories": [],
+                "titleCount": 0
+              },
+              "warnings": []
+            }
+          },
+          "integrity": {
+            "status": "available",
+            "data": {
+              "kind": "asset-integrity-review",
+              "profile": "asset-integrity-review",
+              "status": "reviewed",
+              "contentPolicy": "memory-title-and-path-metadata-only",
+              "summary": {
+                "findingCount": 0,
+                "memories": {
+                  "titleCount": 0,
+                  "reviewedTitleCount": 0,
+                  "truncated": false,
+                  "exactCollisionGroups": 0,
+                  "similarityCandidates": 0
+                },
+                "plugins": {
+                  "enabledPluginCount": 0,
+                  "nameCollisionGroups": 0,
+                  "capabilityOverlapGroups": 0,
+                  "familyCandidates": 0
+                },
+                "hooks": {
+                  "enabledHookCount": 0,
+                  "overRecommendedLimit": false,
+                  "exactDuplicateGroups": 0,
+                  "fanoutCandidates": 0
+                }
+              },
+              "findings": {
+                "items": [],
+                "total": 0,
+                "omitted": 0,
+                "truncated": false
+              }
+            }
+          }
+        },
+        "diagnostics": {
+          "sharedInventorySnapshot": true,
+          "compact": true,
+          "findingLimitPerEnvelope": 16,
+          "ownerRouteLimit": 16,
+          "inheritedWorkspaceCount": 0,
+          "truncatedStages": []
+        }
+      }
+    }
+  },
+  "lead": {
+    "status": "available",
+    "data": {
+      "kind": "better-harness.harness-analysis-evidence",
+      "schemaVersion": 1,
+      "evidence": "HARNESS ANALYSIS EVIDENCE\n\nThis is a read-only evidence brief, not a report conclusion.\nProjected report conclusions are intentionally excluded; use the observations and boundaries below to make your own evidence-backed decisions.\nWorkspace: C:\\Users\\Administrator\\Desktop\\python\\AI_Company\\Dumplings\nPlatform: claude\nLanguage: zh-CN\nBudget: at most 6000 estimated tokens; each evidence domain uses bounded representative rows and reports omissions.\n\nOBSERVATION SCOPE\nSource roots: 0 of 3 enabled roots exist; 3 roots were discovered.\nSession selection: analyzed 0 of 0 eligible sessions with all-eligible selection; confidence Low; representative yes.\nScope: workspace; global capability metadata included no; since 2026-07-02T08:19:44.819Z; until 2026-08-01T08:19:44.819Z.\nPrivacy boundary: reader-safe; raw prompts included no; raw commands included no; absolute home paths included no.\nSource warnings: missing-optional-root, missing-required-root.\n\nREPOSITORY FACTS\nProject label: Dumplings.\n- Task understanding: 0 observed and 1 connected signal(s). Representative evidence: 2 architecture/readme and 0 spec file(s).\n- Controlled execution: 1 observed and 0 connected signal(s). Representative evidence: 1 workspace manifest(s).\n- Change validation: 1 observed and 0 connected signal(s). Representative evidence: 19 tracked test file(s).\n- Reliable delivery: 0 observed and 1 connected signal(s). Representative evidence: 3 CI workflow file(s).\n- Agent practice coverage: Custom Agents has 0 asset(s) in Project.\n- Reusable Skill evidence: scanned-empty; 0 candidate asset(s), 0 observed project Skill(s), and 0 unresolved name match(es).\n- Regression-test evidence: candidates-present; inspected 38 commit(s) and retained 3 source/test co-change candidate(s).\n  - Sources: Agent_Base_.py, Agent_list.py, __init__.py (+2 omitted). Tests: tests/test_acl.py, tests/test_anthropic_agent.py, tests/test_base_agent_parity.py (+5 omitted). Path-correlated yes.\n  - Sources: Agent_Base_.py, anthropic_agent.py. Tests: tests/_llm_mock.py, tests/conftest.py, tests/test_anthropic_agent.py (+2 omitted). Path-correlated yes.\n  - Sources: Agent_Base_.py, Agent_list.py, __init__.py (+5 omitted). Tests: tests/test_placeholder.py. Path-correlated no.\n- Canonical planning evidence: scanned-empty; 0 candidate(s).\n- Sensitive-config scan coverage: complete; 4 of 4 candidate file(s) scanned, 0 skipped, 0 read error(s), truncated no.\n- Learning observation coverage: 0 episode record(s), 0 recurring candidate(s), 0 scoped Skill observation(s), and 0 unscoped Skill observation(s).\n  - Aggregated friction signals: source-warning:missing-optional-root: 2, source-warning:missing-required-root: 1.\n  - Coverage boundary: Asset Coverage=not-evaluable-missing-asset-inventory, Capture=not-evaluable-missing-normalized-events, Pattern Detection=insufficient-episodes, Routing=checked-clean, Freshness=checked-clean, Application=not-evaluable-missing-application-events, Evolution=not-evaluable-missing-update-evidence, Effectiveness=pending-no-later-window, Memory Governance=checked-clean.\n- Workflow-demand observation: 0 current handoff(s) and 0 repeated candidate(s); candidate contents are not projected into this brief.\n  - Coverage boundary: Demand Signals=not-evaluable-missing-normalized-events, Current Handoff=checked-clean, Recurrence=insufficient-episodes, Skill Inventory=checked-clean, Skill Activation=checked-clean.\n\nSESSION AND TASK FACTS\nSession packet: 0 selected session(s), 0 retained candidate episode(s), and 0 discarded episode(s).\n\nANALYZER OBSERVATIONS\n- Analyzed 0 of 0 sessions; 0/3 enabled source roots exist. Use this as the current workspace evidence boundary for final insight cards.\n- No validation command category was observed in the analyzed session sample. Inspect more sessions or add explicit validation guidance before claiming validation-after-edit behavior.\n- No edit event was observed in the analyzed sample. Inspect more sessions before making claims about edit or validation habits.\n- No strong execution friction signal in the analyzed sample. Keep friction claims narrow unless additional failed commands, rejected actions, or warnings are inspected.\n\nDELIVERY EVIDENCE\nNo bounded evidence observed.\n\nINTERVENTION HISTORY\nNo bounded evidence observed.\n\nREVIEW BOUNDARIES\n- Source candidate: requires-review.\n- Repository review: requires-review; 2 framework(s), 9 repository check(s), and 5 Software Fluency capability review(s) remain in scope.\n- Score review: requires-review; 5 dimension(s) await AI judgment.\n- Session observation review: candidate; 4 observation card(s) from 0 analyzed session(s).",
+      "summaryFacts": {
+        "evidenceMode": "session-limited",
+        "evidenceBoundary": {
+          "manifest": {
+            "schemaVersion": 2,
+            "sourceFingerprint": "02fbc02f5bc1120f",
+            "adapterVersion": "claude-task-loop-source-v2",
+            "platform": "claude",
+            "selection": {
+              "strategy": "all-eligible",
+              "eligibleCount": 0,
+              "analyzedCount": 0,
+              "confidence": "Low"
+            }
+          },
+          "episodeCoverage": {
+            "episodeCount": 0,
+            "editedEpisodeCount": 0,
+            "closedEpisodeCount": 0,
+            "recoveredEpisodeCount": 0
+          },
+          "deliveryEvidenceLevels": [],
+          "sourceGaps": []
+        },
+        "semanticFacets": {
+          "schemaVersion": 1,
+          "status": "supplementary",
+          "entries": [
+            {
+              "id": "session-insight:source-coverage",
+              "kind": "redacted-summary",
+              "episodeRef": null,
+              "status": "candidate",
+              "labels": [
+                "source-coverage",
+                "Low"
+              ],
+              "summary": "Analyzed 0 of 0 sessions; 0/3 enabled source roots exist. Use this as the current workspace evidence boundary for final insight cards.",
+              "evidenceRefs": [],
+              "modelVersion": "session-insights-v1"
+            },
+            {
+              "id": "session-insight:validation-behavior",
+              "kind": "redacted-summary",
+              "episodeRef": null,
+              "status": "candidate",
+              "labels": [
+                "validation-behavior",
+                "Low"
+              ],
+              "summary": "No validation command category was observed in the analyzed session sample. Inspect more sessions or add explicit validation guidance before claiming validation-after-edit behavior.",
+              "evidenceRefs": [],
+              "modelVersion": "session-insights-v1"
+            },
+            {
+              "id": "session-insight:post-edit-validation",
+              "kind": "rework-correction",
+              "episodeRef": null,
+              "status": "candidate",
+              "labels": [
+                "post-edit-validation",
+                "Low"
+              ],
+              "summary": "No edit event was observed in the analyzed sample. Inspect more sessions before making claims about edit or validation habits.",
+              "evidenceRefs": [],
+              "modelVersion": "session-insights-v1"
+            },
+            {
+              "id": "session-insight:execution-friction",
+              "kind": "friction-taxonomy",
+              "episodeRef": null,
+              "status": "candidate",
+              "labels": [
+                "execution-friction",
+                "Low"
+              ],
+              "summary": "No strong execution friction signal in the analyzed sample. Keep friction claims narrow unless additional failed commands, rejected actions, or warnings are inspected.",
+              "evidenceRefs": [],
+              "modelVersion": "session-insights-v1"
+            }
+          ]
+        },
+        "learningCapture": {
+          "schemaVersion": 1,
+          "state": "N/A",
+          "summary": "暂不适用——需要两个可比的观察窗口和一次改进对比。",
+          "interventions": []
+        },
+        "aiAgentPractice": {
+          "inspectedSurfaces": [],
+          "coverageRows": [
+            {
+              "surface": "Custom Agents",
+              "scopes": [
+                "Project"
+              ],
+              "count": 0
+            }
+          ]
+        }
+      },
+      "sessionBinding": {
+        "population": {
+          "schemaVersion": 1,
+          "kind": "session-population-binding",
+          "scopeFingerprint": "d288b49f41f13984",
+          "policyFingerprint": "abe9b091df6343fc",
+          "omission": {
+            "exactIdentityAvailable": false,
+            "activeSessions": 0,
+            "homeSessionOnly": 0,
+            "recencyInference": "disabled-frozen-until"
+          },
+          "eligible": {
+            "count": 0,
+            "fingerprint": "4f53cda18c2baa0c"
+          }
+        },
+        "selection": {
+          "schemaVersion": 1,
+          "kind": "session-selection-binding",
+          "parentPopulationFingerprint": "4f53cda18c2baa0c",
+          "strategy": "all-eligible",
+          "selected": {
+            "count": 0,
+            "fingerprint": "4f53cda18c2baa0c"
+          },
+          "projectionPolicyFingerprint": "8bb4426daa034174"
+        },
+        "admission": {
+          "schemaVersion": 1,
+          "kind": "lead-admission-binding",
+          "projectionPolicyFingerprint": "8bb4426daa034174",
+          "projectedEpisodes": 0,
+          "admittedEpisodes": 0,
+          "zeroSignalDiscardedEpisodes": 0,
+          "retainedTaskEpisodes": 0
+        }
+      }
+    }
+  },
+  "diagnostics": {
+    "collectionMode": "frozen-context-multi-owner",
+    "requiredLanes": [
+      "sessionEvidence",
+      "projectHarness",
+      "agentCustomize"
+    ],
+    "incompleteLanes": [],
+    "unavailableLanes": [],
+    "partialLanes": [],
+    "leadRequired": true,
+    "topologyRequired": true,
+    "topologyStatus": "complete",
+    "topologyIncomplete": false,
+    "individualCommandsRemainDiagnostic": true,
+    "sessionPopulationBinding": {
+      "status": "bound",
+      "population": {
+        "schemaVersion": 1,
+        "kind": "session-population-binding",
+        "scopeFingerprint": "d288b49f41f13984",
+        "policyFingerprint": "abe9b091df6343fc",
+        "omission": {
+          "exactIdentityAvailable": false,
+          "activeSessions": 0,
+          "homeSessionOnly": 0,
+          "recencyInference": "disabled-frozen-until"
+        },
+        "eligible": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c"
+        }
+      },
+      "sessionSelection": {
+        "schemaVersion": 1,
+        "kind": "session-selection-binding",
+        "parentPopulationFingerprint": "4f53cda18c2baa0c",
+        "strategy": "all-eligible",
+        "selected": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c"
+        },
+        "projectionPolicyFingerprint": "efaf47eb0decc0c8"
+      },
+      "leadSelection": {
+        "schemaVersion": 1,
+        "kind": "session-selection-binding",
+        "parentPopulationFingerprint": "4f53cda18c2baa0c",
+        "strategy": "all-eligible",
+        "selected": {
+          "count": 0,
+          "fingerprint": "4f53cda18c2baa0c"
+        },
+        "projectionPolicyFingerprint": "8bb4426daa034174"
+      },
+      "episodes": {
+        "comparison": "not-comparable-selection-or-policy",
+        "sessionTaskEpisodes": 0,
+        "leadProjectedEpisodes": 0,
+        "leadRetainedEpisodes": 0,
+        "leadZeroSignalDiscardedEpisodes": 0
+      }
+    }
+  }
+}

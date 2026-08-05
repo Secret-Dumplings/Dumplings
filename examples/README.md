@@ -1,6 +1,6 @@
-# dumplingsAI 示例代码
+# tangyuanAI 示例代码
 
-本文件夹包含 dumplingsAI 框架的使用示例，按复杂度递增排列。
+本文件夹包含 tangyuanAI 框架的使用示例，按复杂度递增排列。
 
 ## 运行示例
 
@@ -52,8 +52,8 @@ python example5_custom_output.py
 ### Agent 注册
 
 ```python
-@dumplingsAI.register_agent("uuid", "name")
-class MyAgent(dumplingsAI.BaseAgent):
+@tangyuanAI.register_agent("uuid", "name")
+class MyAgent(tangyuanAI.BaseAgent):
     prompt = "系统提示词"
     api_provider = "API 端点"
     model_name = "模型名称"
@@ -63,7 +63,7 @@ class MyAgent(dumplingsAI.BaseAgent):
 ### 工具注册
 
 ```python
-@dumplingsAI.tool_registry.register_tool(
+@tangyuanAI.tool_registry.register_tool(
     allowed_agents=None,
     name="tool_name",
     description="工具描述",

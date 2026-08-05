@@ -11,7 +11,7 @@ agent_queue 单测
 import threading
 import time
 
-from dumplingsAI.agent_queue import AgentQueue, get_call_chain
+from tangyuanAI.agent_queue import AgentQueue, get_call_chain
 
 
 class _StubAgent:

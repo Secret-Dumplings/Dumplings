@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Dumplings 命令行入口
-====================
+tangyuanai 命令行入口（Python 模块名 tangyuanAI）
+==================================================
 
 ::
 
-    dumplings --help        全部子命令
-    dumplings --doctor      环境自检（Python / httpx / pydantic / API Key）
-    dumplings --demo        跑一个最小离线示例（不连真 LLM）
+    tangyuanai --help        全部子命令
+    tangyuanai --doctor      环境自检（Python / httpx / pydantic / API Key）
+    tangyuanai --demo        跑一个最小离线示例（不连真 LLM）
 
-也可以通过 ``python -m dumplings`` 或 ``python -m dumplingsAI`` 进入。
+也可以通过 ``python -m tangyuanAI`` 进入。
 """
 from __future__ import annotations
 
@@ -27,11 +27,11 @@ __all__ = ["main", "cmd_doctor", "cmd_demo", "cmd_help"]
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="dumplings",
+        prog="tangyuanai",
         description=(
-            "dumplingsAI 命令行入口。\n"
-            "主要用途：环境自检 + 离线 demo + 帮助。\n"
-            "（dumplingsAI 仍可用，但 dumplings 是新的主入口。）"
+            "tangyuanAI 命令行入口（CLI 命令 = tangyuanai）。\n"
+            "主要用途：环境自检 + 离线 demo + Agent/工具/会话管理。\n"
+            "通过 `pip install tangyuanAI` 安装后可执行 `tangyuanai --help`。"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -86,7 +86,7 @@ def _check_api_keys() -> list[tuple[str, bool, str]]:
 
 def _check_agents() -> tuple[bool, list[str]]:
     try:
-        from dumplingsAI import agent_list
+        from tangyuanAI import agent_list
         names = sorted({a.name for a in agent_list.values() if hasattr(a, "name")})
         return True, names
     except Exception as e:
@@ -95,7 +95,7 @@ def _check_agents() -> tuple[bool, list[str]]:
 
 def cmd_doctor(_args: argparse.Namespace) -> int:
     """环境自检"""
-    print("dumplingsAI Doctor\n" + "=" * 50)
+    print("tangyuanAI Doctor\n" + "=" * 50)
 
     # Python 版本
     ok_py, py = _check_python_version()
@@ -125,24 +125,24 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
     print()
     if not ok_py:
         print("⚠ Python 版本过低，请升级到 3.10+")
-    print("下一步：dumplings --demo 跑一个最简示例")
+    print("下一步：tangyuanai --demo 跑一个最简示例")
     return 0
 
 
 def cmd_demo(_args: argparse.Namespace) -> int:
     """离线 demo：不连 LLM，直接看框架结构"""
-    print("dumplingsAI 离线 Demo\n" + "=" * 50)
+    print("tangyuanAI 离线 Demo\n" + "=" * 50)
     print("本 demo 不连真实 LLM，仅展示框架对象。\n")
 
-    from dumplingsAI import (
+    from tangyuanAI import (
         Agent,
         agent_list,
         builtin_tool,
         template_agent,
     )
-    from dumplingsAI.Agent_list import activate_template
-    from dumplingsAI.agent_tool import tool_registry
-    from dumplingsAI.errors import classify
+    from tangyuanAI.Agent_list import activate_template
+    from tangyuanAI.agent_tool import tool_registry
+    from tangyuanAI.errors import classify
 
     print("  ✓ Agent / builtin_tool / tool_registry / template_agent import OK")
     print(f"  ✓ classify(429, 'rate') → {classify(429, 'rate limited').__class__.__name__}")
@@ -168,7 +168,7 @@ def cmd_demo(_args: argparse.Namespace) -> int:
         print(f"      - {s['function']['name']}")
 
     print("\n  → 接下来你可以：")
-    print("      import dumplings  (或 import dumplingsAI)")
+    print("      import tangyuanAI（pip 默认安装名）")
     print("      agent = agent_list['demo_agent']")
     print("      agent.conversation_with_tool('hi')")
     return 0
@@ -195,7 +195,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         silence_banner()
 
     if args.version:
-        from dumplingsAI import __version__
+        from tangyuanAI import __version__
         print(__version__)
         return 0
 

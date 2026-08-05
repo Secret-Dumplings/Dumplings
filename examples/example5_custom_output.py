@@ -5,14 +5,19 @@
 """
 import os
 
-import dumplingsAI
+import tangyuanAI
 from dotenv import load_dotenv
+from tangyuanAI.Agent_list import activate_template
 
 load_dotenv()
 
 
-@dumplingsAI.register_agent("custom-uuid", "custom_agent")
-class CustomAgent(dumplingsAI.BaseAgent):
+@tangyuanAI.template_agent(
+    "custom_agent",
+    uuid="custom-uuid",
+    description="自定义输出格式 Agent 模板",
+)
+class CustomAgent(tangyuanAI.BaseAgent):
     """具有自定义输出处理的 Agent"""
     prompt = "你是一个具有自定义输出格式的助手"
     api_provider = "https://api.example.com/v1/chat/completions"
@@ -34,7 +39,8 @@ class CustomAgent(dumplingsAI.BaseAgent):
 
 
 if __name__ == "__main__":
-    agent = dumplingsAI.agent_list["custom_agent"]
+    activate_template("custom_agent")
+    agent = tangyuanAI.agent_list["custom_agent"]
 
     print("=== 自定义输出示例 ===")
     agent.conversation_with_tool("你好，请用你的方式回答")

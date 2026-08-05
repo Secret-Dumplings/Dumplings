@@ -6,19 +6,19 @@ http_utils 单测
 """
 import httpx
 import pytest
-from dumplingsAI.errors import (
+from tangyuanAI.errors import (
     APIError,
     InternalServerError,
     RateLimitError,
     classify,
 )
-from dumplingsAI.errors import (
-    ConnectionError as DumplingsConnectionError,
+from tangyuanAI.errors import (
+    ConnectionError as TangyuanConnectionError,
 )
-from dumplingsAI.errors import (
-    TimeoutError as DumplingsTimeoutError,
+from tangyuanAI.errors import (
+    TimeoutError as TangyuanTimeoutError,
 )
-from dumplingsAI.http_utils import RETRYABLE_STATUS_CODES, HTTPClient
+from tangyuanAI.http_utils import RETRYABLE_STATUS_CODES, HTTPClient
 
 
 class _MockTransport(httpx.BaseTransport):
@@ -130,7 +130,7 @@ def test_connect_error_retries_then_raises():
          httpx.ConnectError("net down")],
         max_retries=2,
     )
-    with pytest.raises(DumplingsConnectionError):
+    with pytest.raises(TangyuanConnectionError):
         client.post("https://x/y", json={})
     assert len(client.client._transport.calls) == 3  # type: ignore[attr-defined]
 
@@ -141,7 +141,7 @@ def test_timeout_retries_then_raises():
          httpx.ReadTimeout("t3")],
         max_retries=2,
     )
-    with pytest.raises((DumplingsTimeoutError, DumplingsConnectionError)):
+    with pytest.raises((TangyuanTimeoutError, TangyuanConnectionError)):
         client.post("https://x/y", json={})
 
 

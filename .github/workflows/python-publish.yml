@@ -1,4 +1,4 @@
-# dumplingsAI 自动发布到 PyPI
+# tangyuanAI 自动发布到 PyPI
 #
 # 触发方式：
 #   ① push 一个形如 v0.2.1 的 tag —— 自动 build + 发到 PyPI + 创建 GitHub Release（**全自动**）
@@ -6,7 +6,7 @@
 #
 # PyPI 凭证：使用 Trusted Publishing（OIDC），无需 API token。
 #   首次需要在 https://pypi.org/manage/account/publishing/ 把这个仓库登记为 Trusted Publisher，
-#   Project name = dumplingsAI，Workflow filename = python-publish.yml。
+#   Project name = tangyuanAI，Workflow filename = python-publish.yml。
 name: Publish Python Package
 
 on:
@@ -85,7 +85,7 @@ jobs:
       id-token: write
     environment:
       name: pypi
-      url: https://pypi.org/p/dumplingsAI
+      url: https://pypi.org/p/tangyuanAI
 
     steps:
       - name: Download distributions

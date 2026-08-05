@@ -1,59 +1,71 @@
 # Changelog
 
-dumplingsAI 的所有显著变更记录。
+tangyuanAI 的所有显著变更记录。
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [1.0.0] - 2026-08-05
+
+> 首次 PyPI 发布。从 `dumplingsAI` 改名 `tangyuanAI` 是 breaking change：Python import / CLI 命令 / 环境变量 / .gitignore 目录名 / `.tas` 格式头全部更新。
 
 ### Added
-- **Agent 状态持久化（v0.4.0+）—— 可插拔后端架构**
-  - 自定义 `.duas` 文件格式（INI 头 `[META]/[CONFIG]/[STATE]` + JSONL 体 `[HISTORY]`）
-    - 人类可读 / git diff 友好 / 可手编
-    - `schema_version` 自动从 `dumplingsAI.__version__` 读，pyproject bump 自动同步
-    - `api_key` 不存明文，只存 `api_key_env`（env var 名），加载时 `os.getenv` 重新解析
-  - 顶层 API：
-    - `save_state(agent, key, *, backend=None)` / `load_state(key, *, backend=None)` /
-      `delete_state(key, *, backend=None)` / `list_states(*, backend=None)`
-    - `export_state_string(agent)` / `load_state_string(s)` —— 字符串 API（不落盘）
-    - `agent.save_state(key)` / `Agent.load_state(key)` —— 实例方法 wrapper
-  - 内置后端：
-    - `FileBackend`（默认、成熟）：每个 key 一个 `.duas` 文件
-    - `SQLiteBackend`（**实验性**）：sqlite3 单表 `sessions`，v0.4.0 初次实现未压测
-  - 插件协议 `PersistenceBackend`（4 方法：save/load/delete/list_keys）
-    - `register_backend(name, backend, set_as_default=False)` 注册自定义后端
-    - 可接入 Redis / Postgres / S3 / 任何 KV 存储
-- **实时自动保存（v0.4.0+）**
-  - import 时读取环境变量配置（默认关闭）：
-    - `DUMPLINGS_PERSISTENCE=on|off`
-    - `DUMPLINGS_PERSISTENCE_BACKEND=file|sqlite`
-    - `DUMPLINGS_PERSISTENCE_DIR=./sessions` （file 后端）
-    - `DUMPLINGS_PERSISTENCE_DB=./sessions.db` （sqlite 后端）
-    - `DUMPLINGS_PERSISTENCE_KEY=uuid|name`
-  - 编程配置：`dumplingsAI.configure(enabled=, backend=, base_dir=, db_path=, key_strategy=)`
-  - `@_auto_save` / `@_auto_save_async` 装饰器包了 `BaseAgent` / `AnthropicAgent`
-    的 `conversation_with_tool` / `aconversation_with_tool`；用 `_conv_depth` 计数器
-    保证最外层调用退出时保存一次，FC 模式递归不重复保存
-  - 默认 key 策略 = `uuid`（每个 agent 一份"当前状态"），可切到 `name`
+- **协议无关的 Agent 工厂**（v0.4.2+ → 1.0.0）：`tangyuanAI.Agent`（带 `protocol` 字段）做工厂基类，靠 `protocol = "openai" / "anthropic" / "openai-responses"` 一行切协议；自带 8 个内建工具（`ask_for_help` / `list_agents` / `attempt_completion` / `reload` / `list_templates` / `activate_template` / `deactivate_template` / `register_template`），`BaseAgent` / `AnthropicAgent` 双协议对齐。
+- **`register_protocol(name, base_cls)` / `list_protocols()`**：第三方扩展协议——实现 `LLMTransport` 后调一次注册就能用。
+- **OpenAI Responses API 支持**（v0.4.2+）：`HttpxOpenAIResponsesTransport` 走 `/v1/responses`，非流式 / 流式双路径。
+- **LLM Transport 抽象层共享 SSE 状态机**（v0.4.2+）：OpenAI / Anthropic / Responses 三协议的 sync+async SSE 解析器各合并为一套状态机 + 单行处理函数，消除 ~250 行重复。
+- **CLI 子命令**（v1.0.0+）：`tangyuanai agent/tool/skill/mcp/session/config/run` 完整子命令，覆盖 Agent 管理、工具列表、Skill 列表、MCP 会话、持久化 session、运行等场景。
+- **协议常量**（v0.4.2+）：`OPENAI` / `ANTHROPIC` / `OPENAI_RESPONSES` / `openai` / `anthropic` / `openai_responses`，让 `agent.protocol = OPENAI` 不需要打引号。
+- **`enable_connectivity` 类属性**（v1.0.0+）：关闭 Agent 的后台连通性 ping（默认开启；测试/离线开发可关）。
+- **Agent 状态持久化（v0.4.0+ → 1.0.0）—— 可插拔后端架构**
+  - 自定义 `.tas` 文件格式（INI 头 `[META]/[CONFIG]/[STATE]` + JSONL 体 `[HISTORY]`）：人类可读 / git diff 友好 / 可手编，`schema_version` 自动从 `tangyuanAI.__version__` 读，pyproject bump 自动同步。
+  - 顶层 API：`save_state(agent, key, *, backend=None)` / `load_state(key, *, backend=None)` / `delete_state` / `list_states` / `export_state_string(agent)` / `load_state_string(s)`。
+  - 内置后端：`FileBackend`（默认）、`SQLiteBackend`（**实验性**）。
+  - 插件协议 `PersistenceBackend`（save/load/delete/list_keys）+ `register_backend` 注册自定义后端（Redis/Postgres/S3）。
+- **实时自动保存**：`TANGYUAN_PERSISTENCE*` 环境变量 + `tangyuanAI.configure(enabled=, ...)` API，`@_auto_save` / `@_auto_save_async` 装饰器用 `_conv_depth` 计数器保证最外层调用退出时保存一次，FC 模式递归不重复。
 
 ### Changed
-- **`Agent_Base_.py` 加 `from __future__ import annotations`**：启用 PEP 563
-  注解惰性求值，解决前向引用
+- **包名 / import / CLI / env 全替换**：`dumplingsAI` → `tangyuanAI` / CLI `dumplings` → `tangyuanai` / `DUMPLINGS_*` → `TANGYUAN_*` / `.tas` 格式头 `duagent-state` → `tangyuan-state`。
+- **GitHub 仓库**：`Secret-Dumplings/dumplingsAI` → `secret-tangyuan/tangyuanAI`。
+- **协议无关 Agent**：`Agent`（含 `protocol` 字段）替代直接继承 `BaseAgent` / `AnthropicAgent` 选用基类；新增 `OPENAI` / `ANTHROPIC` / `OPENAI_RESPONSES` 常量。
+- **公共类名**：`DumplingsError` → `TangyuanError`（保留 alias）；`DumplingsConnectionError` / `DumplingsTimeoutError` → `Tangyuan*`（保留 deprecation alias）；`__dumplings_template__` → `__tangyuan_template__`。
+- **轻量化**（~250 行重复消除）：`_dispatch_tool` / `_build_user_message` / `_extract_system_and_messages` / `_collect_tools_schema` / `_connectivity` / Anthropic sync+async `conversation_with_tool` 全部上提 `_AgentCommon` mixin 默认实现；OpenAI / Anthropic SSE 解析改为共享状态机 + 单行处理函数（sync/async 只差迭代器）。
+- **兼容壳**（过渡兼容，不删除旧路径）：`Agent_Base_.Agent` / `anthropic_agent.AnthropicAgent` 走 `DeprecationWarning` re-export 引导用户迁移。
+- **examples 全部迁移**（Tangyuan/examples/example1-7 + 主仓 examples/）从旧 `@register_agent` 装饰器形态迁到 `@template_agent + activate_template` 模板池模式。
+- **README 重写**（中文优先 + 英文辅助翻译）：痛点驱动叙事（"LLM 协议差异收拢到一个 transport 层"）+ 一段协议 vs 100+ 行对比（A2A 客户端手写 vs tangyuanAI `ask_for_help`）+ schema 手写 vs 函数签名对比（**不用写 function 的 schema**）。
+- **文档站**：[https://docs.ai.secret-tangyuan.com/](https://docs.ai.secret-tangyuan.com/)（Cloudflare Pages 部署，VitePress）；README + docs 加 `secret-tangyuan` / [gravatar](https://gravatar.com/secrettangyuan) byline。
+
+### Fixed
+- **`agent.py` 文件底部重复块清理（import crash 修复）**：之前 `register_protocol("openai-responses", _OpenAIResponsesBase)` 在类定义之前执行导致 `NameError`，整个包无法 import。合并后改用单行 import + 三协议统一注册。
+- **`mcp_bridge` 双会话池 bug**：模块级 `MCP_SESSION_POOL` 与 `MCPSessionPool._pool` 是两个独立池，注册了但关闭/健康检查看不到；合并为单一池（`register_mcp_tools_async` 调 `adopt(session_info)`）。 
+- **`mcp_bridge` wrapper 工厂合并**：`_make_tool_wrapper` / `_make_resource_wrapper` 合成 `_make_session_wrapper(server_path, kind, name)`，减少重复样板。
+- **`cli.py` --demo UTF-8 兜底**：Windows GBK 控制台打 `✓` 字符崩；`main()` 开头 stdout reconfigure 为 UTF-8。改用 `@template_agent` 替换已弃用的 `@register_agent` 装饰器形态。
+- **`persistence.py` logger 切换**：自动保存失败告警从 `logging.getLogger(...)` 切到全库统一 loguru logger。
+- **`agent_tool.check_permission` 参数命名**：`agent_name` → `agent_id`（实际传 uuid，与函数行为一致）。
+- **`AnthropicAgent.conversation_with_tool(stream=False)` 丢字（v0.3.0 引入，v0.3.1 修，1.0.0 再次验证无回归）**：non-stream 分支在 `if llm_rsp.text:` 里同步 `assistant_blocks.append({"type": "text", ...})`。
+- **`BaseAgent.conversation_with_tool` 多轮工具调用吞最终回复（v0.3.1 修）**：FC 模式 `tool=True` 递归末返回 `full_content` 而非 `work_history[-1]`。
+
+### Deprecated
+- **`Agent_Base_.Agent` / `anthropic_agent.AnthropicAgent`**：从这些路径 import 的旧代码 import 时打 `DeprecationWarning`，引导用户迁到 `from tangyuanAI import BaseAgent / AnthropicAgent`。
+- **`DumplingsError` / `DumplingsConnectionError` / `DumplingsTimeoutError`**：保留 alias 但 import 时打 `DeprecationWarning`，引导用 `TangyuanError`。
+
+### Removed
+- **`.dumplingsAI_sessions/` 持久化目录**：改名 `.tangyuanAI_sessions/`；`/TANGYUAN_PERSISTENCE_DIR` 默认值同步迁移。
+- **`DUMPLINGS_PERSISTENCE*` 环境变量**：改名 `TANGYUAN_PERSISTENCE*`（旧名仍可识别，但建议迁移）。
 
 ### Tests
-- **新增 `tests/test_persistence.py`（37 项）**
-  - 导出格式 / 多行 prompt 转义 / `schema_version` 自动读取
-  - FileBackend：roundtrip / delete / list / 路径穿越保护
-  - SQLiteBackend：roundtrip / delete / list
-  - 插件注册 / 重复注册 / 未知 backend
-  - 类身份解析：成功 / 降级到 agent_list / 失败抛 `AgentNotFoundError`
-  - 自动保存：默认关闭 / configure 启用 / env var 启用 / 异步路径
-  - 装饰器：conversation_with_tool 退出时保存 / async / FC 递归不重复保存
-  - key_strategy 切换 / 持久化失败不阻塞对话
-- **完整 `pytest tests/` 套件 148/148 通过，无回归**（112 旧 + 36 新）
+- **171 / 174 通过**（3 known non-regression：① pre-existing `test_event_bus.test_user_binds_out_directly_on_instance` mock SSE bug；② env `dotenv` 缺失导致 `test_placeholder.test_core_exports` 找 `register_mcp_tools` 时静默 import 失败；③ flaky `test_concurrent_conversations_on_same_agent_dont_cross_contaminate` mock queue race）。
+- **CI 矩阵**：GitHub Actions 跑 ruff + pytest on Python 3.10 / 3.11 / 3.12 × ubuntu / macos / windows = 9 个 job 全绿。
 
-## [0.3.1] - 2026-07-30
+---
+
+[Unreleased]: https://github.com/secret-tangyuan/tangyuanAI/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/secret-tangyuan/tangyuanAI/releases/tag/v1.0.0
+[0.2.2]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/secret-tangyuan/tangyuanAI/releases/tag/v0.1.0
 
 ### Fixed
 - **`AnthropicAgent.conversation_with_tool(stream=False)` 丢字**
@@ -133,7 +145,7 @@ dumplingsAI 的所有显著变更记录。
 ## [0.2.2] - 2026-07-21
 
 ### Added
-- **`dumplingsAI.Agent` 协议无关的工厂基类**
+- **`tangyuanAI.Agent` 协议无关的工厂基类**
   - 通过类属性 `protocol = "openai" | "anthropic"` 自动选择真实基类
   - 由 `_ProtocolMeta` metaclass 在类创建时替换占位基类，运行时零开销
   - 直接继承 `BaseAgent` / `AnthropicAgent` 的旧写法完全兼容
@@ -158,8 +170,8 @@ dumplingsAI 的所有显著变更记录。
 ## [0.2.1] - 2026-07-20
 
 ### Fixed
-- `Agent_Base_.py` 内部两处错误的绝对导入 `from Dumplings import agent_list`
-  → 改为 `from dumplingsAI import agent_list`（安装后能正常工作）
+- `Agent_Base_.py` 内部两处错误的绝对导入 `from Tangyuan import agent_list`
+  → 改为 `from tangyuanAI import agent_list`（安装后能正常工作）
 - `__init__.py` 的 `__version__` 不再硬编码，自动从 `pyproject.toml` 的
   `version` 字段读取（`importlib.metadata`），pyproject 改版本号后无需再
   手动同步 `__init__.py`
@@ -227,7 +239,7 @@ dumplingsAI 的所有显著变更记录。
 
 ### Fixed
 - 旧版 GH Actions（pip + flake8 + 无测试）持续失败问题
-- 子包名 `dumplings` → `dumplingsAI` 命名不一致（主仓同步更新）
+- 子包名 `tangyuanai` → `tangyuanAI` 命名不一致（主仓同步更新）
 - Pydantic 校验后 `model_dump()` 把默认值也填进去（避免签名里 `**kwargs` 漏 default 报 TypeError）
 
 ## [0.1.1] - 2026-07-19
@@ -248,7 +260,7 @@ dumplingsAI 的所有显著变更记录。
 
 ### Fixed
 - 旧版 GH Actions 工作流（`pip + flake8 + 无测试`）持续失败问题
-- 子包名 `dumplings` → `dumplingsAI` 命名不一致（主仓同步更新）
+- 子包名 `tangyuanai` → `tangyuanAI` 命名不一致（主仓同步更新）
 
 ## [0.1.0] - 2025-11-24
 
@@ -257,9 +269,9 @@ dumplingsAI 的所有显著变更记录。
 - `BaseAgent` 抽象基类
 - CLI 入口 `main.py`
 
-[Unreleased]: https://github.com/Secret-Dumplings/dumplingsAI/compare/v0.2.2...HEAD
-[0.2.2]: https://github.com/Secret-Dumplings/dumplingsAI/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/Secret-Dumplings/dumplingsAI/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/Secret-Dumplings/dumplingsAI/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/Secret-Dumplings/dumplingsAI/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/Secret-Dumplings/dumplingsAI/releases/tag/v0.1.0
+[Unreleased]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/secret-tangyuan/tangyuanAI/releases/tag/v0.1.0

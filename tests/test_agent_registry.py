@@ -2,7 +2,7 @@
 """
 Agent 注册表 API 包装（v0.4.2+）。
 
-之前 ``dumplingsAI.agent_list`` 是个裸 dict，外部代码可以直接
+之前 ``tangyuanAI.agent_list`` 是个裸 dict，外部代码可以直接
 ``agent_list.clear()`` / ``agent_list["foo"] = bar`` 破坏全局状态。
 
 v0.4.2+ 包装：
@@ -16,7 +16,7 @@ v0.4.2+ 包装：
 from __future__ import annotations
 
 import pytest
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     activate_template,
     agent_list,

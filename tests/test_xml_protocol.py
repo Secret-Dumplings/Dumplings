@@ -20,7 +20,7 @@ from _llm_mock import (
     _start_mock_server,
     anthropic_text_response,
 )
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     activate_template,
     agent_list,

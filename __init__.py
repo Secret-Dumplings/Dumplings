@@ -1,37 +1,37 @@
 # -*- coding: utf-8 -*-
 """
-dumplingsAI - 多智能体协作框架
-==============================
+tangyuanAI - 多智能体协作框架
+=============================
 
 基于 LLM 的轻量级多智能体协作系统框架，支持 OpenAI 兼容协议与 Anthropic 协议。
 
 快速开始
 --------
 
-    import dumplingsAI
+    import tangyuanAI
     from dotenv import load_dotenv
     load_dotenv()  # API_KEY 放在 .env
 
-    @dumplingsAI.template_agent("my_agent", uuid="uuid-1", description="")
-    class MyAgent(dumplingsAI.BaseAgent):
+    @tangyuanAI.template_agent("my_agent", uuid="uuid-1", description="")
+    class MyAgent(tangyuanAI.BaseAgent):
         prompt = "你是一个助手"
         api_provider = "https://api.example.com/v1/chat/completions"
         model_name = os.getenv("OPENAI_MODEL")
         api_key = os.getenv("OPENAI_API_KEY")
 
-    agent = dumplingsAI.agent_list["my_agent"]
+    agent = tangyuanAI.agent_list["my_agent"]
     agent.conversation_with_tool("你好")
 
 Anthropic 协议用法::
 
-    @dumplingsAI.template_agent("claude_agent", uuid="uuid-2", description="")
-    class ClaudeAgent(dumplingsAI.Agent):
+    @tangyuanAI.template_agent("claude_agent", uuid="uuid-2", description="")
+    class ClaudeAgent(tangyuanAI.Agent):
         protocol = "anthropic"
         prompt = "你是一个助手"
         model_name = os.getenv("ANTHROPIC_MODEL")
         api_key = os.getenv("ANTHROPIC_API_KEY")        # 可指向任意兼容端点（详见 AnthropicAgent docstring）
 
-    dumplingsAI.agent_list["claude_agent"].conversation_with_tool("你好")
+    tangyuanAI.agent_list["claude_agent"].conversation_with_tool("你好")
 
 切协议只需改 ``protocol`` 字段（``"openai"`` / ``"anthropic"``），无需换基类。
 详见 ``Agent`` docstring。
@@ -52,7 +52,7 @@ Anthropic 协议用法::
 更多资源
 --------
 
-- 完整文档：https://github.com/Secret-Dumplings/dumplingsAI
+- 完整文档：https://github.com/secret-tangyuan/tangyuanAI/wiki
 - 示例代码：examples/ 目录
 - 发布流程：仓库根目录 RELEASING.md
 - 许可证：Apache License 2.0
@@ -110,21 +110,21 @@ except ImportError:
 from .skill import Skill, skill_registry
 from .skill_bridge import register_skill_as_tool, unregister_skill_from_tool
 
-# 版本号自动从包元数据读取，与 Dumplings/pyproject.toml 中的 version 字段保持同步。
-# 覆盖方式（仅在打包失败等极端场景下使用）：import dumplingsAI; dumplingsAI.__version__ = "x"
+# 版本号自动从包元数据读取，与 Tangyuan/pyproject.toml 中的 version 字段保持同步。
+# 覆盖方式（仅在打包失败等极端场景下使用）：import tangyuanAI; tangyuanAI.__version__ = "x"
 try:
     from importlib.metadata import PackageNotFoundError
     from importlib.metadata import version as _pkg_version
 
     try:
-        __version__ = _pkg_version("dumplingsAI")
+        __version__ = _pkg_version("tangyuanAI")
     except PackageNotFoundError:
         # 包未安装（极少见，例如源码直接以脚本运行）
         __version__ = "0.0.0+unknown"
 except Exception:  # pragma: no cover
     __version__ = "0.0.0+unknown"
 
-__author__ = "secret_dumplings"
+__author__ = "secret-tangyuan"
 
 
 # ======================================================================
@@ -257,7 +257,7 @@ def help():
         names = sorted(agent_list.keys())
         print(f"已注册 Agent: {n_agents} 个 → {', '.join(names)}")
     else:
-        print("已注册 Agent: 0 个（请用 @dumplingsAI.template_agent 注册）")
+        print("已注册 Agent: 0 个（请用 @tangyuanAI.template_agent 注册）")
 
     try:
         tools = list(tool_registry.list_tools() or [])
@@ -270,15 +270,15 @@ def help():
 
     # 3) 命令行入口提示（指向真实模块，不写死字符串）
     try:
-        import dumplingsAI.cli as _cli
+        import tangyuanAI.cli as _cli
         cli_module = _cli.__name__
     except Exception:  # pragma: no cover
-        cli_module = "dumplingsAI"
+        cli_module = "tangyuanAI"
     print("\n命令行入口：")
     print(f"  $ python -m {cli_module} --help    # 全部子命令")
     print(f"  $ python -m {cli_module} --doctor  # 环境自检（Python / API Key / 已注册 Agent）")
     print(f"  $ python -m {cli_module} --demo    # 离线 demo（不连真实 LLM）")
 
 
-# 方便交互式访问：``help(dumplingsAI)`` 会显示模块 docstring
+# 方便交互式访问：``help(tangyuanAI)`` 会显示模块 docstring
 help.__doc__ = __doc__

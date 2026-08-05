@@ -5,9 +5,11 @@ order: 1
 icon: HOME_OUTLINED
 ---
 
-# dumplingsAI 文档
+# tangyuanAI 文档
 
-dumplingsAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像"公司团队"一样分工完成任务。
+> 维护者：[secret-tangyuan](https://github.com/secret-tangyuan) · [个人介绍](https://gravatar.com/secrettangyuan)
+
+tangyuanAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像"公司团队"一样分工完成任务。
 
 同一份 `agent_list` 同时容纳 **OpenAI 协议 Agent**（`BaseAgent`）与 **Anthropic 协议 Agent**（`AnthropicAgent`），通过 `Agent` 工厂基类 + `protocol` 字段统一选择。
 
@@ -22,15 +24,15 @@ dumplingsAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像
 | [protocols.md](protocols.md) | OpenAI 协议 vs Anthropic 协议、`Agent` 工厂基类、双协议对称性 |
 | [output-and-hooks.md](output-and-hooks.md) | `pack` / `out` 输出事件总线、工具调用钩子 |
 | [mcp-skills.md](mcp-skills.md) | MCP 协议桥接、Skill 开放标准（**测试功能**） |
-| [persistence.md](persistence.md) | Agent 状态持久化：`.duas` 文件格式 / 插件后端 / 实时自动保存 |
+| [persistence.md](persistence.md) | Agent 状态持久化：`.tas` 文件格式 / 插件后端 / 实时自动保存 |
 | [TODO.md](TODO.md) | 待办：单测覆盖 / 边界处理 / 生产就绪检查清单 |
 
-> 本套文档就是本仓库自己搭的文档站：**https://docs.dumplingsai.secret-dumplings.xin**（Cloudflare Pages 构建，push 自动更新，见 [docs-site/README.md](../docs-site/README.md)）。
+> 本套文档就是本仓库自己搭的文档站：**https://docs.ai.secret-tangyuan.com/**（Cloudflare Pages 构建，push 自动更新，见 [docs-site/README.md](../docs-site/README.md)）。
 
 ## 仓库结构
 
 ```
-Dumplings/                       # 主包：dumplingsAI（PyPI）
+Tangyuan/                       # 主包：tangyuanAI（PyPI）
 ├── Agent_Base_.py               # BaseAgent（OpenAI 协议）
 ├── anthropic_agent.py           # AnthropicAgent（Anthropic 协议）
 ├── Agent_list.py                # agent_list + 模板池（register_template / activate_template）
@@ -41,7 +43,7 @@ Dumplings/                       # 主包：dumplingsAI（PyPI）
 ├── http_utils.py                # 退避重试 HTTP 客户端
 ├── skill.py / skill_bridge.py   # Skill 注册 + 热加载
 ├── mcp_bridge.py                # stdio MCP 桥接
-├── cli.py                       # `dumplings` CLI
+├── cli.py                       # `tangyuanai` CLI（Python 模块名 tangyuanAI）
 ├── docs/                        # 文档源（frontmatter 驱动，本套文档的 markdown 源）
 │   ├── index.md                 # 本页（slug: index, order: 1）
 │   ├── getting-started.md

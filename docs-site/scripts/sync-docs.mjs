@@ -9,7 +9,7 @@ import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const SRC = resolve(__dirname, '../../docs')    // Dumplings/docs/（数据源）
+const SRC = resolve(__dirname, '../../docs')    // Tangyuan/docs/（数据源）
 const DST = resolve(__dirname, '../docs-build') // 构建目录（.gitignore 排除）
 const SKIP = new Set(['README.md'])
 

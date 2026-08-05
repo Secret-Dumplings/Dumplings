@@ -49,9 +49,11 @@ nul
 .DS_Store
 Thumbs.db
 
-# Persistence backends (v0.4.0+)
+# Persistence backends (v1.0.0+)
+# 状态文件默认用 .tas 扩展；旧 .duas 文件（v0.4.0–v0.4.x 命名）兼容识别，但不入库。
 .dumplingsAI_sessions/
 .dumplingsAI_sessions.db
+*.tas
 *.duas
 *.duas.gz
 b.db

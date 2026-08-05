@@ -64,7 +64,7 @@ def out(self, content: dict) -> None:
 ```python
 import json
 
-class MyAgent(dumplingsAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):
     def out(self, content: dict) -> None:
         # 推到前端 WebSocket
         if hasattr(self, "_ws"):
@@ -77,7 +77,7 @@ class MyAgent(dumplingsAI.BaseAgent):
 ## 工具调用钩子
 
 ```python
-class MyAgent(dumplingsAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):
     def __init__(self):
         super().__init__()
         self.register_tool_hook(self._audit)

@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
-"""⚠️ v0.4.2+ DEPRECATED：本模块旧实现仍保留兼容，但 bug 修复 / 瘦身只发生在 ``dumplingsAI.agent``。
+"""⚠️ v0.4.2+ DEPRECATED：本模块旧实现仍保留兼容，但 bug 修复 / 瘦身只发生在 ``tangyuanAI.agent``。
 
-Anthropic 协议 Agent 基类（兼容旧 import 路径 ``dumplingsAI.anthropic_agent.AnthropicAgent``）。
-逻辑、bug 修复、瘦身现在只在 ``dumplingsAI.agent._AnthropicBase``
-（对外别名 :class:`dumplingsAI.AnthropicAgent`）里维护。
+Anthropic 协议 Agent 基类（兼容旧 import 路径 ``tangyuanAI.anthropic_agent.AnthropicAgent``）。
+逻辑、bug 修复、瘦身现在只在 ``tangyuanAI.agent._AnthropicBase``
+（对外别名 :class:`tangyuanAI.AnthropicAgent`）里维护。
 
 新代码请直接用::
 
-    from dumplingsAI import AnthropicAgent          # 推荐
+    from tangyuanAI import AnthropicAgent          # 推荐
 
 import 本模块时打印一次 ``DeprecationWarning``；旧 :class:`AnthropicAgent` 类保留以
-保持 ``from dumplingsAI.anthropic_agent import AnthropicAgent`` 的旧 import 路径
-继续可用（本路径将在 v0.6.0 删除）。
+保持 ``from tangyuanAI.anthropic_agent import AnthropicAgent`` 的旧 import 路径
+继续可用。
 """
 import warnings as _warnings
 
-# 模块加载即打 deprecation warning —— 任何 `from dumplingsAI.anthropic_agent import ...`
+# 模块加载即打 deprecation warning —— 任何 `from tangyuanAI.anthropic_agent import ...`
 # 都会经过 module 求值，触发一次告警。
 _warnings.warn(
-    "dumplingsAI.anthropic_agent 已弃用；新代码请用 dumplingsAI.AnthropicAgent "
-    "（实现在 dumplingsAI.agent._AnthropicBase）。本路径将在 v0.6.0 删除。",
+    "tangyuanAI.anthropic_agent 已弃用；新代码请用 tangyuanAI.AnthropicAgent "
+    "（实现在 tangyuanAI.agent._AnthropicBase）。",
     DeprecationWarning,
     stacklevel=2,
 )
@@ -300,8 +300,8 @@ class AnthropicAgent:
     def save_state(self, key: str, backend: Optional[str] = None) -> None:
         """把当前 agent 状态保存到指定后端。
 
-        Wrapper around :func:`dumplingsAI.save_state`. 详见
-        ``dumplingsAI/persistence.py`` 顶部的格式说明。
+        Wrapper around :func:`tangyuanAI.save_state`. 详见
+        ``tangyuanAI/persistence.py`` 顶部的格式说明。
         """
         from .persistence import save_state as _save_state
         _save_state(self, key, backend=backend)
@@ -780,7 +780,7 @@ class AnthropicAgent:
     # ---------------- API 调用层（已迁移到 LLM Transport）----------------
     # 旧 _call / _call_blocking / _call_stream 在 v0.2 里被 HttpxAnthropicTransport 取代。
     # 新代码请用：
-    #     from dumplingsAI.llm_transport import HttpxAnthropicTransport
+    #     from tangyuanAI.llm_transport import HttpxAnthropicTransport
     #     transport = HttpxAnthropicTransport(...)
     #     rsp = transport.chat(req)  # 或 transport.chat_stream(req)
     def _call(self, payload):  # pragma: no cover - 已废弃
@@ -845,7 +845,7 @@ class AnthropicAgent:
     @builtin_tool(
         description="请求其他Agent帮助，调用另一个Agent完成子任务并把它的回复作为工具结果返回。",
         params={
-            "agent_id": "目标Agent的UUID或名称（已在 Dumplings.agent_list 中注册）",
+            "agent_id": "目标Agent的UUID或名称（已在 Tangyuan.agent_list 中注册）",
             "message": "要发送给目标Agent的内容",
         },
     )
@@ -937,14 +937,14 @@ class AnthropicAgent:
         if not items:
             return (
                 "模板注册请在 Python 代码侧完成："
-                "from dumplingsAI.Agent_list import register_template;"
+                "from tangyuanAI.Agent_list import register_template;"
                 "register_template(MyAgent, name='my_agent'。"
                 "当前 agent_template_pool 为空。"
             )
         names = "、".join(it["name"] for it in items)
         return (
             "模板注册请在 Python 代码侧完成："
-            "from dumplingsAI.Agent_list import register_template;"
+            "from tangyuanAI.Agent_list import register_template;"
             "register_template(MyAgent, name='my_agent'。"
             f"当前 agent_template_pool 内的模板：{names}。"
         )

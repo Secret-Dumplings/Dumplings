@@ -21,9 +21,9 @@ icon: BUILD_OUTLINED
 ## 写法 1：`@tool_registry.register_tool`（模块级函数）
 
 ```python
-import dumplingsAI
+import tangyuanAI
 
-@dumplingsAI.tool_registry.register_tool(
+@tangyuanAI.tool_registry.register_tool(
     allowed_agents=["my_agent"],
     name="add",
     description="求两数之和",
@@ -43,9 +43,9 @@ def add(a: float, b: float) -> float:
 ## 写法 2：`@builtin_tool`（Agent 内置方法）
 
 ```python
-from dumplingsAI import builtin_tool
+from tangyuanAI import builtin_tool
 
-class MyAgent(dumplingsAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):
     @builtin_tool(
         description="求两数之和",
         params={"a": "第一个加数", "b": "第二个加数"},
@@ -63,7 +63,7 @@ schema 自动从签名 + 类型注解推导，无需手写 JSON Schema。
 `allowed_agents` 必须传 agent **name**（不是 uuid）：
 
 ```python
-@dumplingsAI.tool_registry.register_tool(
+@tangyuanAI.tool_registry.register_tool(
     allowed_agents=["my_agent"],   # ✓ name
     # allowed_agents=["my-uuid"], # ✗ uuid —— check_permission 内部会先做 uuid→name 翻译
     #                            #    再去跟 name 列表比对，必然失败
@@ -95,7 +95,7 @@ class AddParams(BaseModel):
     a: float = Field(..., description="第一个加数")
     b: float = Field(..., description="第二个加数")
 
-class MyAgent(dumplingsAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):
     @builtin_tool(
         description="求两数之和",
         params_model=AddParams,  # 显式传
@@ -116,7 +116,7 @@ class MyAgent(dumplingsAI.BaseAgent):
 | 工具返回值 | 字符串或可 JSON 序列化的对象 |
 
 ```python
-class MyAgent(dumplingsAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):
     def __init__(self):
         super().__init__()
         self.register_tool_hook(self._audit)

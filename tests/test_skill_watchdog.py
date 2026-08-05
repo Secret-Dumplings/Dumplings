@@ -15,7 +15,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dumplingsAI.skill import Skill, SkillRegistry, skill_registry
+from tangyuanAI.skill import Skill, SkillRegistry, skill_registry
 
 
 @pytest.fixture(autouse=True)
@@ -80,7 +80,7 @@ def test_user_removes_skill_md_reload_fails_gracefully(tmp_path: Path, caplog):
     skill = Skill(skill_dir)
     skill_md.unlink()
 
-    with caplog.at_level(logging.ERROR, logger="dumplingsAI"):
+    with caplog.at_level(logging.ERROR, logger="tangyuanAI"):
         skill.reload()  # 不应崩，只 log error
     # 旧内容还在（reload 失败时不动原状态）
     assert skill.name == "x"

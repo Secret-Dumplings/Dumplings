@@ -17,12 +17,12 @@ icon: EDIT_NOTE_OUTLINED
 
 ```python
 import os
-import dumplingsAI
-from dumplingsAI import template_agent
-from dumplingsAI.Agent_list import activate_template
+import tangyuanAI
+from tangyuanAI import template_agent
+from tangyuanAI.Agent_list import activate_template
 
 @template_agent("my_agent", uuid="my-uuid", description="一句话说明用途")
-class MyAgent(dumplingsAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):
     prompt = "..."
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")
@@ -30,15 +30,15 @@ class MyAgent(dumplingsAI.BaseAgent):
 
 # 显式激活
 activate_template("my_agent")
-agent = dumplingsAI.agent_list["my_agent"]
+agent = tangyuanAI.agent_list["my_agent"]
 ```
 
 ### 函数式
 
 ```python
-from dumplingsAI.Agent_list import register_template, activate_template
+from tangyuanAI.Agent_list import register_template, activate_template
 
-class MyAgent(dumplingsAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):
     prompt = "..."
     api_provider = "..."
     model_name = os.getenv("OPENAI_MODEL")
@@ -65,8 +65,8 @@ agent.conversation_with_tool("需要写文章的 Agent，先把 'writer' 模板�
 ## 旧写法（v0.3.0 起已弃用）
 
 ```python
-@dumplingsAI.register_agent("my-uuid", "my_agent", "一句话说明 Agent 用途")
-class MyAgent(dumplingsAI.BaseAgent):
+@tangyuanAI.register_agent("my-uuid", "my_agent", "一句话说明 Agent 用途")
+class MyAgent(tangyuanAI.BaseAgent):
     prompt       = "..."
     api_provider = "..."
     model_name   = "..."
@@ -97,7 +97,7 @@ activate_template("name")  # 显式激活（或由 LLM 在对话中触发）
 每个 Agent 子类必须实现 4 个类属性（与协议无关）：
 
 ```python
-class MyAgent(dumplingsAI.Agent):  # 或 BaseAgent / AnthropicAgent
+class MyAgent(tangyuanAI.Agent):  # 或 BaseAgent / AnthropicAgent
     prompt        = "..."          # 系统提示词
     api_provider  = "https://..."  # 必填；缺则 _endpoint() 抛 ValueError
     model_name    = os.getenv("OPENAI_MODEL")  # 推荐走 os.getenv，不硬编码

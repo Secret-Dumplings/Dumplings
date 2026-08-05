@@ -1,6 +1,6 @@
 from typing import Optional
 
-# 1. 已"激活"的 Agent 实例池（与 dumplingsAI.agent_list 兼容）
+# 1. 已"激活"的 Agent 实例池（与 tangyuanAI.agent_list 兼容）
 #    语义：只有调用 activate_template() 之后，模板才会作为实例进入这里。
 agent_list = {}          # {key1: instance, key2: instance}
 
@@ -14,10 +14,10 @@ try:
     from .logging_config import logger
 except ImportError:
     try:
-        from dumplingsAI.logging_config import logger
+        from tangyuanAI.logging_config import logger
     except ImportError:
         import logging as _logging
-        logger = _logging.getLogger("dumplingsAI.Agent_list")
+        logger = _logging.getLogger("tangyuanAI.Agent_list")
 
 
 # ---------------------------------------------------------------------------
@@ -29,7 +29,7 @@ def _normalize(template, *, name=None, uuid=None, description=None) -> dict:
     支持三种入参：
     - Agent 类（type）：从类属性提取 uuid/name/description
     - dict：原样返回（拷贝一次，避免外部修改污染池内数据）
-    - 其它对象：必须有 ``__dumplings_template__()`` 返回 dict
+    - 其它对象：必须有 ``__tangyuan_template__()`` 返回 dict
     """
     if isinstance(template, dict):
         tpl = dict(template)
@@ -41,13 +41,13 @@ def _normalize(template, *, name=None, uuid=None, description=None) -> dict:
             "cls": template,
         }
     else:
-        factory = getattr(template, "__dumplings_template__", None)
+        factory = getattr(template, "__tangyuan_template__", None)
         if callable(factory):
             tpl = dict(factory())
         else:
             raise TypeError(
                 f"无法识别的 template 类型：{type(template)!r}。"
-                " 请传 Agent 类、dict，或提供 __dumplings_template__() 方法。"
+                " 请传 Agent 类、dict，或提供 __tangyuan_template__() 方法。"
             )
 
     # 显式传入的参数覆盖类属性
@@ -83,7 +83,7 @@ def register_template(template, *, name=None, uuid=None,
     模板的实例化时机完全由 ``activate_template`` 控制。
 
     参数:
-        template: Agent 类 / dict / 实现了 ``__dumplings_template__()`` 的对象
+        template: Agent 类 / dict / 实现了 ``__tangyuan_template__()`` 的对象
         name: 显式指定模板名（覆盖类属性）
         uuid: 显式指定模板 uuid（默认 = name）
         description: 显式指定描述

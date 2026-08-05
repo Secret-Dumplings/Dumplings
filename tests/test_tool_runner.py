@@ -13,7 +13,7 @@ ToolRunner 单测
 import time
 
 import pytest
-from dumplingsAI.tool_runner import ToolRunner
+from tangyuanAI.tool_runner import ToolRunner
 
 
 def test_sync_completion_returns_result():

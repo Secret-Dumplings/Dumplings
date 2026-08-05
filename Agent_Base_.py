@@ -1,28 +1,27 @@
 # -*- coding: utf-8 -*-
-"""⚠️ v0.4.2+ DEPRECATED：本模块旧实现仍保留兼容，但 bug 修复 / 瘦身只发生在 ``dumplingsAI.agent``。
+"""⚠️ v0.4.2+ DEPRECATED：本模块旧实现仍保留兼容，但 bug 修复 / 瘦身只发生在 ``tangyuanAI.agent``。
 
-OpenAI 协议 Agent 基类的兼容路径（``dumplingsAI.Agent_Base_.Agent``）。
-逻辑、bug 修复、瘦身现在只在 ``dumplingsAI.agent._OpenAIBase``
-（对外别名 :class:`dumplingsAI.BaseAgent`）里维护。
+OpenAI 协议 Agent 基类的兼容路径（``tangyuanAI.Agent_Base_.Agent``）。
+逻辑、bug 修复、瘦身现在只在 ``tangyuanAI.agent._OpenAIBase``
+（对外别名 :class:`tangyuanAI.BaseAgent`）里维护。
 
 新代码请直接用::
 
-    from dumplingsAI import BaseAgent               # 推荐
+    from tangyuanAI import BaseAgent               # 推荐
     class MyAgent(BaseAgent): ...
 
 import 本模块时打印一次 ``DeprecationWarning``；旧 :class:`Agent` 类保留以保持
-``from dumplingsAI.Agent_Base_ import Agent`` 的旧 import 路径继续可用（本路径
-将在 v0.6.0 删除）。
+``from tangyuanAI.Agent_Base_ import Agent`` 的旧 import 路径继续可用。
 """
 from __future__ import annotations
 
 import warnings as _warnings
 
-# 模块加载即打 deprecation warning —— 任何 `from dumplingsAI.Agent_Base_ import ...`
+# 模块加载即打 deprecation warning —— 任何 `from tangyuanAI.Agent_Base_ import ...`
 # 都会经过 module 求值，触发一次告警。
 _warnings.warn(
-    "dumplingsAI.Agent_Base_ 已弃用；新代码请用 dumplingsAI.BaseAgent "
-    "（实现在 dumplingsAI.agent._OpenAIBase）。本路径将在 v0.6.0 删除。",
+    "tangyuanAI.Agent_Base_ 已弃用；新代码请用 tangyuanAI.BaseAgent "
+    "（实现在 tangyuanAI.agent._OpenAIBase）。",
     DeprecationWarning,
     stacklevel=2,
 )
@@ -53,7 +52,7 @@ except Exception:
 
 class Agent():
     """
-    所有具体 Dumplings 必须实现四个属性：
+    所有具体 Tangyuan 必须实现四个属性：
         api_key
         api_provider
         model_name
@@ -81,7 +80,7 @@ class Agent():
         has_own_out = "out" in cls.__dict__
         if has_own_pack and not has_own_out:
             logger.warning(
-                "[dumplingsAI] 检测到子类 {} 覆写了 pack() 但没有覆写 out()。"
+                "[tangyuanAI] 检测到子类 {} 覆写了 pack() 但没有覆写 out()。"
                 "如果你想自定义输出行为（流式 / UI / 自定义 logger 等），"
                 "请覆写 out(content) 而不是 pack() ——"
                 "pack() 只负责把事件打包成 dict 然后调用 self.out(content) 丢出去。",
@@ -181,8 +180,8 @@ class Agent():
     def save_state(self, key: str, backend: Optional[str] = None) -> None:
         """把当前 agent 状态保存到指定后端。
 
-        Wrapper around :func:`dumplingsAI.save_state`. 详见
-        ``dumplingsAI/persistence.py`` 顶部的格式说明。
+        Wrapper around :func:`tangyuanAI.save_state`. 详见
+        ``tangyuanAI/persistence.py`` 顶部的格式说明。
         """
         from .persistence import save_state as _save_state
         _save_state(self, key, backend=backend)
@@ -873,7 +872,7 @@ class Agent():
         from .agent_queue import get_call_chain, get_default_queue
 
         try:
-            from dumplingsAI import agent_list
+            from tangyuanAI import agent_list
 
             target = agent_list.get(agent_id)
             if target is None:
@@ -901,7 +900,7 @@ class Agent():
     )
     def list_agents(self) -> str:
         """返回当前系统中所有已注册 Agent 的清单，便于发现协作对象。"""
-        from dumplingsAI import agent_list
+        from tangyuanAI import agent_list
 
         unique_agents: dict = {}
         for _key, inst in agent_list.items():
@@ -958,14 +957,14 @@ class Agent():
         if not items:
             return (
                 "模板注册请在 Python 代码侧完成："
-                "from dumplingsAI.Agent_list import register_template;"
+                "from tangyuanAI.Agent_list import register_template;"
                 "register_template(MyAgent, name='my_agent'。"
                 "当前 agent_template_pool 为空。"
             )
         names = "、".join(it["name"] for it in items)
         return (
             "模板注册请在 Python 代码侧完成："
-            "from dumplingsAI.Agent_list import register_template;"
+            "from tangyuanAI.Agent_list import register_template;"
             "register_template(MyAgent, name='my_agent'。"
             f"当前 agent_template_pool 内的模板：{names}。"
         )

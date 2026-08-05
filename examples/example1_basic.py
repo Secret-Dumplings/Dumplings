@@ -5,14 +5,19 @@
 """
 import os
 
-import dumplingsAI
+import tangyuanAI
 from dotenv import load_dotenv
+from tangyuanAI.Agent_list import activate_template
 
 load_dotenv()
 
 
-@dumplingsAI.register_agent("001", "simple_agent")
-class SimpleAgent(dumplingsAI.BaseAgent):
+@tangyuanAI.template_agent(
+    "simple_agent",
+    uuid="001",
+    description="简单问答 Agent 模板",
+)
+class SimpleAgent(tangyuanAI.BaseAgent):
     """一个简单的问答助手 Agent"""
     prompt = "你是一个名为汤圆 AI 的简单问答助手，友好地回答用户的问题"
     api_provider = "https://api.example.com/v1/chat/completions"
@@ -21,8 +26,10 @@ class SimpleAgent(dumplingsAI.BaseAgent):
 
 
 if __name__ == "__main__":
+    activate_template("simple_agent")
+
     # 获取 Agent 实例
-    agent = dumplingsAI.agent_list["simple_agent"]
+    agent = tangyuanAI.agent_list["simple_agent"]
 
     # 开始对话
     print("=== 简单 Agent 示例 ===")

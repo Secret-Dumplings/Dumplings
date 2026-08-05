@@ -29,7 +29,7 @@ from _llm_mock import (
     openai_text_response,
     openai_tool_call_response,
 )
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     BaseAgent,
     activate_template,
@@ -37,7 +37,7 @@ from dumplingsAI import (
     template_agent,
     tool_registry,
 )
-from dumplingsAI.anthropic_agent import AnthropicAgent
+from tangyuanAI.anthropic_agent import AnthropicAgent
 
 # ---------------------------------------------------------------------------
 # fixtures
@@ -47,7 +47,7 @@ from dumplingsAI.anthropic_agent import AnthropicAgent
 def _clean_globals():
     saved_tools = dict(tool_registry._tools)
     saved_perms = dict(tool_registry._agent_permissions)
-    from dumplingsAI import agent_template_pool
+    from tangyuanAI import agent_template_pool
     agent_list.clear()
     agent_template_pool.clear()
     yield
@@ -216,10 +216,10 @@ def test_user_request_when_llm_returns_500_agent_raises():
     # 写一个返 500 的简易 server
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-    from dumplingsAI.errors import APIError
+    from tangyuanAI.errors import APIError
 
     # 简化：直接调 transport.chat 验证 500 的传播
-    from dumplingsAI.llm_transport import HttpxOpenAITransport
+    from tangyuanAI.llm_transport import HttpxOpenAITransport
 
     class _500Handler(BaseHTTPRequestHandler):
         def do_POST(self):
@@ -241,7 +241,7 @@ def test_user_request_when_llm_returns_500_agent_raises():
     try:
         transport = HttpxOpenAITransport(endpoint=base_url + "/v1/chat/completions", api_key="x")
         with pytest.raises(APIError):
-            transport.chat(__import__("dumplingsAI.llm_transport", fromlist=["ChatRequest"]).ChatRequest(
+            transport.chat(__import__("tangyuanAI.llm_transport", fromlist=["ChatRequest"]).ChatRequest(
                 model="m", system="s", messages=[{"role": "user", "content": "hi"}],
             ))
     finally:
@@ -430,7 +430,7 @@ def test_user_runs_slow_data_migration_agent_does_not_block():
     """
     import time as _time
 
-    from dumplingsAI.tool_runner import ToolRunner
+    from tangyuanAI.tool_runner import ToolRunner
 
     state, base_url, server = _start_anthropic_mock()
     try:

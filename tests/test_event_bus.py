@@ -24,7 +24,7 @@ from _llm_mock import (
     anthropic_text_then_tool_response,
     anthropic_tool_use_response,
 )
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     activate_template,
     agent_list,
@@ -32,7 +32,7 @@ from dumplingsAI import (
     template_agent,
     tool_registry,
 )
-from dumplingsAI.anthropic_agent import AnthropicAgent
+from tangyuanAI.anthropic_agent import AnthropicAgent
 
 
 @pytest.fixture(autouse=True)

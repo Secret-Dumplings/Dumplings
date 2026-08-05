@@ -34,19 +34,19 @@ def _clean_global_state():
     """
     # ===== 清理前 =====
     try:
-        from dumplingsAI.agent_queue import _default_queue
+        from tangyuanAI.agent_queue import _default_queue
     except ImportError:
         _default_queue = None
     try:
-        from dumplingsAI.skill import skill_registry
+        from tangyuanAI.skill import skill_registry
     except ImportError:
         skill_registry = None
     try:
-        from dumplingsAI.persistence import backends
+        from tangyuanAI.persistence import backends
     except ImportError:
         backends = None
     try:
-        from dumplingsAI.mcp_bridge import _global_session_pool
+        from tangyuanAI.mcp_bridge import _global_session_pool
     except ImportError:
         _global_session_pool = None
 
@@ -88,7 +88,7 @@ def _clean_global_state():
             pass
 
     # 重置模块级单例
-    import dumplingsAI.agent_queue as _aq
+    import tangyuanAI.agent_queue as _aq
     _aq._default_queue = default_queue_backup
 
     if skill_registry is not None:

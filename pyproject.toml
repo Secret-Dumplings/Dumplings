@@ -3,13 +3,13 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dumplingsAI"
-version = "0.4.0"
+name = "tangyuanAI"
+version = "1.0.0"
 description = "Lightweight multi-agent collaboration framework on top of LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
-authors = [{ name = "Secret Dumplings" }]
+authors = [{ name = "Secret Tangyuan" }]
 keywords = ["llm", "agent", "multi-agent", "mcp", "ai-framework", "anthropic", "claude", "async"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -37,17 +37,21 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Secret-Dumplings/dumplingsAI"
-Repository = "https://github.com/Secret-Dumplings/dumplingsAI.git"
-Issues = "https://github.com/Secret-Dumplings/dumplingsAI/issues"
+Homepage = "https://github.com/secret-tangyuan/tangyuanAI"
+Repository = "https://github.com/secret-tangyuan/tangyuanAI.git"
+Issues = "https://github.com/secret-tangyuan/tangyuanAI/issues"
+
+# CLI 命令：pip install 后 `tangyuanai` 可用
+[project.scripts]
+tangyuanai = "tangyuanAI.cli:main"
 
 [[tool.uv.index]]
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 default = true
 
 [tool.setuptools]
-packages = ["dumplingsAI"]
-package-dir = {"dumplingsAI" = "."}
+packages = ["tangyuanAI"]
+package-dir = {"tangyuanAI" = "."}
 include-package-data = true
 
 # docs-site/（VitePress 文档站 + FastAPI 后端）绝不进 wheel / sdist ——

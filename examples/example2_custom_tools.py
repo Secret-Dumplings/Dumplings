@@ -5,15 +5,16 @@
 """
 import os
 
-import dumplingsAI
+import tangyuanAI
 from dotenv import load_dotenv
+from tangyuanAI.Agent_list import activate_template
 
 load_dotenv()
 
 
 # ==================== 注册工具 ====================
 
-@dumplingsAI.tool_registry.register_tool(
+@tangyuanAI.tool_registry.register_tool(
     allowed_agents=["calculator"],
     name="add",
     description="计算两个数的和",
@@ -31,7 +32,7 @@ def add(a: float, b: float) -> str:
     return f"结果：{a + b}"
 
 
-@dumplingsAI.tool_registry.register_tool(
+@tangyuanAI.tool_registry.register_tool(
     allowed_agents=["calculator"],
     name="multiply",
     description="计算两个数的乘积",
@@ -51,8 +52,12 @@ def multiply(a: float, b: float) -> str:
 
 # ==================== 注册 Agent ====================
 
-@dumplingsAI.register_agent("002", "calculator")
-class CalculatorAgent(dumplingsAI.BaseAgent):
+@tangyuanAI.template_agent(
+    "calculator",
+    uuid="002",
+    description="计算器 Agent：可执行加法和乘法工具",
+)
+class CalculatorAgent(tangyuanAI.BaseAgent):
     """一个可以执行数学运算的计算器 Agent"""
     prompt = "你是一个计算器助手，可以使用 add 和 multiply 工具执行数学运算"
     api_provider = "https://api.example.com/v1/chat/completions"
@@ -61,7 +66,8 @@ class CalculatorAgent(dumplingsAI.BaseAgent):
 
 
 if __name__ == "__main__":
-    agent = dumplingsAI.agent_list["calculator"]
+    activate_template("calculator")
+    agent = tangyuanAI.agent_list["calculator"]
 
     print("=== 计算器 Agent 示例 ===")
 

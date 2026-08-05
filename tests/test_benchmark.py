@@ -29,14 +29,14 @@ from _llm_mock import (
     anthropic_text_response,
     anthropic_tool_use_response,
 )
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     activate_template,
     agent_list,
     template_agent,
     tool_registry,
 )
-from dumplingsAI.persistence import (
+from tangyuanAI.persistence import (
     FileBackend,
     SQLiteBackend,
 )

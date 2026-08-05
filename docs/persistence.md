@@ -17,73 +17,73 @@ icon: SAVE_OUTLINED
 ### 1. 完全手动：显式 save / load
 
 ```python
-import dumplingsAI
+import tangyuanAI
 
-agent = dumplingsAI.agent_list["weather"]
+agent = tangyuanAI.agent_list["weather"]
 
 # 保存
-dumplingsAI.save_state(agent, "weather-session-2026-07-30")
+tangyuanAI.save_state(agent, "weather-session-2026-07-30")
 # 或写字符串（不落盘）
-state_str = dumplingsAI.export_state_string(agent)
+state_str = tangyuanAI.export_state_string(agent)
 
 # 加载
-agent2 = dumplingsAI.load_state("weather-session-2026-07-30")
+agent2 = tangyuanAI.load_state("weather-session-2026-07-30")
 # 或从字符串
-agent3 = dumplingsAI.load_state_string(state_str)
+agent3 = tangyuanAI.load_state_string(state_str)
 ```
 
 ### 2. 半自动：import 时 env var 启用 + 默认 file 后端
 
 ```bash
 # .env 或 shell
-export DUMPLINGS_PERSISTENCE=on
-export DUMPLINGS_PERSISTENCE_DIR=./sessions
+export TANGYUAN_PERSISTENCE=on
+export TANGYUAN_PERSISTENCE_DIR=./sessions
 ```
 
 ```python
 # 程序里什么都不用写
-import dumplingsAI
-# ... 之后的 agent.conversation_with_tool(...) 每次返回都会自动保存到 ./sessions/{uuid}.duas
+import tangyuanAI
+# ... 之后的 agent.conversation_with_tool(...) 每次返回都会自动保存到 ./sessions/{uuid}.tas
 ```
 
 ### 3. 编程配置：运行时改 backend / 关闭
 
 ```python
-import dumplingsAI
+import tangyuanAI
 
 # 切到 sqlite
-dumplingsAI.configure(enabled=True, backend="sqlite", db_path="./sessions.db")
+tangyuanAI.configure(enabled=True, backend="sqlite", db_path="./sessions.db")
 # 或指定不同目录
-dumplingsAI.configure(base_dir="./my-sessions")
+tangyuanAI.configure(base_dir="./my-sessions")
 # 关闭
-dumplingsAI.disable()
+tangyuanAI.disable()
 # 当前是否启用
-print(dumplingsAI.is_enabled())  # True / False
+print(tangyuanAI.is_enabled())  # True / False
 ```
 
 ## 环境变量（import 时自动读取）
 
 | 变量 | 取值 | 默认 | 作用 |
 |---|---|---|---|
-| `DUMPLINGS_PERSISTENCE` | `on` / `off` | `off` | 启用自动持久化 |
-| `DUMPLINGS_PERSISTENCE_BACKEND` | `file` / `sqlite` | `file` | 选后端 |
-| `DUMPLINGS_PERSISTENCE_DIR` | 路径 | `./.dumplingsAI_sessions` | file 后端目录 |
-| `DUMPLINGS_PERSISTENCE_DB` | 路径 | `./.dumplingsAI_sessions.db` | sqlite 后端数据库 |
-| `DUMPLINGS_PERSISTENCE_KEY` | `uuid` / `name` | `uuid` | 自动保存的 key 策略 |
+| `TANGYUAN_PERSISTENCE` | `on` / `off` | `off` | 启用自动持久化 |
+| `TANGYUAN_PERSISTENCE_BACKEND` | `file` / `sqlite` | `file` | 选后端 |
+| `TANGYUAN_PERSISTENCE_DIR` | 路径 | `./.tangyuanAI_sessions` | file 后端目录 |
+| `TANGYUAN_PERSISTENCE_DB` | 路径 | `./.tangyuanAI_sessions.db` | sqlite 后端数据库 |
+| `TANGYUAN_PERSISTENCE_KEY` | `uuid` / `name` | `uuid` | 自动保存的 key 策略 |
 
-## 文件格式（`.duas` —— dumplingsAI Agent State）
+## 文件格式（`.tas` —— tangyuanAI Agent State）
 
-默认 file 后端每个 session 一个文件，扩展名 `.duas`。人类可读、git diff 友好、
+默认 file 后端每个 session 一个文件，扩展名 `.tas`。人类可读、git diff 友好、
 可手编。INI 头 + JSONL 体：
 
 ```ini
-# dumplingsAI Agent State File
-# format: duagent-state/1.0
+# tangyuanAI Agent State File
+# format: tangyuan-state/1.0
 # ===== DO NOT EDIT UNLESS YOU KNOW WHAT YOU'RE DOING =====
 
 [META]
 format_version = 1
-schema_version = 0.4.0           # 自动从 dumplingsAI.__version__ 读
+schema_version = 0.4.0           # 自动从 tangyuanAI.__version__ 读
 agent_uuid = abc123...
 agent_name = weather
 protocol = openai
@@ -114,18 +114,18 @@ hooks = ["examples.api.agents_config:audit_hook"]
 ...
 ```
 
-`schema_version` 自动读 `dumplingsAI.__version__`，pyproject bump 后状态文件自动
+`schema_version` 自动读 `tangyuanAI.__version__`，pyproject bump 后状态文件自动
 带上新版本号，不需要手动同步。
 
 `api_key_env` 字段**不存明文**——只存环境变量名，加载时用 `os.getenv()` 重新解析。
-避免 `.duas` 文件泄漏 API key。
+避免 `.tas` 文件泄漏 API key。
 
 ## 后端
 
 ### FileBackend（默认，成熟）
 
 ```python
-from dumplingsAI.persistence import FileBackend
+from tangyuanAI.persistence import FileBackend
 backend = FileBackend(base_dir="./sessions")
 backend.save("key", state_dict)
 state = backend.load("key")
@@ -136,7 +136,7 @@ keys = backend.list_keys()  # 返回 .stem 列表
 ### SQLiteBackend（实验性）
 
 ```python
-from dumplingsAI.persistence import SQLiteBackend
+from tangyuanAI.persistence import SQLiteBackend
 backend = SQLiteBackend(db_path="./sessions.db")
 # API 同 FileBackend
 ```
@@ -161,7 +161,7 @@ CREATE TABLE sessions (
 实现 `PersistenceBackend` 协议即可接入任意存储（Redis / Postgres / S3 ...）：
 
 ```python
-from dumplingsAI.persistence import PersistenceBackend, register_backend
+from tangyuanAI.persistence import PersistenceBackend, register_backend
 
 class RedisBackend:
     name = "redis"
@@ -199,9 +199,9 @@ register_backend("redis", RedisBackend(my_redis_client), set_as_default=True)
 
 ```python
 # 加载时如果原类已删除，但 agent_list 里有同 uuid 的实例
-import dumplingsAI
-dumplingsAI.activate_template("my_agent")  # 把类放回 agent_list
-agent = dumplingsAI.load_state("my-session")  # 走降级 1 路径
+import tangyuanAI
+tangyuanAI.activate_template("my_agent")  # 把类放回 agent_list
+agent = tangyuanAI.load_state("my-session")  # 走降级 1 路径
 ```
 
 ## hooks 持久化
@@ -214,7 +214,7 @@ def my_hook(event_type, tool_name, ...):
     ...
 
 agent.register_tool_hook(my_hook)
-dumplingsAI.save_state(agent, "k1")  # hooks = ["my.module:my_hook"]
+tangyuanAI.save_state(agent, "k1")  # hooks = ["my.module:my_hook"]
 # 加载时如果 my_hook 还能 import，自动 re-bind；不能就跳过
 ```
 
@@ -227,17 +227,17 @@ dumplingsAI.save_state(agent, "k1")  # hooks = ["my.module:my_hook"]
 
 ```python
 import os
-os.environ["DUMPLINGS_PERSISTENCE"] = "on"
-os.environ["DUMPLINGS_PERSISTENCE_DIR"] = "./sessions"
+os.environ["TANGYUAN_PERSISTENCE"] = "on"
+os.environ["TANGYUAN_PERSISTENCE_DIR"] = "./sessions"
 
-import dumplingsAI
-# 之后所有 agent 的 conversation 都会自动写到 ./sessions/{uuid}.duas
+import tangyuanAI
+# 之后所有 agent 的 conversation 都会自动写到 ./sessions/{uuid}.tas
 ```
 
 手动触发（不开 enable 也行）：
 
 ```python
-from dumplingsAI.persistence import auto_save
+from tangyuanAI.persistence import auto_save
 auto_save(agent)  # 用 agent.uuid 作 key（默认），写到默认 backend
 ```
 
@@ -287,7 +287,7 @@ Agent.load_state(key, backend=None)   # classmethod；调 load_state(...)
 - 装饰器：conversation_with_tool 退出时保存 / async / 递归不重复保存
 - key_strategy 切换 / 持久化失败不阻塞对话
 - INI parser 边界
-- schema_version 自动从 `dumplingsAI.__version__` 读
+- schema_version 自动从 `tangyuanAI.__version__` 读
 
 ## 边界 / 已知限制
 
@@ -298,5 +298,5 @@ Agent.load_state(key, backend=None)   # classmethod；调 load_state(...)
 4. **跨进程**：tool_call_hooks、tool_registry、agent_list 都是进程内状态。加载
    时如果 `agent_list` 已有同名 agent，行为由 `check_permission` 决定。
 5. **history 很大**：JSONL 按行解析。如果 history 几万条，文件会很大。
-   v0.4.0 不做 gzip 透明压缩（.duas.gz），未来考虑。
+   v0.4.0 不做 gzip 透明压缩（.tas.gz），未来考虑。
 6. **SQLite 并发**：v0.4.0 初次实现，**未压测**。生产前请充分测试。

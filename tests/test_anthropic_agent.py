@@ -27,7 +27,7 @@ from _llm_mock import (
     anthropic_text_then_tool_response,
     anthropic_tool_use_response,
 )
-from dumplingsAI import (
+from tangyuanAI import (
     Agent,
     BaseAgent,
     activate_template,
@@ -35,11 +35,11 @@ from dumplingsAI import (
     template_agent,
     tool_registry,
 )
-from dumplingsAI.Agent_list import (
+from tangyuanAI.Agent_list import (
     agent_template_pool,
     register_template,
 )
-from dumplingsAI.anthropic_agent import AnthropicAgent
+from tangyuanAI.anthropic_agent import AnthropicAgent
 
 # ---------------------------------------------------------------------------
 # fixtures
@@ -253,7 +253,7 @@ def test_anthropic_has_pack_method():
 
 def test_anthropic_pack_constructs_envelope_and_calls_out():
     """pack 构造 content dict（含 ai_uuid / task_id / timestamp）后转 self.out"""
-    from dumplingsAI.anthropic_agent import AnthropicAgent
+    from tangyuanAI.anthropic_agent import AnthropicAgent
     captured: List[dict] = []
     inst = object.__new__(AnthropicAgent)  # 绕过 __init__
     inst.uuid = "u-1"
@@ -309,7 +309,7 @@ def test_anthropic_has_template_builtin_tools():
 
 def test_anthropic_list_templates_empty_pool(anthropic_url):
     """无模板时 list_templates 返回 '暂无'。fixture 已经清空 pool。"""
-    from dumplingsAI import agent_template_pool
+    from tangyuanAI import agent_template_pool
     assert len(agent_template_pool) == 0
     # 不创建 agent，直接调 list_templates 方法（基类方法，不需要 agent 实例）
     out = AnthropicAgent.list_templates(None)  # 类方法调用

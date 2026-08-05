@@ -23,14 +23,14 @@ icon: INVENTORY_2_OUTLINED
 
 ### `ask_for_help` 队列机制
 
-跨 Agent 调用走 `dumplingsAI.agent_queue.get_default_queue()`：
+跨 Agent 调用走 `tangyuanAI.agent_queue.get_default_queue()`：
 
 - **循环检测**：若 target 在当前调用链里直接拒绝
 - **深度限制**：链长达到 `max_depth` 拒绝
 - **串行执行**：worker pool 中每个 worker 一次只跑一个 Job
 
 ```python
-from dumplingsAI.agent_queue import get_call_chain, get_default_queue
+from tangyuanAI.agent_queue import get_call_chain, get_default_queue
 
 chain = get_call_chain()
 queue = get_default_queue()
@@ -54,7 +54,7 @@ result = queue.submit(
 
 ```text
 模板注册请在 Python 代码侧完成：
-from dumplingsAI.Agent_list import register_template;
+from tangyuanAI.Agent_list import register_template;
 register_template(MyAgent, name='my_agent'。
 当前 agent_template_pool 内的模板：writer、reviewer。
 ```

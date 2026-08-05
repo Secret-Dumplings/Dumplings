@@ -8,22 +8,22 @@ CI 环境在没有真实 LLM API Key 时无法跑端到端 Agent，所以这里�
 
 
 def test_package_importable():
-    import dumplingsAI  # noqa: F401
+    import tangyuanAI  # noqa: F401
 
 
 def test_core_exports():
-    import dumplingsAI
+    import tangyuanAI
     for name in ("BaseAgent", "register_agent",
                  "tool_registry", "builtin_tool", "agent_list",
                  "skill_registry", "register_mcp_tools", "skill_bridge"):
-        assert hasattr(dumplingsAI, name), f"missing export: {name}"
+        assert hasattr(tangyuanAI, name), f"missing export: {name}"
 
     # AnthropicAgent 走子模块路径
-    from dumplingsAI.anthropic_agent import AnthropicAgent  # noqa: F401
+    from tangyuanAI.anthropic_agent import AnthropicAgent  # noqa: F401
 
 
 def test_builtin_tool_decorator_extracts_schema():
-    from dumplingsAI import builtin_tool
+    from tangyuanAI import builtin_tool
 
     @builtin_tool(
         description="求两数之和",
@@ -47,13 +47,13 @@ def test_builtin_tool_decorator_extracts_schema():
 
 def test_collect_builtin_tools_picks_up_base_methods():
     """BaseAgent 上的 4 个内置方法应该被自动收集到 schema。"""
-    from dumplingsAI import tool_registry
+    from tangyuanAI import tool_registry
 
     class _Fake:
         pass
 
     # 临时挂一个空类继承 BaseAgent，绕过 __init__ 的网络连通性测试
-    from dumplingsAI.Agent_Base_ import Agent as BaseAgent
+    from tangyuanAI.Agent_Base_ import Agent as BaseAgent
 
     class Demo(BaseAgent):
         # 跳过 __init__：直接绕开

@@ -12,7 +12,7 @@
   （register_template 留给代码侧，测试只验证占位返回）
 """
 import pytest
-from dumplingsAI.Agent_list import (
+from tangyuanAI.Agent_list import (
     activate_template,
     agent_list,
     agent_template_pool,
@@ -320,7 +320,7 @@ def _make_baseagent_stub_cls():
     BaseAgent.__init_subclass__ 会自动把父类 @builtin_tool 的 meta 提升到子类，
     所以 collect_builtin_tools 能找到 4 个模板池工具。
     """
-    from dumplingsAI.Agent_Base_ import Agent as BaseAgent
+    from tangyuanAI.Agent_Base_ import Agent as BaseAgent
 
     class _Stub(BaseAgent):
         def __init__(self):  # noqa: D401 - 故意跳过 BaseAgent.__init__
@@ -332,7 +332,7 @@ def _make_baseagent_stub_cls():
 
 def test_baseagent_builtin_tool_schemas_are_collected():
     """BaseAgent 上的 4 个模板池 builtin_tool 应被自动收集到 schema。"""
-    from dumplingsAI import tool_registry
+    from tangyuanAI import tool_registry
 
     inst = _make_baseagent_stub_cls()()
     schemas = tool_registry.collect_builtin_tools(inst)

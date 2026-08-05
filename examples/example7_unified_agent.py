@@ -2,7 +2,7 @@
 示例：协议无关的 Agent 工厂
 
 从 v0.2.2 起，可以不直接选基类（BaseAgent / AnthropicAgent），
-而是继承统一的 ``dumplingsAI.Agent``，靠 ``protocol`` 字段决定实际协议。
+而是继承统一的 ``tangyuanAI.Agent``，靠 ``protocol`` 字段决定实际协议。
 
 本文件对比：
 1. 直接选基类（旧写法，仍兼容）
@@ -12,15 +12,21 @@
 import os
 import uuid
 
-import dumplingsAI
+import tangyuanAI
 from dotenv import load_dotenv
+from tangyuanAI.Agent_list import activate_template
+from tangyuanAI.anthropic_agent import AnthropicAgent
 
 load_dotenv()
 
 
 # ---------- 方式 1（旧写法，仍然兼容） ----------
-@dumplingsAI.register_agent(uuid.uuid4().hex, "openai_legacy")
-class OpenAILegacy(dumplingsAI.BaseAgent):
+@tangyuanAI.template_agent(
+    "openai_legacy",
+    uuid=uuid.uuid4().hex,
+    description="直接继承 BaseAgent（旧写法演示）",
+)
+class OpenAILegacy(tangyuanAI.BaseAgent):
     """直接继承 BaseAgent —— OpenAI 协议"""
     prompt = "你是一个助手"
     api_provider = "https://api.example.com/v1/chat/completions"
@@ -28,8 +34,12 @@ class OpenAILegacy(dumplingsAI.BaseAgent):
     api_key = os.getenv("API_KEY")
 
 
-@dumplingsAI.register_agent(uuid.uuid4().hex, "anthropic_legacy")
-class AnthropicLegacy(dumplingsAI.anthropic_agent.AnthropicAgent):
+@tangyuanAI.template_agent(
+    "anthropic_legacy",
+    uuid=uuid.uuid4().hex,
+    description="直接继承 AnthropicAgent（旧写法演示）",
+)
+class AnthropicLegacy(AnthropicAgent):
     """直接继承 AnthropicAgent —— Anthropic 协议"""
     prompt = "你是一个助手"
     model_name = os.getenv("ANTHROPIC_MODEL")
@@ -37,8 +47,12 @@ class AnthropicLegacy(dumplingsAI.anthropic_agent.AnthropicAgent):
 
 
 # ---------- 方式 2（新写法，Agent + protocol 字段） ----------
-@dumplingsAI.register_agent(uuid.uuid4().hex, "openai_factory")
-class OpenAIViaFactory(dumplingsAI.Agent):
+@tangyuanAI.template_agent(
+    "openai_factory",
+    uuid=uuid.uuid4().hex,
+    description="用 Agent + protocol 字段选 OpenAI（新写法演示）",
+)
+class OpenAIViaFactory(tangyuanAI.Agent):
     """用 Agent + protocol 选 OpenAI"""
     protocol = "openai"  # 这一行决定实际继承 BaseAgent
     prompt = "你是一个助手"
@@ -47,8 +61,12 @@ class OpenAIViaFactory(dumplingsAI.Agent):
     api_key = os.getenv("API_KEY")
 
 
-@dumplingsAI.register_agent(uuid.uuid4().hex, "anthropic_factory")
-class AnthropicViaFactory(dumplingsAI.Agent):
+@tangyuanAI.template_agent(
+    "anthropic_factory",
+    uuid=uuid.uuid4().hex,
+    description="用 Agent + protocol 字段选 Anthropic（新写法演示）",
+)
+class AnthropicViaFactory(tangyuanAI.Agent):
     """用 Agent + protocol 选 Anthropic"""
     protocol = "anthropic"  # 这一行决定实际继承 AnthropicAgent
     prompt = "你是一个助手"
@@ -61,14 +79,16 @@ class AnthropicViaFactory(dumplingsAI.Agent):
 # 所以这里把协议值取到不冲突的变量名 ``_proto`` 上，再在类里用 ``protocol = _proto``。
 def _make_agent(name: str):
     """从环境变量读协议，动态构造 Agent 类。"""
-    _proto = os.getenv("AGENT_PROTOCOL")
-    if _proto is not None:
-        _proto = _proto.lower()
+    _proto = os.getenv("AGENT_PROTOCOL", "openai").lower()  # 没设 AGENT_PROTOCOL 就默认 openai
     _model = os.getenv("AGENT_MODEL")
-    _provider = os.getenv("AGENT_API_PROVIDER")
+    _provider = os.getenv("AGENT_API_PROVIDER", "https://api.example.com/v1/chat/completions")
 
-    @dumplingsAI.register_agent(uuid.uuid4().hex, name)
-    class DynamicAgent(dumplingsAI.Agent):
+    @tangyuanAI.template_agent(
+        name,
+        uuid=uuid.uuid4().hex,
+        description="动态协议 Agent（由 AGENT_PROTOCOL 环境变量决定）",
+    )
+    class DynamicAgent(tangyuanAI.Agent):
         protocol = _proto
         prompt = "你是一个助手"
         model_name = _model
@@ -82,8 +102,14 @@ DynamicAgentCls = _make_agent("dynamic_agent")
 
 
 if __name__ == "__main__":
-    from dumplingsAI import BaseAgent
-    from dumplingsAI.anthropic_agent import AnthropicAgent
+    from tangyuanAI import BaseAgent
+    from tangyuanAI.anthropic_agent import AnthropicAgent
+
+    # v0.3.0+ 模板池：全部激活后才能在 agent_list 里看到
+    for n in ("openai_legacy", "anthropic_legacy",
+              "openai_factory", "anthropic_factory",
+              "dynamic_agent"):
+        activate_template(n)
 
     # 验证派发结果
     cases = [
@@ -99,6 +125,6 @@ if __name__ == "__main__":
         marker = "OK" if ok else "FAIL"
         print(f"[{marker}] {name:25s} MRO 含协议基类: {bases}")
     print()
-    print("所有 Agent 都在 dumplingsAI.agent_list 里可用：")
-    for name in sorted(dumplingsAI.agent_list):
+    print("所有 Agent 都在 tangyuanAI.agent_list 里可用：")
+    for name in sorted(tangyuanAI.agent_list):
         print(f"  - {name}")

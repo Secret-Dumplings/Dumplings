@@ -5,18 +5,18 @@ Pydantic structured output 单测
 from typing import Optional
 
 import pytest
-from dumplingsAI import (
+from pydantic import BaseModel, Field
+from tangyuanAI import (
     activate_template,
     agent_list,
     template_agent,
     tool_registry,
 )
-from dumplingsAI.agent_tool import (
+from tangyuanAI.agent_tool import (
     _validate_tool_args_for,
     builtin_tool,
 )
-from dumplingsAI.anthropic_agent import AnthropicAgent
-from pydantic import BaseModel, Field
+from tangyuanAI.anthropic_agent import AnthropicAgent
 
 
 class _Stub:
@@ -151,7 +151,7 @@ def test_end_to_end_llm_bad_args_gets_validation_error_back():
     """
     import uuid as _uuid
 
-    from dumplingsAI.tool_runner import ToolRunner
+    from tangyuanAI.tool_runner import ToolRunner
 
     Agent_cls = _make_agent_cls()  # 已经有 add(a:int, b:int) builtin_tool
     uuid_str = _uuid.uuid4().hex

@@ -10,8 +10,8 @@
 import asyncio
 
 import pytest
-from dumplingsAI.Agent_Base_ import Agent as BaseAgent
-from dumplingsAI.anthropic_agent import AnthropicAgent
+from tangyuanAI.Agent_Base_ import Agent as BaseAgent
+from tangyuanAI.anthropic_agent import AnthropicAgent
 
 
 def test_anthropic_agent_has_aconversation():
@@ -29,7 +29,7 @@ def test_base_agent_has_aconversation():
 @pytest.mark.asyncio
 async def test_async_simple_tool_runs():
     """ToolRunner 异步路径：await submit 也能跑（同步线程池）"""
-    from dumplingsAI.tool_runner import ToolRunner
+    from tangyuanAI.tool_runner import ToolRunner
 
     runner = ToolRunner(timeout=1.0)
     try:
@@ -43,7 +43,7 @@ async def test_async_simple_tool_runs():
 
 def test_async_http_client_constructor():
     """AsyncHTTPClient 可以直接构造（无需 async context）"""
-    from dumplingsAI.http_utils import AsyncHTTPClient
+    from tangyuanAI.http_utils import AsyncHTTPClient
 
     client = AsyncHTTPClient(default_timeout=5.0)
     assert client.default_timeout == 5.0

@@ -12,7 +12,7 @@ icon: ROCKET_LAUNCH_OUTLINED
 ## 安装
 
 ```bash
-pip install dumplingsAI
+pip install tangyuanAI
 ```
 
 需要 Python 3.10+。无额外可选依赖。
@@ -30,10 +30,10 @@ export ANTHROPIC_API_KEY="sk-ant-..." # Anthropic 协议
 
 ```python
 import os
-import dumplingsAI
+import tangyuanAI
 
 # 注册一个工具
-@dumplingsAI.tool_registry.register_tool(
+@tangyuanAI.tool_registry.register_tool(
     allowed_agents=["weather"],
     name="get_weather",
     description="查询某城市当前天气",
@@ -47,11 +47,11 @@ def get_weather(city: str) -> str:
     return f"{city}今天晴，25°C"
 
 # 注册 Agent（v0.3.0+ 模板池写法）
-from dumplingsAI import template_agent
-from dumplingsAI.Agent_list import activate_template
+from tangyuanAI import template_agent
+from tangyuanAI.Agent_list import activate_template
 
 @template_agent("weather", uuid="weather-uuid", description="天气小助手")
-class WeatherAgent(dumplingsAI.BaseAgent):
+class WeatherAgent(tangyuanAI.BaseAgent):
     prompt = "你是天气助手，使用 get_weather 工具查询天气。"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")
@@ -61,7 +61,7 @@ class WeatherAgent(dumplingsAI.BaseAgent):
 activate_template("weather")
 
 # 跑一次对话
-agent = dumplingsAI.agent_list["weather"]
+agent = tangyuanAI.agent_list["weather"]
 print(agent.conversation_with_tool("北京今天天气怎么样？"))
 ```
 
@@ -69,19 +69,19 @@ print(agent.conversation_with_tool("北京今天天气怎么样？"))
 
 ```python
 import os
-import dumplingsAI
-from dumplingsAI import template_agent
-from dumplingsAI.Agent_list import activate_template
+import tangyuanAI
+from tangyuanAI import template_agent
+from tangyuanAI.Agent_list import activate_template
 
 @template_agent("reviewer", uuid="reviewer-uuid", description="评审 Agent")
-class ReviewerAgent(dumplingsAI.AnthropicAgent):
+class ReviewerAgent(tangyuanAI.AnthropicAgent):
     prompt = "你是评审助手。完成工作后用 attempt_completion 汇报。"
     api_provider = "https://api.anthropic.com"
     model_name = os.getenv("ANTHROPIC_MODEL")
     api_key = os.getenv("ANTHROPIC_API_KEY")
 
 activate_template("reviewer")
-agent = dumplingsAI.agent_list["reviewer"]
+agent = tangyuanAI.agent_list["reviewer"]
 print(agent.conversation_with_tool("请评审：xxx"))
 ```
 
