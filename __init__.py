@@ -140,6 +140,22 @@ try:
 except ImportError:
     pass
 
+# Image Generation（config-driven）
+try:
+    from .imaging import (
+        HttpJsonImageProvider,
+        ImageError,
+        ImageGenerator,
+        ImageProvider,
+        download_urls,
+        render_template,
+        resolve_json_path,
+        resolve_url_template,
+    )
+    from .plugin_store import install_plugin, list_installed
+except ImportError:
+    pass
+
 # 从 kb 包导入 KB 相关功能（MCP 风格守卫 import）
 try:
     from .kb import (
@@ -265,6 +281,10 @@ __all__ = [
     "unregister_skill_from_tool",
     # MCP 客户端类（v1.0.0+）
     "MCPClient",
+    # Image Generation（config-driven，v1.0.0+）
+    "ImageGenerator", "ImageProvider", "ImageError", "HttpJsonImageProvider",
+    "download_urls", "install_plugin", "list_installed",
+    "resolve_json_path", "render_template", "resolve_url_template",
     # A2A 兼容（v1.0.0+）
     "A2AExporter", "A2AAgentProxy",
     "discover", "register_a2a_agent", "send_task", "send_task_sync",

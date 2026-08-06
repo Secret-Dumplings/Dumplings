@@ -25,6 +25,14 @@ tangyuanAI 的所有显著变更记录。
   - 导入：`discover(url)` / `register_a2a_agent(url)` → `A2AAgentProxy` 注册到 agent_list，`ask_for_help` 透明调远端。
   - 导出：`A2AExporter(host, port)` 暴露 `/.well-known/agent.json` + `POST /a2a/v1/tasks/send`（aiohttp，optional `[a2a]`）。
   - 来源跟踪：`register_agent(name, instance, *, source="internal"|"a2a:<url>")` + `agent_source()` / `list_internal_agents()` / `list_external_agents()`。
+- **Image Generation 子系统（config-driven）**：
+  - 通用 `HttpJsonImageProvider`：读 config 的 `request_template`（`${var}` 占位符）+ `response_image_url_path`（JSON path）→ **每家 provider 自己的"方言"在 config 描述，新增 provider 不写 Python**。
+  - 内置 SiliconFlow（flat body）+ DashScope / 阿里百炼（nested OpenAI chat body + `${env:VAR}` URL 占位）模板。
+  - 本地下载：`download=True` 自动落盘（URL 1 小时过期）。
+  - CLI：`tangyuanai image-gen "prompt" [--download] [--image-size] [--model] ...`。
+  - Plugin：`tangyuanai plugin install <name>` / `plugin list`，从中央仓库 `https://github.com/secret-tangyuan/tangyuanAI_image_plus` 下载配置合并到 `tangyuanai.config.json`。
+  - `tangyuanai.config.json`：`features` 列表（name / type / enabled / config），路径 cwd → `$TANGYUAN_CONFIG`。
+  - 工具：`render_template` / `resolve_json_path` / `resolve_url_template` / `download_urls`。
 
 ### Changed
 - **KB 子包结构重组**：50 个 `kb_*.py` 文件统一移到 `kb/` 子包，文件名去掉 `kb_` 前缀（子包名已表明是 KB）。`knowledge_base.py` → `kb/__init__.py`；`kb_cli.py` → `kb/cli.py`；测试移到 `tests/kb/`。

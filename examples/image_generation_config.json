@@ -1,0 +1,64 @@
+{
+  "features": [
+    {
+      "name": "image_generation",
+      "type": "image_generation",
+      "enabled": true,
+      "config": {
+        "provider": "siliconflow",
+        "api_base": "https://api.siliconflow.cn/v1",
+        "api_key_env": "TANGYUAN_IMAGE_API_KEY",
+        "default_model": "Qwen/Qwen-Image-Edit-2509",
+        "default_image_size": "1024x1024",
+        "request_template": {
+          "model": "${model}",
+          "prompt": "${prompt}",
+          "image_size": "${image_size}",
+          "negative_prompt": "${negative_prompt}",
+          "num_inference_steps": "${num_inference_steps}",
+          "guidance_scale": "${guidance_scale}",
+          "cfg": "${cfg}",
+          "seed": "${seed}",
+          "image": "${image}",
+          "batch_size": "${batch_size}"
+        },
+        "request_static": {
+          "stream": false
+        },
+        "response_image_url_path": "data.0.url"
+      }
+    },
+    {
+      "name": "image_generation_dashscope",
+      "type": "image_generation",
+      "enabled": false,
+      "config": {
+        "provider": "dashscope",
+        "api_base": "https://${env:DASHSCOPE_WORKSPACE_ID}.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        "api_key_env": "DASHSCOPE_API_KEY",
+        "default_model": "qwen-image-3.0-pro",
+        "request_template": {
+          "model": "${model}",
+          "input": {
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "text": "${prompt}"
+                  }
+                ]
+              }
+            ]
+          },
+          "parameters": {
+            "prompt_extend": true,
+            "negative_prompt": "${negative_prompt}",
+            "size": "${image_size}"
+          }
+        },
+        "response_image_url_path": "output.choices.0.message.content.0.image"
+      }
+    }
+  ]
+}

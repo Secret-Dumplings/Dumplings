@@ -59,9 +59,111 @@ def _build_parser() -> argparse.ArgumentParser:
         add_subparser(subparsers)
     except ImportError:
         # KB 依赖未装时，kb 子命令不可用（不影响其他命令）
+        subparsers = None
+
+    # Image Gen 子命令 + Plugin 管理
+    try:
+        if subparsers is None:
+            subparsers = p.add_subparsers(dest="cmd", help="子命令")
+        _add_imaging_subparsers(subparsers)
+    except ImportError:
         pass
 
     return p
+
+
+def _add_imaging_subparsers(subparsers) -> None:
+    """image-gen + plugin 子命令。"""
+
+    # image-gen
+    img_p = subparsers.add_parser("image-gen", help="图片生成（config 启用，provider 自定）")
+    img_p.add_argument("prompt", help="文本提示词")
+    img_p.add_argument("--feature", default="image_generation", help="config 里的 feature 名")
+    img_p.add_argument("--config", help="tangyuanai.config.json 路径")
+    img_p.add_argument("--model", default=None, help="覆盖 config 里的 default_model")
+    img_p.add_argument("--download", action="store_true", help="下载到本地（URL 1 小时过期）")
+    img_p.add_argument("--download-dir", default="./images", help="下载目录")
+    img_p.add_argument("--negative-prompt", dest="negative_prompt", default=None)
+    img_p.add_argument("--image-size", dest="image_size", default=None)
+    img_p.add_argument("--seed", type=int, default=None)
+    img_p.add_argument("--num-inference-steps", dest="num_inference_steps", type=int, default=None)
+    img_p.add_argument("--batch-size", dest="batch_size", type=int, default=None)
+    img_p.add_argument("--guidance-scale", dest="guidance_scale", type=float, default=None)
+    img_p.add_argument("--cfg", type=float, default=None)
+    img_p.add_argument("--image", default=None, help="base64 或 URL（编辑模式）")
+    img_p.add_argument("--image2", dest="image2", default=None)
+    img_p.add_argument("--image3", dest="image3", default=None)
+    img_p.set_defaults(func=cmd_image_gen)
+
+    # plugin
+    plug_p = subparsers.add_parser("plugin", help="plugin 管理（install / list）")
+    plug_sub = plug_p.add_subparsers(dest="plugin_action", required=True)
+
+    pi = plug_sub.add_parser("install", help="从中央仓库下载并启用 plugin")
+    pi.add_argument("name", help="plugin 名（中央仓库 <name>.json）")
+    pi.add_argument("--config", help="tangyuanai.config.json 路径")
+    pi.add_argument("--no-enable", action="store_true", help="只装不启用")
+    pi.add_argument("--owner", default="secret-tangyuan", help="中央仓库 owner")
+    pi.add_argument("--repo", default="tangyuanAI_image_plus", help="中央仓库 repo")
+    pi.add_argument("--branch", default="main", help="中央仓库 branch")
+    pi.set_defaults(func=cmd_plugin_install)
+
+    pl = plug_sub.add_parser("list", help="列出本地已启用的 plugin")
+    pl.add_argument("--config", help="tangyuanai.config.json 路径")
+    pl.set_defaults(func=cmd_plugin_install)
+
+
+def cmd_image_gen(args) -> int:
+    """tangyuanai image-gen "prompt" → 打印图片 URL 或本地路径。"""
+    import asyncio
+
+    from .imaging import ImageGenerator
+
+    g = ImageGenerator(config_path=args.config)
+    kwargs = {}
+    for k in ("negative_prompt", "image_size", "seed",
+              "num_inference_steps", "batch_size", "guidance_scale", "cfg",
+              "image", "image2", "image3"):
+        v = getattr(args, k, None)
+        if v is not None:
+            kwargs[k] = v
+    try:
+        paths = asyncio.run(g.generate(
+            feature_name=args.feature,
+            prompt=args.prompt,
+            model=args.model,
+            download=args.download,
+            download_dir=args.download_dir,
+            **kwargs,
+        ))
+        for u in paths:
+            print(u)
+        return 0 if paths else 1
+    finally:
+        asyncio.run(g.close())
+
+
+def cmd_plugin_install(args) -> int:
+    """tangyuanai plugin install/list。"""
+    import asyncio
+
+    from .plugin_store import install_plugin, list_installed
+
+    if getattr(args, "plugin_action", None) == "list":
+        for f in list_installed(args.config):
+            print(f"  enabled: {f.get('name')!r}  type={f.get('type')!r}")
+        return 0
+
+    asyncio.run(install_plugin(
+        plugin_name=args.name,
+        config_path=args.config,
+        enable=not args.no_enable,
+        owner=args.owner,
+        repo=args.repo,
+        branch=args.branch,
+    ))
+    print(f"plugin 已安装: {args.name}")
+    return 0
 
 
 def _check_python_version() -> tuple[bool, str]:
@@ -209,6 +311,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         except ImportError:
             print("KB 子命令不可用（依赖未装？）。")
             return 1
+
+    # image-gen / plugin 子命令委派
+    if getattr(args, "cmd", None) in ("image-gen", "plugin"):
+        func = getattr(args, "func", None)
+        if func is None:
+            print("子命令参数缺失。")
+            return 1
+        return func(args)
 
     if args.quiet:
         silence_banner()
