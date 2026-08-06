@@ -12,8 +12,8 @@ icon: DATABASE_OUTLINED
 ## 功能一览
 
 - **混合检索**：Qdrant dense（向量）+ sparse（BM25）+ RRF 融合
-- **嵌入模型**：OpenAI / Cohere / Jina / Voyage / Ollama / vLLM / 任何 OpenAI-compatible 端点
-- **重排模型**：Cohere / BGE（本地）/ Jina / ColBERT / MonoT5
+- **嵌入模型**：远程 HTTP 嵌入端点（任何 OpenAI 兼容 API：包括但不限于 OpenAI、SiliconFlow、阿里云 DashScope、火山引擎等），或本地 sentence-transformers
+- **重排模型**：远程 HTTP 重排端点（任何暴露 `/v1/rerank` 的服务），或本地 cross-encoder（sentence-transformers / ColBERT / MonoT5）
 - **文档处理**：unstructured（默认）/ minerU（学术 PDF）/ open minerU / Paddle OCR / raw
 - **生产级**：嵌入缓存（内存 LRU + 磁盘）、token-aware 批处理、失败重试、模型迁移、持久化
 
