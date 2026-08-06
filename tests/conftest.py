@@ -73,19 +73,19 @@ def _clean_global_state():
 
     # ===== KB 全局状态（v1.0.0+）：测试前清空 + 缓存隔离 =====
     try:
-        from tangyuanAI.kb_registry import _kbs, _store_cache
+        from tangyuanAI.kb.registry import _kbs, _store_cache
         _kbs_backup = dict(_kbs)
         _kbs.clear()
         _store_cache.clear()
     except ImportError:
         _kbs_backup = None
     try:
-        from tangyuanAI.kb_ingest import _store_cache as _ingest_cache
+        from tangyuanAI.kb.ingest import _store_cache as _ingest_cache
         _ingest_cache.clear()
     except ImportError:
         pass
     try:
-        from tangyuanAI.kb_cache import get_global_cache, NullCache, set_global_cache
+        from tangyuanAI.kb.cache import get_global_cache, NullCache, set_global_cache
         _orig_cache = get_global_cache()
         if not isinstance(_orig_cache, NullCache):
             set_global_cache(NullCache())
@@ -138,12 +138,12 @@ def _clean_global_state():
         _kbs.clear()
         _kbs.update(_kbs_backup)
     try:
-        from tangyuanAI.kb_registry import _store_cache as _reg_store
+        from tangyuanAI.kb.registry import _store_cache as _reg_store
         _reg_store.clear()
     except ImportError:
         pass
     try:
-        from tangyuanAI.kb_ingest import _store_cache as _ingest_cache2
+        from tangyuanAI.kb.ingest import _store_cache as _ingest_cache2
         _ingest_cache2.clear()
     except ImportError:
         pass

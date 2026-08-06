@@ -23,8 +23,8 @@ from pathlib import Path
 
 def _fake_embedder_dim(texts):
     """演示用 fake embedder（不连真模型）。"""
-    from tangyuanAI.kb_embedder_base import BaseEmbedder
-    from tangyuanAI.kb_config import EmbedderConfig
+    from tangyuanAI.kb.embedder_base import BaseEmbedder
+    from tangyuanAI.kb.config import EmbedderConfig
 
     class _Fake(BaseEmbedder):
         client_name = "fake"
@@ -44,7 +44,7 @@ def _fake_embedder_dim(texts):
             return out
 
     # 注册到 factory
-    import tangyuanAI.kb_embedder_factory as factory
+    import tangyuanAI.kb.embedder_factory as factory
     factory._EMBEDDERS["openai-compatible"] = _Fake
 
     return EmbedderConfig(

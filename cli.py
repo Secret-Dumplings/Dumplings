@@ -52,9 +52,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="打印版本号并退出",
     )
 
-    # KB 子命令（kb_cli.py）
+    # KB 子命令（kb.cli）
     try:
-        from .kb_cli import add_subparser
+        from .kb.cli import add_subparser
         subparsers = p.add_subparsers(dest="cmd", help="子命令")
         add_subparser(subparsers)
     except ImportError:
@@ -204,10 +204,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     # kb 子命令委派
     if getattr(args, "cmd", None) == "kb":
         try:
-            from .kb_cli import main as kb_main
+            from .kb.cli import main as kb_main
             return kb_main(args)
         except ImportError:
-            print("KB 依赖未安装，`kb` 子命令不可用。")
+            print("KB 子命令不可用（依赖未装？）。")
             return 1
 
     if args.quiet:

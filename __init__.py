@@ -110,9 +110,9 @@ except ImportError:
 from .skill import Skill, skill_registry
 from .skill_bridge import register_skill_as_tool, unregister_skill_from_tool
 
-# 从 knowledge_base 导入 KB 相关功能（MCP 风格守卫 import）
+# 从 kb 包导入 KB 相关功能（MCP 风格守卫 import）
 try:
-    from .knowledge_base import (
+    from .kb import (
         KnowledgeBase, Chunk, Document, DocMeta, SearchResult, ScoreKind, Visibility,
         EmbedderConfig, RerankerConfig,
         Embedder, Reranker, VectorStore, Chunker, DocProcessor, Loader, EmbeddingCache,
