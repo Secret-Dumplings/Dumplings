@@ -38,15 +38,41 @@ class Skill:
     单个 Skill 的解析和执行
 
     Skill 是一个目录 + SKILL.md 文件，遵循 Agent Skills 开放标准。
+
+    **类化用法（#4）**：
+    ```python
+    class time(Skill):
+        path = "./skills/time"   # 类属性：指定 SKILL.md 所在目录
+
+    t = time()                   # 自动从 path 加载 + 自动注册到 skill_registry
+    t.render({"tz": "Asia/Shanghai"})
+    ```
     """
 
-    def __init__(self, skill_dir: Path):
+    # 类属性：subclass 设置 skill 目录（无显式参数时用）
+    path: Optional[str] = None
+
+    def __init__(
+        self,
+        skill_dir: Optional[Path] = None,
+        *,
+        auto_register: bool = True,
+    ):
         """
         从目录加载 Skill
 
         Args:
-            skill_dir: Skill 目录路径，该目录下必须包含 SKILL.md
+            skill_dir: Skill 目录路径（缺省时用类属性 self.path）
+            auto_register: 是否自动注册到 skill_registry 池（默认 True）
         """
+        # 解析目录：显式参数 > 类属性 path
+        if skill_dir is None:
+            skill_dir = getattr(type(self), "path", None)
+        if skill_dir is None:
+            raise ValueError(
+                "Skill 需要 skill_dir 参数或类属性 path（指向含 SKILL.md 的目录）"
+            )
+
         self.skill_dir = Path(skill_dir)
         self._skill_file = self.skill_dir / "SKILL.md"
 
@@ -61,6 +87,22 @@ class Skill:
         logger.debug(
             f"Skill 已加载: {self.name} @ {self.skill_dir}"
         )
+
+        # 自动注册到 skill_registry 池（共享，不隔离）
+        if auto_register:
+            self._auto_register()
+
+    def _auto_register(self):
+        """自动注册到 skill_registry（共享池，AI 可遍历调用）。"""
+        try:
+            skill_registry.register_skill_instance(self)
+        except Exception as e:
+            logger.warning(f"Skill '{self.name}' 自动注册失败: {e}")
+
+    @classmethod
+    def from_dir(cls, path) -> "Skill":
+        """从 SKILL.md 目录构造 Skill 实例（自动注册到池）。"""
+        return cls(path)
 
     def _parse_raw_content(self):
         """解析 SKILL.md 的 raw content，分离 frontmatter 和 markdown body"""
@@ -363,6 +405,18 @@ class SkillRegistry:
 
     # ---- 注册和注销 ----
 
+    def register_skill_instance(self, skill: "Skill") -> Optional["Skill"]:
+        """注册一个已构造的 Skill 实例到池 + 桥接到 tool_registry。"""
+        self._skills[skill.name] = skill
+        self._skill_dirs[skill.name] = skill.skill_dir
+
+        # 桥接到 tool_registry
+        from .skill_bridge import register_skill_as_tool
+        register_skill_as_tool(skill)
+
+        logger.info(f"Skill 实例已注册: {skill.name} @ {skill.skill_dir}")
+        return skill
+
     def register_skill(self, skill_dir: Path) -> Optional[Skill]:
         """
         注册单个 Skill 目录
@@ -374,15 +428,8 @@ class SkillRegistry:
             Skill 实例，失败返回 None
         """
         try:
-            skill = Skill(skill_dir)
-            self._skills[skill.name] = skill
-            self._skill_dirs[skill.name] = skill_dir
-
-            # 桥接到 tool_registry
-            from .skill_bridge import register_skill_as_tool
-            register_skill_as_tool(skill)
-
-            logger.info(f"Skill 已注册: {skill.name} @ {skill_dir}")
+            skill = Skill(skill_dir, auto_register=False)
+            self.register_skill_instance(skill)
             return skill
 
         except Exception as e:
