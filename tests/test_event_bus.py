@@ -2,8 +2,6 @@
 """
 输出事件总线（pack / out / hooks）单测。
 
-覆盖 ``docs/TODO.md`` 里的"输出事件"相关项：
-
 - 子类覆写 ``out``：验证 conversation 过程中 4 类事件都被收到
 - 实例直接绑 ``out``：常见的定制方式
 - 覆写 ``pack`` 但未覆写 ``out``：构造时打 warning

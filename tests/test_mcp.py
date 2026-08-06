@@ -2,8 +2,7 @@
 """
 MCP 集成基础 smoke 测试。
 
-完整 E2E（spawn 子进程跑真实 MCP server）受限于跨平台 stdio + asyncio 子进程策略，
-未在大规模压测，详见 ``docs/TODO.md`` 的 MCP 区块。
+完整 E2E（spawn 子进程跑真实 MCP server）受限于跨平台 stdio + asyncio 子进程策略。
 本测试只覆盖：
 
 - MCP 模块可 import，核心 API 存在

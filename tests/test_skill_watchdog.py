@@ -2,8 +2,6 @@
 """
 Skill 热加载 / 重载单测。
 
-覆盖 ``docs/TODO.md`` 里的"Skill 热加载"项。
-
 **注**：watchdog 跨平台兼容性差（Windows 上文件变更事件可能延迟/丢失），
 这里不依赖 watchdog 的实际触发，改成直接测 ``Skill.reload()`` 和
 ``SkillRegistry.reload_skill()`` 这两个核心 API。真实 watchdog 行为

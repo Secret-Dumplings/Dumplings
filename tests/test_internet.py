@@ -2,8 +2,6 @@
 """
 LLM HTTP / 对话流端到端测试（v0.4.1+）。
 
-覆盖 ``docs/TODO.md`` 里的"网络相关"项：
-
 - BaseAgent ``aconversation_with_tool`` 端到端（async path）
 - ``attempt_completion`` 终止对话循环
 - 异常流（LLM 500 / tool 抛异常 / 不可恢复错误）

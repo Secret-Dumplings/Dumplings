@@ -10,9 +10,6 @@ Skill 模块单测 —— 覆盖 `tests/test_skill.py` 缺失的协议层单测�
 - SkillRegistry：register / unregister / get / list / scan
 - get_skills_prompt_text 输出
 - 边界：缺 SKILL.md / 无 frontmatter / 非法 YAML
-
-MCP 的端到端单测见 [docs/TODO.md](../docs/TODO.md#mcp-测试)（需要 spawn 子进程，
-跨平台测试有坑；v0.3.1 暂未补齐）。
 """
 from __future__ import annotations
 

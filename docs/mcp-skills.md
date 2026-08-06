@@ -10,8 +10,7 @@ icon: PUBLIC_OUTLINED
 > ⚠️ **测试功能（Test Feature）—— v0.3.1 尚未达到生产就绪**
 >
 > 这两个扩展点目前处于"功能可跑通，但单测覆盖 + 边界处理尚不完整"的状态。
-> API 可用但路径上仍有未压测的代码（见 [TODO.md](TODO.md)）。生产环境使用前请
-> 自行做充分的集成测试。
+> API 可用但路径上仍有未压测的代码。生产环境使用前请自行做充分的集成测试。
 
 MCP（Model Context Protocol）让 Agent 接入外部 stdio 工具服务器；Skill 是声明式的能力描述（agent 行为 / 工具 / 示例），兼容 Anthropic 的 `.claude/skills/` 目录规范。
 
@@ -162,4 +161,4 @@ tangyuanAI.stop_health_check()
 
 MCP 真实测试需要 spawn 子进程跑一个最小 MCP server，跨平台兼容性差（Windows stdio
 行为 + asyncio 子进程策略有坑）。`tests/test_api.py` 在主仓里有 `/mcp/*` HTTP 接口的
-基础测试，但**协议层端到端单测**尚未补齐。见 [TODO.md](TODO.md#mcp-测试)。
+基础测试，但**协议层端到端单测**尚未补齐。

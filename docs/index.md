@@ -25,7 +25,6 @@ tangyuanAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像"
 | [output-and-hooks.md](output-and-hooks.md) | `pack` / `out` 输出事件总线、工具调用钩子 |
 | [mcp-skills.md](mcp-skills.md) | MCP 协议桥接、Skill 开放标准（**测试功能**） |
 | [persistence.md](persistence.md) | Agent 状态持久化：`.tas` 文件格式 / 插件后端 / 实时自动保存 |
-| [TODO.md](TODO.md) | 待办：单测覆盖 / 边界处理 / 生产就绪检查清单 |
 
 > 本套文档就是本仓库自己搭的文档站：**https://docs.ai.secret-tangyuan.com/**（Cloudflare Pages 构建，push 自动更新，见 [docs-site/README.md](../docs-site/README.md)）。
 
