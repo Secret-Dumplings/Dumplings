@@ -178,6 +178,7 @@ class KnowledgeBase(BaseModel):
     # === 内部实现字段 ===
     id: str = Field(default_factory=lambda: uuid.uuid4().hex)
     embed_dim: int = Field(0, ge=0, description="从 embedder.embed_dim 自动填")
+    collection_name: str = Field("", description="Qdrant collection 名；空时默认用 id")
     base_dir: str = "./.tangyuanAI_kbs"
     qdrant_location: str = ""             # embedded Qdrant 路径（留空时默认 ./base_dir/qdrant）
     qdrant_url: Optional[str] = None      # server Qdrant URL（与 qdrant_location 二选一）
@@ -199,15 +200,17 @@ class KnowledgeBase(BaseModel):
     def _check_embedder_dim(self) -> "KnowledgeBase":
         """embedder 给定则必须 embed_dim > 0 且与 embedder.embed_dim 一致。"""
         if self.embedder is not None:
-            # 延迟 import 避免循环
-            try:
-                ed = int(getattr(self.embedder, "embed_dim", 0))
-            except Exception:
-                ed = 0
+            # 兼容：pydantic Any 字段反序列化后可能是 dict（config_json 回读）
+            if isinstance(self.embedder, dict):
+                ed = int(self.embedder.get("embed_dim", 0))
+            else:
+                try:
+                    ed = int(getattr(self.embedder, "embed_dim", 0))
+                except Exception:
+                    ed = 0
             if ed <= 0:
                 raise ValueError("embedder.embed_dim must be > 0")
             if self.embed_dim == 0:
-                # 自动同步
                 object.__setattr__(self, "embed_dim", ed)
             elif self.embed_dim != ed:
                 raise ValueError(

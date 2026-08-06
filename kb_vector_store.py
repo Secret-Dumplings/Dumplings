@@ -106,9 +106,16 @@ class QdrantVectorStore:
         existing = self._client.collection_exists(name)
         if existing:
             info = self._client.get_collection(name)
-            if info.config.params.vectors.size != dim:
+            vectors_cfg = info.config.params.vectors
+            if isinstance(vectors_cfg, dict):
+                # 命名向量：取 dense
+                dense_cfg = vectors_cfg.get("dense") or next(iter(vectors_cfg.values()), None)
+                existing_dim = dense_cfg.size if dense_cfg else None
+            else:
+                existing_dim = vectors_cfg.size
+            if existing_dim is not None and existing_dim != dim:
                 raise ValueError(
-                    f"collection {name!r} already exists with dim {info.config.params.vectors.size}, "
+                    f"collection {name!r} already exists with dim {existing_dim}, "
                     f"requested {dim}. Delete it first (delete_kb) or use migrate_embedding_model."
                 )
             self._collections[name] = dim
@@ -298,6 +305,14 @@ class QdrantVectorStore:
                 ),
                 wait=True,
             )
+
+    async def drop_collection(self, collection: str) -> None:
+        """彻底删除 collection（迁移后清理用）。"""
+        try:
+            self._client.delete_collection(collection_name=collection)
+            _logger.info(f"collection dropped: {collection}")
+        except Exception as e:
+            _logger.warning(f"drop collection {collection!r} failed: {e}")
 
     # === scroll ===
 

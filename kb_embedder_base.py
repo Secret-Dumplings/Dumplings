@@ -219,11 +219,13 @@ class BaseEmbedder(ABC):
     # === 内部 ===
 
     def _cache_key(self, text: str) -> str:
+        # 含 dim：同一模型名不同维度 → 不同 cache key（避免模型迁移时命中旧缓存）
         return make_cache_key(
             self.config.provider,
             self.config.api_base,
             self.config.model,
             text,
+            dim=self.dim,
         )
 
     def _validate_dim(self, vec: list[float]) -> None:

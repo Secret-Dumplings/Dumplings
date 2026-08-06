@@ -78,6 +78,7 @@ class LRUDiskCache:
         self._lock = threading.RLock()
         self._hits = 0
         self._misses = 0
+        self._closed = False
 
         self.db_path = Path(db_path).expanduser()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -90,6 +91,20 @@ class LRUDiskCache:
         self._conn.execute("PRAGMA journal_mode = WAL")
         self._conn.executescript(self.SCHEMA)
 
+    def _ensure_conn(self) -> None:
+        """如果连接被 close 过（如 set_global_cache 换出），懒重开。"""
+        if self._closed or self._conn is None:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            self._conn = sqlite3.connect(
+                str(self.db_path),
+                check_same_thread=False,
+                isolation_level=None,
+                timeout=10.0,
+            )
+            self._conn.execute("PRAGMA journal_mode = WAL")
+            self._conn.executescript(self.SCHEMA)
+            self._closed = False
+
     # === 读 ===
 
     async def get(self, key: str) -> Optional[list[float]]:
@@ -100,6 +115,7 @@ class LRUDiskCache:
                 self._hits += 1
                 return self._mem[key]
         # 再查磁盘
+        self._ensure_conn()
         row = self._conn.execute(
             "SELECT vec_blob FROM embed_cache WHERE k = ?", (key,)
         ).fetchone()
@@ -132,6 +148,7 @@ class LRUDiskCache:
                 self._mem.popitem(last=False)
         # 异步写磁盘（同步但很快；msgpack 后几百字节 ~ 几 KB）
         try:
+            self._ensure_conn()
             blob = msgpack.packb([float(v) for v in vec], use_bin_type=True)
             self._conn.execute(
                 "INSERT INTO embed_cache (k, vec_blob, dim, ctime) VALUES (?, ?, ?, strftime('%s','now')) "
@@ -148,6 +165,7 @@ class LRUDiskCache:
             self._mem.clear()
             self._hits = 0
             self._misses = 0
+        self._ensure_conn()
         self._conn.execute("DELETE FROM embed_cache")
 
     def stats(self) -> dict[str, Any]:
@@ -162,10 +180,12 @@ class LRUDiskCache:
         }
 
     def close(self) -> None:
+        self._closed = True
         try:
             self._conn.close()
         except Exception:
             pass
+        self._conn = None
 
     def __repr__(self) -> str:
         return f"LRUDiskCache(memory={len(self._mem)}/{self._memory_size}, db={self.db_path})"
@@ -244,7 +264,15 @@ def set_global_cache(cache) -> None:
 # 便捷函数：构造 cache key
 # ---------------------------------------------------------------------------
 
-def make_cache_key(provider: str, api_base: str, model: str, text: str) -> str:
-    """构造 cache key。key = sha256(provider|api_base|model|text).hexdigest()。"""
-    raw = f"{provider}|{api_base}|{model}|{text}"
+def make_cache_key(
+    provider: str,
+    api_base: str,
+    model: str,
+    text: str,
+    *,
+    dim: int | None = None,
+) -> str:
+    """构造 cache key。key = sha256(provider|api_base|model|dim|text).hexdigest()。"""
+    dim_part = str(dim) if dim is not None else ""
+    raw = f"{provider}|{api_base}|{model}|{dim_part}|{text}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
