@@ -38,9 +38,10 @@ dependencies = [
     "qdrant-client>=1.10",             # 向量库（embedded + server 双模式）
     "langchain-text-splitters>=0.3",   # 文本切分
     "unstructured>=0.15",              # 文档加载（PDF/DOCX/HTML/MD/...）
-    "openai>=1.50",                    # OpenAI-compatible 嵌入客户端
     "tenacity>=9.0",                   # 失败重试
     "msgpack>=1.0",                    # 嵌入缓存压缩
+    # OpenAI-compatible 端点（OpenAI / SiliconFlow / Ollama / vLLM / 等）走 http_utils 自建 httpx，
+    # 不需要 openai SDK；其他 provider 各自的 SDK 在 optional 组里。
 ]
 
 [project.optional-dependencies]
