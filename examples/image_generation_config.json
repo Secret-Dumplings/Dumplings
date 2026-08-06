@@ -59,6 +59,30 @@
         },
         "response_image_url_path": "output.choices.0.message.content.0.image"
       }
+    },
+    {
+      "name": "image_generation_minimax",
+      "type": "image_generation",
+      "enabled": false,
+      "config": {
+        "provider": "minimax",
+        "api_base": "https://api.minimaxi.com",
+        "api_key_env": "MINIMAX_API_KEY",
+        "default_model": "image-01",
+        "request_template": {
+          "model": "${model}",
+          "prompt": "${prompt}",
+          "aspect_ratio": "${aspect_ratio}",
+          "width": "${width}",
+          "height": "${height}",
+          "response_format": "url",
+          "seed": "${seed}",
+          "n": "${n}",
+          "prompt_optimizer": "${prompt_optimizer}",
+          "aigc_watermark": "${aigc_watermark}"
+        },
+        "response_image_url_path": "data.image_urls"
+      }
     }
   ]
 }

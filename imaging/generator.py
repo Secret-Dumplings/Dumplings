@@ -32,11 +32,48 @@ class ImageGenerator:
     def _get_provider(self, feature: dict) -> ImageProvider:
         cfg = feature["config"]
         key = (feature["name"], cfg["provider"])
-        if key not in self._providers:
+        if key in self._providers:
+            return self._providers[key]
+
+        # 自定义 provider 实现（覆盖传输差异：form-data / base64 / 自定义鉴权等）
+        impl = cfg.get("provider_impl")
+        if impl:
+            self._providers[key] = self._instantiate_impl(impl, feature)
+        else:
             self._providers[key] = HttpJsonImageProvider(
                 name=key[1], feature_cfg=cfg,
             )
         return self._providers[key]
+
+    @staticmethod
+    def _instantiate_impl(impl: str, feature: dict) -> ImageProvider:
+        """从 "module:ClassName" 导入并实例化自定义 provider。
+
+        自定义 provider 需实现 ImageProvider Protocol：
+            class X:
+                name = "x"
+                def __init__(self, *, name, feature_cfg): ...
+                async def generate(self, *, prompt, model=None, **kwargs) -> list[str]: ...
+                async def close(self): ...
+        """
+        if ":" not in impl:
+            raise ImageError(
+                f"provider_impl 格式应为 'module:ClassName'，got {impl!r}"
+            )
+        module_path, class_name = impl.split(":", 1)
+        try:
+            import importlib
+            module = importlib.import_module(module_path)
+        except ImportError as e:
+            raise ImageError(
+                f"导入 provider_impl 模块失败: {module_path}（{e}）"
+            ) from e
+        cls = getattr(module, class_name, None)
+        if cls is None:
+            raise ImageError(
+                f"provider_impl 模块 {module_path} 里找不到类 {class_name!r}"
+            )
+        return cls(name=feature["config"]["provider"], feature_cfg=feature["config"])
 
     async def generate(
         self,

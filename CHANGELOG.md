@@ -33,6 +33,9 @@ tangyuanAI 的所有显著变更记录。
   - Plugin：`tangyuanai plugin install <name>` / `plugin list`，从中央仓库 `https://github.com/secret-tangyuan/tangyuanAI_image_plus` 下载配置合并到 `tangyuanai.config.json`。
   - `tangyuanai.config.json`：`features` 列表（name / type / enabled / config），路径 cwd → `$TANGYUAN_CONFIG`。
   - 工具：`render_template` / `resolve_json_path` / `resolve_url_template` / `download_urls`。
+  - **通用传输旋钮**：`auth_scheme` / `auth_header` / `auth_prefix`（默认 `Authorization: Bearer`；厂商用 `X-API-Key` 等只需 config 改 2 行）+ `request_static` / `timeout`。
+  - **传输差异插件**：`provider_impl: "module:ClassName"` 覆盖 form-data / base64 / 自定义鉴权等（实现 `ImageProvider` Protocol，不需要改核心）。
+  - 内置适配：SiliconFlow / DashScope / MiniMax（`data.image_urls` 数组响应）。
 
 ### Changed
 - **KB 子包结构重组**：50 个 `kb_*.py` 文件统一移到 `kb/` 子包，文件名去掉 `kb_` 前缀（子包名已表明是 KB）。`knowledge_base.py` → `kb/__init__.py`；`kb_cli.py` → `kb/cli.py`；测试移到 `tests/kb/`。

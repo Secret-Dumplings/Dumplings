@@ -134,6 +134,41 @@ async def main():
 asyncio.run(main())
 ```
 
+## MiniMax
+
+```bash
+# 安装（默认禁用，需手动 enabled）
+tangyuanai plugin install image_generation_minimax
+
+# 设 env
+export MINIMAX_API_KEY=eyJhbGciOiJIUzI1NiJ9.xxx
+
+# 编辑本地 tangyuanai.config.json：把 image_generation_minimax 的 enabled 改 true
+```
+
+MiniMax 方言要点（与 SiliconFlow / DashScope 都不同）：
+- 端点：`POST /v1/image_generation`（base 无 `/v1`，路径自带）
+- 尺寸用 `aspect_ratio`（`"16:9"` 等）不是像素 `image_size`；`width` / `height` 是像素（仅 `image-01`）
+- 数量用 `n`（1-9）不是 `batch_size`
+- 响应 `data.image_urls` 是 **URL 数组**；URL **24 小时**有效（比 SiliconFlow 长）
+
+```python
+import asyncio, tangyuanAI as t
+async def main():
+    g = t.ImageGenerator()
+    urls = await g.generate('image_generation_minimax',
+                             prompt='a man at venice beach, photorealistic',
+                             aspect_ratio='16:9', n=3, prompt_optimizer=True)
+    for u in urls: print(u)
+    await g.close()
+asyncio.run(main())
+```
+
+CLI（MiniMax 的 `aspect_ratio`/`n` 非 CLI 标准 flag → 用顶层 API 传 kwargs；CLI 只支持通用参数）：
+```bash
+python -m tangyuanAI image-gen "a man at venice beach" --feature image_generation_minimax --download
+```
+
 ## 添加新 provider（不需要写 Python）
 
 1. 复制任一现有 `.json` 作为模板
@@ -163,6 +198,62 @@ asyncio.run(main())
   }
 }
 ```
+
+### 通用传输配置项（一次加，对所有厂商生效）
+
+这些不是"厂商专用 hack"，是 `HttpJsonImageProvider` 的通用旋钮：
+
+| 字段 | 默认 | 说明 |
+|---|---|---|
+| `auth_scheme` | `"bearer"` | `"bearer"`（带鉴权头）\| `"none"`（公开端点不带） |
+| `auth_header` | `"Authorization"` | 鉴权 header 名（厂商用 `X-API-Key` 等时改） |
+| `auth_prefix` | `"Bearer "` | 鉴权 header 值前缀（厂商用 `Token ` 等时改） |
+| `request_static` | `{}` | 每次请求都带的静态字段 |
+| `timeout` | `60.0` | 请求超时秒 |
+
+```json
+{
+  "config": {
+    "provider": "vendor_x",
+    "api_key_env": "VENDOR_X_KEY",
+    "auth_header": "X-API-Key",      // 厂商 X 用这个 header
+    "auth_prefix": "",               // 且没有前缀
+    "request_template": {...},
+    "response_image_url_path": "..."
+  }
+}
+```
+
+### 传输差异 → 插件机制（`provider_impl`）
+
+少数厂商**传输层不同**（不是方言）——form-data 请求 / base64 响应 / 动态签名鉴权。这种**不需要改核心代码**，写一个自定义 provider 模块，config 里指过去：
+
+```python
+# my_plugins/vendor_z.py
+class ZImageProvider:
+    name = "z"
+    def __init__(self, *, name, feature_cfg):
+        self._cfg = feature_cfg
+    async def generate(self, *, prompt, model=None, **kwargs) -> list[str]:
+        # 自定义：multipart 请求 / base64 解码落盘 / 动态签名...
+        return ["/local/path.png"]
+    async def close(self):
+        pass
+```
+
+```json
+{
+  "config": {
+    "provider": "z",
+    "provider_impl": "my_plugins.vendor_z:ZImageProvider",
+    "api_key_env": "Z_KEY",
+    "request_template": {...},   // 仍可给自定义 provider 用（feature_cfg）
+    "response_image_url_path": "..."
+  }
+}
+```
+
+自定义 provider 实现 `ImageProvider` Protocol（`name` / `async generate(prompt, model, **kwargs) -> list[str]` / `async close()`），构造签名 `(name, feature_cfg)` 与内置一致。
 
 ## 注意事项
 

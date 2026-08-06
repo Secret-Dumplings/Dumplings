@@ -173,6 +173,13 @@ class HttpJsonImageProvider:
             raise ImageError(
                 f"env {key_env!r} 未设置（image provider {name!r} 需要）"
             )
+        # 鉴权可配置（零修改兼容更多厂商）：
+        #   auth_header  header 名（默认 Authorization）
+        #   auth_prefix  header 值前缀（默认 "Bearer "）
+        #   auth_scheme  "bearer"（默认，带 auth_header+auth_prefix）| "none"（不带鉴权头）
+        self._auth_scheme = feature_cfg.get("auth_scheme", "bearer")
+        self._auth_header = feature_cfg.get("auth_header", "Authorization")
+        self._auth_prefix = feature_cfg.get("auth_prefix", "Bearer ")
         http = httpx.AsyncClient(
             base_url=self._api_base,
             timeout=feature_cfg.get("timeout", 60.0),
@@ -198,14 +205,22 @@ class HttpJsonImageProvider:
         for k, v in self._cfg.get("request_static", {}).items():
             body.setdefault(k, v)
 
+        # 鉴权头（可配置）
+        headers = {}
+        if self._auth_scheme != "none":
+            headers[self._auth_header] = f"{self._auth_prefix}{self._api_key}"
+
         resp = await self._client.apost(
             "",
             json=body,
-            headers={"Authorization": f"Bearer {self._api_key}"},
+            headers=headers,
         )
         data = resp.json()
         path = self._cfg["response_image_url_path"]
         url = resolve_json_path(data, path)
+        if isinstance(url, list):
+            # 响应 path 指向 URL 数组（如 data.image_urls）
+            return [u for u in url if isinstance(u, str) and u]
         if not url:
             # fallback：常见 OpenAI images 风格
             return [

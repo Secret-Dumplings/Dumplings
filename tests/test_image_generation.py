@@ -164,6 +164,96 @@ class TestHttpJsonImageProvider:
         with pytest.raises(ImageError, match="未设置"):
             HttpJsonImageProvider(name="x", feature_cfg=self._cfg())
 
+    @pytest.mark.asyncio
+    async def test_custom_auth_header(self, monkeypatch):
+        """用 X-API-Key 而非 Authorization: Bearer → config 配 auth_header/auth_prefix。"""
+        monkeypatch.setenv("D_KEY", "sk-d")
+        cfg = {
+            "provider": "d",
+            "api_base": "https://api.d.example.com/v1",
+            "api_key_env": "D_KEY",
+            "default_model": "d-img",
+            "auth_header": "X-API-Key",
+            "auth_prefix": "",
+            "request_template": {"model": "${model}", "prompt": "${prompt}"},
+            "response_image_url_path": "url",
+        }
+        p = HttpJsonImageProvider(name="d", feature_cfg=cfg)
+        fake_resp = MagicMock()
+        fake_resp.json.return_value = {"url": "http://img/d.png"}
+        p._client = MagicMock()
+        p._client.apost = AsyncMock(return_value=fake_resp)
+
+        urls = await p.generate(prompt="hi")
+        assert urls == ["http://img/d.png"]
+
+        call = p._client.apost.call_args
+        headers = call.kwargs["headers"]
+        assert headers == {"X-API-Key": "sk-d"}
+        await p.close()
+
+    @pytest.mark.asyncio
+    async def test_auth_scheme_none(self, monkeypatch):
+        """公开端点不需要鉴权 → auth_scheme=none。"""
+        monkeypatch.setenv("PUB_KEY", "unused")
+        cfg = {
+            "provider": "public",
+            "api_base": "https://public.example.com/v1",
+            "api_key_env": "PUB_KEY",
+            "default_model": "x",
+            "auth_scheme": "none",
+            "request_template": {"model": "${model}", "prompt": "${prompt}"},
+            "response_image_url_path": "url",
+        }
+        p = HttpJsonImageProvider(name="public", feature_cfg=cfg)
+        fake_resp = MagicMock()
+        fake_resp.json.return_value = {"url": "http://img/pub.png"}
+        p._client = MagicMock()
+        p._client.apost = AsyncMock(return_value=fake_resp)
+
+        urls = await p.generate(prompt="hi")
+        assert urls == ["http://img/pub.png"]
+        call = p._client.apost.call_args
+        assert call.kwargs["headers"] == {}  # 无鉴权头
+        await p.close()
+
+    @pytest.mark.asyncio
+    async def test_generate_minimax_array_urls(self, monkeypatch):
+        """MiniMax 响应 data.image_urls 是数组 → 返回 URL 列表。"""
+        monkeypatch.setenv("MINIMAX_KEY_TEST", "sk-minimax")
+        cfg = {
+            "provider": "minimax",
+            "api_base": "https://api.minimaxi.com",
+            "api_key_env": "MINIMAX_KEY_TEST",
+            "default_model": "image-01",
+            "request_template": {
+                "model": "${model}",
+                "prompt": "${prompt}",
+                "aspect_ratio": "${aspect_ratio}",
+                "n": "${n}",
+            },
+            "response_image_url_path": "data.image_urls",
+        }
+        p = HttpJsonImageProvider(name="minimax", feature_cfg=cfg)
+        fake_resp = MagicMock()
+        fake_resp.json.return_value = {
+            "id": "t1",
+            "data": {"image_urls": ["http://img/1", "http://img/2", "http://img/3"]},
+            "metadata": {"success_count": "3", "failed_count": "0"},
+        }
+        p._client = MagicMock()
+        p._client.apost = AsyncMock(return_value=fake_resp)
+
+        urls = await p.generate(prompt="a man at venice beach", aspect_ratio="16:9", n=3)
+        assert urls == ["http://img/1", "http://img/2", "http://img/3"]
+
+        call = p._client.apost.call_args
+        body = call.kwargs["json"]
+        assert body["model"] == "image-01"
+        assert body["aspect_ratio"] == "16:9"
+        assert body["n"] == 3
+        await p.close()
+
 
 # ---------------------------------------------------------------------------
 # download_urls（mock httpx）
@@ -285,4 +375,32 @@ class TestImageGenerator:
                 paths = await g.generate("image_generation", prompt="hi", download=True)
         assert paths == ["/tmp/x.png"]
         mock_dl.assert_awaited_once()
+        await g.close()
+
+    @pytest.mark.asyncio
+    async def test_provider_impl_plugin(self, tmp_path, monkeypatch):
+        """provider_impl 插件：自定义 provider（覆盖 form-data / base64 等传输差异）。"""
+        monkeypatch.setenv("Z_KEY", "sk-z")
+        import json
+        cfg = {
+            "features": [{
+                "name": "z",
+                "type": "image_generation",
+                "enabled": True,
+                "config": {
+                    "provider": "z",
+                    "provider_impl": "_fake_imaging_provider:Base64ImageProvider",
+                    "api_key_env": "Z_KEY",
+                    "default_model": "z-img",
+                    "request_template": {"prompt": "${prompt}"},
+                    "response_image_url_path": "url",
+                },
+            }]
+        }
+        p = tmp_path / "tangyuanai.config.json"
+        p.write_text(json.dumps(cfg), encoding="utf-8")
+
+        g = ImageGenerator(config_path=str(p))
+        urls = await g.generate("z", prompt="base64 img")
+        assert urls == ["http://fake/base64"]
         await g.close()
