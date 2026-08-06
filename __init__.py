@@ -110,6 +110,25 @@ except ImportError:
 from .skill import Skill, skill_registry
 from .skill_bridge import register_skill_as_tool, unregister_skill_from_tool
 
+# 从 knowledge_base 导入 KB 相关功能（MCP 风格守卫 import）
+try:
+    from .knowledge_base import (
+        KnowledgeBase, Chunk, Document, DocMeta, SearchResult, ScoreKind, Visibility,
+        EmbedderConfig, RerankerConfig,
+        Embedder, Reranker, VectorStore, Chunker, DocProcessor, Loader, EmbeddingCache,
+        LRUDiskCache, NullCache, get_global_cache, set_global_cache,
+        register_kb, get_kb, list_kbs, delete_kb,
+        add_document, add_document_sync, add_documents, add_documents_sync,
+        search, search_sync, list_documents, list_documents_sync,
+        migrate_embedding_model, migrate_embedding_model_sync,
+        register_kb_tools, unregister_kb_tools,
+        create_embedder, create_reranker, create_chunker, create_loader, get_processor_for,
+        list_embedder_providers, list_reranker_providers,
+        list_chunkers, list_loaders, list_doc_processors,
+    )
+except ImportError:
+    pass
+
 # 版本号自动从包元数据读取，与 Tangyuan/pyproject.toml 中的 version 字段保持同步。
 # 覆盖方式（仅在打包失败等极端场景下使用）：import tangyuanAI; tangyuanAI.__version__ = "x"
 try:
@@ -195,6 +214,21 @@ __all__ = [
     "SQLiteBackend",     # 内置 sqlite 后端（实验性）
     "AgentNotFoundError",  # load_state 找不到类时抛
     "FormatError",       # 状态文件格式错误时抛
+    # Knowledge Base（v1.0.0+）
+    "KnowledgeBase", "Chunk", "Document", "DocMeta", "SearchResult",
+    "ScoreKind", "Visibility",
+    "EmbedderConfig", "RerankerConfig",
+    "Embedder", "Reranker", "VectorStore", "Chunker", "DocProcessor", "Loader",
+    "LRUDiskCache", "NullCache", "get_global_cache", "set_global_cache",
+    "register_kb", "get_kb", "list_kbs", "delete_kb",
+    "add_document", "add_document_sync", "add_documents", "add_documents_sync",
+    "search", "search_sync", "list_documents", "list_documents_sync",
+    "migrate_embedding_model", "migrate_embedding_model_sync",
+    "register_kb_tools", "unregister_kb_tools",
+    "create_embedder", "create_reranker", "create_chunker", "create_loader",
+    "get_processor_for",
+    "list_embedder_providers", "list_reranker_providers",
+    "list_chunkers", "list_loaders", "list_doc_processors",
     # 元信息
     "__version__",
     "__author__",

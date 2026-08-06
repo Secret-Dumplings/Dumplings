@@ -34,7 +34,28 @@ dependencies = [
     "pyyaml>=6.0",
     "tiktoken>=0.7",
     "watchdog>=3.0",
+    # Knowledge Base 子系统（v1.0.0+）
+    "qdrant-client>=1.10",             # 向量库（embedded + server 双模式）
+    "langchain-text-splitters>=0.3",   # 文本切分
+    "unstructured>=0.15",              # 文档加载（PDF/DOCX/HTML/MD/...）
+    "openai>=1.50",                    # OpenAI-compatible 嵌入客户端
+    "tenacity>=9.0",                   # 失败重试
+    "msgpack>=1.0",                    # 嵌入缓存压缩
 ]
+
+[project.optional-dependencies]
+# KB embedder providers
+kb-embed-cohere = ["cohere>=5.5"]
+kb-embed-voyage  = ["voyageai>=0.2"]
+kb-embed-jina    = []
+# KB reranker providers
+kb-rerank-cohere = ["cohere>=5.5"]
+kb-rerank-jina   = []
+kb-rerank-local  = ["sentence-transformers>=2.2", "torch>=2.0"]  # BGE / ColBERT / MonoT5
+# KB doc processors
+kb-processor-mineru     = ["magic-pdf[full]>=0.6"]     # OpenDataLab 学术 PDF
+kb-processor-openminerU = ["openmineru>=0.1"]          # 开源版 minerU
+kb-processor-paddleocr  = ["paddleocr>=2.7", "paddlepaddle>=2.5"]
 
 [project.urls]
 Homepage = "https://github.com/secret-tangyuan/tangyuanAI"

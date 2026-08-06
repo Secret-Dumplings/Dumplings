@@ -71,6 +71,27 @@ def _clean_global_state():
     else:
         backends_backup = None
 
+    # ===== KB 全局状态（v1.0.0+）：测试前清空 + 缓存隔离 =====
+    try:
+        from tangyuanAI.kb_registry import _kbs, _store_cache
+        _kbs_backup = dict(_kbs)
+        _kbs.clear()
+        _store_cache.clear()
+    except ImportError:
+        _kbs_backup = None
+    try:
+        from tangyuanAI.kb_ingest import _store_cache as _ingest_cache
+        _ingest_cache.clear()
+    except ImportError:
+        pass
+    try:
+        from tangyuanAI.kb_cache import get_global_cache, NullCache, set_global_cache
+        _orig_cache = get_global_cache()
+        if not isinstance(_orig_cache, NullCache):
+            set_global_cache(NullCache())
+    except ImportError:
+        _orig_cache = None
+
     # ===== 测试运行 =====
     yield
 
@@ -109,5 +130,25 @@ def _clean_global_state():
             loop = asyncio.new_event_loop()
             loop.run_until_complete(_global_session_pool.close_all())
             loop.close()
+        except Exception:
+            pass
+
+    # ===== KB 清理后：还原注册表 + 恢复全局缓存 =====
+    if _kbs_backup is not None:
+        _kbs.clear()
+        _kbs.update(_kbs_backup)
+    try:
+        from tangyuanAI.kb_registry import _store_cache as _reg_store
+        _reg_store.clear()
+    except ImportError:
+        pass
+    try:
+        from tangyuanAI.kb_ingest import _store_cache as _ingest_cache2
+        _ingest_cache2.clear()
+    except ImportError:
+        pass
+    if _orig_cache is not None:
+        try:
+            set_global_cache(_orig_cache)
         except Exception:
             pass
