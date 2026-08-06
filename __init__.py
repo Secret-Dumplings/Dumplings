@@ -120,6 +120,7 @@ try:
         Document,
         Embedder,
         EmbedderConfig,
+        Knowledge,
         KnowledgeBase,
         Loader,
         LRUDiskCache,
@@ -249,7 +250,7 @@ __all__ = [
     "AgentNotFoundError",  # load_state 找不到类时抛
     "FormatError",       # 状态文件格式错误时抛
     # Knowledge Base（v1.0.0+）
-    "KnowledgeBase", "Chunk", "Document", "DocMeta", "SearchResult",
+    "Knowledge", "KnowledgeBase", "Chunk", "Document", "DocMeta", "SearchResult",
     "ScoreKind", "Visibility",
     "EmbedderConfig", "RerankerConfig",
     "Embedder", "Reranker", "VectorStore", "Chunker", "DocProcessor", "Loader",

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import hashlib
 
-import pytest
 from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
 from tangyuanAI.kb.embedder_base import BaseEmbedder
 
@@ -44,32 +43,8 @@ def _cfg(dim: int = 16, model: str = "fake-model", **kw) -> EmbedderConfig:
     return EmbedderConfig(**base)
 
 
-@pytest.fixture(autouse=True)
-def _clean(monkeypatch, tmp_path):
-    import tangyuanAI.kb.embedder_factory as factory
-    import tangyuanAI.kb.ingest as ingest
-    from tangyuanAI.kb.registry import _kbs, _store_cache
-
-    monkeypatch.setenv("TANGYUAN_KB_DIR", str(tmp_path))
-    factory._EMBEDDERS["openai-compatible"] = FakeEmbedder
-
-    saved = dict(_kbs)
-    _kbs.clear()
-    _store_cache.clear()
-    ingest._store_cache.clear()
-    yield
-    _kbs.clear()
-    _kbs.update(saved)
-    _store_cache.clear()
-    ingest._store_cache.clear()
-    factory._EMBEDDERS["openai-compatible"] = __import__(
-        "tangyuanAI.kb.embedder_openai", fromlist=["OpenAICompatibleEmbedder"]
-    ).OpenAICompatibleEmbedder
 
 
-# ---------------------------------------------------------------------------
-# 端到端
-# ---------------------------------------------------------------------------
 
 class TestEndToEnd:
     def test_full_flow(self, tmp_path):

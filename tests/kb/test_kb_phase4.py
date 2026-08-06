@@ -49,38 +49,8 @@ def _fake_cfg(dim: int = 8, **kw) -> EmbedderConfig:
 # Fixtures：重置全局状态
 # ---------------------------------------------------------------------------
 
-@pytest.fixture(autouse=True)
-def _clean_kb_globals(monkeypatch, tmp_path):
-    """每个测试清空 KB 注册表 + store cache，隔离 Qdrant，并注册 fake embedder。"""
-    import tangyuanAI.kb.embedder_factory as factory
-    import tangyuanAI.kb.ingest as ingest
-    from tangyuanAI.kb.registry import _kbs, _store_cache
-
-    # 默认 base_dir 指向 tmp（隔离持久化）
-    monkeypatch.setenv("TANGYUAN_KB_DIR", str(tmp_path))
-
-    # 覆盖 openai-compatible → FakeEmbedder（测试隔离）
-    factory._EMBEDDERS["openai-compatible"] = FakeEmbedder
-
-    saved = dict(_kbs)
-    _kbs.clear()
-    _store_cache.clear()
-    ingest._store_cache.clear()
-
-    yield
-
-    _kbs.clear()
-    _kbs.update(saved)
-    _store_cache.clear()
-    ingest._store_cache.clear()
-    factory._EMBEDDERS["openai-compatible"] = __import__(
-        "tangyuanAI.kb.embedder_openai", fromlist=["OpenAICompatibleEmbedder"]
-    ).OpenAICompatibleEmbedder
 
 
-# ---------------------------------------------------------------------------
-# kb_registry
-# ---------------------------------------------------------------------------
 
 class TestRegistry:
     def test_register_get(self):

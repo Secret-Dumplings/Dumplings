@@ -48,34 +48,13 @@ def _cfg(**kw) -> EmbedderConfig:
     return EmbedderConfig(**base)
 
 
-@pytest.fixture(autouse=True)
-def _clean(monkeypatch, tmp_path):
-    import tangyuanAI.kb.embedder_factory as factory
-    import tangyuanAI.kb.ingest as ingest
-    from tangyuanAI.kb.registry import _kbs, _store_cache
-
-    monkeypatch.setenv("TANGYUAN_KB_DIR", str(tmp_path))
-    factory._EMBEDDERS["openai-compatible"] = FakeEmbedder
-    saved = dict(_kbs)
-    _kbs.clear()
-    _store_cache.clear()
-    ingest._store_cache.clear()
-    yield
-    _kbs.clear()
-    _kbs.update(saved)
-    _store_cache.clear()
-    ingest._store_cache.clear()
-    factory._EMBEDDERS["openai-compatible"] = __import__(
-        "tangyuanAI.kb.embedder_openai", fromlist=["OpenAICompatibleEmbedder"]
-    ).OpenAICompatibleEmbedder
-
-
 def _make_docs(n: int, tmp_path) -> list[str]:
     """生成 n 篇 md 文档，返回路径列表。"""
     paths = []
     for i in range(n):
         p = tmp_path / f"doc{i:04d}.md"
-        p.write_text(f"# 文档 {i}\n这是第 {i} 篇测试文档，主题是 topic{i % 10}。", encoding="utf-8")
+        content = f"# 文档 {i}\n这是第 {i} 篇测试文档，主题是 topic{i % 10}。"
+        p.write_text(content, encoding="utf-8")
         paths.append(str(p))
     return paths
 

@@ -41,6 +41,9 @@ from .ingest import (
     add_documents_sync,
     shutdown_kb,
 )
+
+# === 核心类（kb_knowledge.py）===
+from .knowledge import Knowledge
 from .loader_factory import create_loader, list_loaders
 from .migrate import migrate_embedding_model, migrate_embedding_model_sync
 
@@ -90,6 +93,8 @@ __all__ = [
     "LRUDiskCache", "NullCache", "get_global_cache", "set_global_cache",
     # KB CRUD
     "register_kb", "get_kb", "list_kbs", "delete_kb",
+    # 核心类
+    "Knowledge",
     # 文档
     "add_document", "add_document_sync", "add_documents", "add_documents_sync",
     # 资源清理

@@ -29,6 +29,16 @@ def _cfg(provider: str, **kw) -> EmbedderConfig:
     return EmbedderConfig(**base)
 
 
+@pytest.fixture(autouse=True)
+def _restore_real_embedders():
+    """本文件测真实 provider（不是 FakeEmbedder），恢复 factory 映射。"""
+    import tangyuanAI.kb.embedder_factory as factory
+    from tangyuanAI.kb.embedder_openai import OpenAICompatibleEmbedder
+    factory._EMBEDDERS["openai-compatible"] = OpenAICompatibleEmbedder
+    factory._EMBEDDERS["openai"] = OpenAICompatibleEmbedder
+    yield
+
+
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------

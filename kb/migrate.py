@@ -10,7 +10,7 @@
 2. 读旧 collection 所有 chunks（scroll）
 3. 用新 embedder embed_batch（走 cache，命中率高）
 4. 写入新 collection（临时）
-5. swap：KB.collection_name 指向新 collection + embedder/embed_dim 更新 + 持久化
+5. swap：Knowledge.config 指向新 collection + embedder/embed_dim 更新 + 持久化
 6. 删除旧 collection
 
 **事务保证**：
@@ -19,6 +19,7 @@
 """
 from __future__ import annotations
 
+import asyncio as _asyncio
 import datetime as _dt
 import time
 from typing import Any
@@ -27,17 +28,22 @@ from ..logging_config import get_logger
 from .cache import get_global_cache
 from .config import EmbedderConfig
 from .embedder_factory import create_embedder
-from .ingest import get_vector_store
-from .persistence import KBMetaStore
 
-__all__ = ["migrate_embedding_model", "migrate_embedding_model_sync"]
+__all__ = ["migrate_kb", "migrate_kb_sync", "migrate_embedding_model", "migrate_embedding_model_sync"]
 
 
 _logger = get_logger("kb.migrate")
 
 
-async def migrate_embedding_model(
-    kb_id_or_name: str,
+def _resolve(kb):
+    if isinstance(kb, str):
+        from .registry import get_kb
+        return get_kb(kb)
+    return kb
+
+
+async def migrate_kb(
+    kb,
     new_config: EmbedderConfig,
     *,
     batch_size: int = 100,
@@ -47,19 +53,18 @@ async def migrate_embedding_model(
     Returns:
         {"total_chunks", "duration_sec", "old_collection", "new_collection", "old_embedder"}
     """
-    from .registry import get_kb as _get_kb
-
-    kb = _get_kb(kb_id_or_name)
-    if kb.embedder is None:
-        raise ValueError(f"KB {kb.name!r} has no current embedder; nothing to migrate from")
+    kb = _resolve(kb)
+    cfg = kb.config
+    if cfg.embedder is None:
+        raise ValueError(f"KB {cfg.name!r} has no current embedder; nothing to migrate from")
     if new_config.embed_dim <= 0:
         raise ValueError("new_config.embed_dim must be > 0")
 
-    old_embedder = kb.embedder
-    old_collection = kb.collection_name or kb.id
+    old_embedder = cfg.embedder
+    old_collection = kb.collection
     t0 = time.perf_counter()
 
-    vs = get_vector_store(kb)
+    vs = kb.vs
 
     # 1. 读旧 collection 所有 chunks
     all_points: list[dict[str, Any]] = []
@@ -87,14 +92,19 @@ async def migrate_embedding_model(
         await vs.upsert(new_collection, ids, vectors, payloads)
         _logger.info(f"migrate: written {len(vectors)} vectors to {new_collection}")
 
-    # 5. swap config（内存 + 持久化）
-    object.__setattr__(kb, "embedder", new_config)
-    object.__setattr__(kb, "embed_dim", new_config.embed_dim)
-    object.__setattr__(kb, "collection_name", new_collection)
-    object.__setattr__(kb, "updated_at", _dt.datetime.now(_dt.timezone.utc).isoformat())
-    KBMetaStore(kb.base_dir).save_kb(kb)
+    # 5. swap config（重建 config 对象，更新 embedder / embed_dim / collection_name / updated_at）
+    new_cfg_data = kb.config.model_dump()
+    new_cfg_data["embedder"] = new_config
+    new_cfg_data["embed_dim"] = new_config.embed_dim
+    new_cfg_data["collection_name"] = new_collection
+    new_cfg_data["updated_at"] = _dt.datetime.now(_dt.timezone.utc).isoformat()
+    new_cfg = kb.config.__class__(**new_cfg_data)
+    kb.config = new_cfg
+    kb._sync_mirror()  # 同步实例镜像属性（embed_dim / embedder / 等）
+    # 持久化
+    kb._meta.save_kb(new_cfg)
     _logger.info(
-        f"migrate: KB {kb.name} embedder → {new_config.provider}/{new_config.model} "
+        f"migrate: KB {cfg.name} embedder → {new_config.provider}/{new_config.model} "
         f"dim={new_config.embed_dim} collection={new_collection}"
     )
 
@@ -114,11 +124,17 @@ async def migrate_embedding_model(
     }
 
 
-def migrate_embedding_model_sync(
-    kb_id_or_name: str,
-    new_config: EmbedderConfig,
-    **kwargs,
-) -> dict[str, Any]:
-    """同步包装 migrate_embedding_model。"""
-    import asyncio
-    return asyncio.run(migrate_embedding_model(kb_id_or_name, new_config, **kwargs))
+def migrate_kb_sync(kb, new_config: EmbedderConfig, **kwargs) -> dict[str, Any]:
+    return _asyncio.run(migrate_kb(kb, new_config, **kwargs))
+
+
+# === 向后兼容（保留原函数名） ===
+
+async def migrate_embedding_model(kb, new_config, **kwargs):
+    return await migrate_kb(kb, new_config, **kwargs)
+
+
+def migrate_embedding_model_sync(kb, new_config, **kwargs):
+    return _asyncio.run(migrate_embedding_model(kb, new_config, **kwargs))
+
+

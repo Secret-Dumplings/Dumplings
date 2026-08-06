@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import hashlib
 
-import pytest
 from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
 from tangyuanAI.kb.embedder_base import BaseEmbedder
 
@@ -68,36 +67,8 @@ def _cfg(**kw) -> EmbedderConfig:
     return EmbedderConfig(**base)
 
 
-@pytest.fixture(autouse=True)
-def _clean(monkeypatch, tmp_path):
-    import tangyuanAI.kb.embedder_factory as factory
-    import tangyuanAI.kb.ingest as ingest
-    import tangyuanAI.kb.reranker_factory as rfactory
-    from tangyuanAI.kb.registry import _kbs, _store_cache
-
-    monkeypatch.setenv("TANGYUAN_KB_DIR", str(tmp_path))
-    # 替换 embedder / reranker（测试替换性）
-    factory._EMBEDDERS["openai-compatible"] = FakeEmbedder
-    rfactory._RERANKERS["boost"] = BoostReranker
-
-    saved = dict(_kbs)
-    _kbs.clear()
-    _store_cache.clear()
-    ingest._store_cache.clear()
-    yield
-    _kbs.clear()
-    _kbs.update(saved)
-    _store_cache.clear()
-    ingest._store_cache.clear()
-    factory._EMBEDDERS["openai-compatible"] = __import__(
-        "tangyuanAI.kb.embedder_openai", fromlist=["OpenAICompatibleEmbedder"]
-    ).OpenAICompatibleEmbedder
-    rfactory._RERANKERS.pop("boost", None)
 
 
-# ---------------------------------------------------------------------------
-# 替换性验证
-# ---------------------------------------------------------------------------
 
 class TestReplaceable:
     def test_replace_cache_with_null(self):
