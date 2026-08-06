@@ -110,6 +110,12 @@ except ImportError:
 from .skill import Skill, skill_registry
 from .skill_bridge import register_skill_as_tool, unregister_skill_from_tool
 
+# MCP 客户端类（#5 类化）
+try:
+    from .mcp_client import MCPClient
+except ImportError:
+    pass
+
 # 从 kb 包导入 KB 相关功能（MCP 风格守卫 import）
 try:
     from .kb import (
@@ -232,6 +238,8 @@ __all__ = [
     "Skill",
     "register_skill_as_tool",
     "unregister_skill_from_tool",
+    # MCP 客户端类（v1.0.0+）
+    "MCPClient",
     # 持久化（v0.3.2+）
     "save_state",
     "load_state",
