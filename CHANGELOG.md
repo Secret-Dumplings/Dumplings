@@ -18,14 +18,23 @@ tangyuanAI 的所有显著变更记录。
   - CLI：`tangyuanai kb {add,search,list,show,delete,migrate,providers,processors,cache}` 9 个子命令。
   - 工具集成：`register_kb_tools(kb)` 注册 `kb_<name>_search / _list / _add` 给 Agent 用。
   - 多文件拆分：每个 provider 一个文件（`kb/embedder_openai.py` 等），新增 provider = 加 1 文件 + factory 1 行，**不动其他文件**。
+- **Knowledge 类**（替代全局 `_kbs` dict）：`class MyKB(Knowledge): embedder=...; chunk_size=...` → 实例化多 KB、完全隔离（独立 collection + 独立 meta DB + 独立 id）、AI 可直接持有实例调 `kb.add()` / `kb.search()` / `kb.migrate()` / `kb.register_tools()`。`register_kb/get_kb` 薄包装向后兼容。
+- **Skill 类化**：`class TimeSkill(Skill): path="./skills/time"` → 实例化自动从 SKILL.md 解析 name/description/parameters 并自动注册到共享 skill 池。新增 `Skill.from_dir()`。
+- **MCPClient 类**：`class NotionMCP(MCPClient): server_path="..."` → `async with NotionMCP() as m: tools = await m.list_tools()`；`m.register_tools()` 注入 Agent。
+- **A2A 互操作**：
+  - 导入：`discover(url)` / `register_a2a_agent(url)` → `A2AAgentProxy` 注册到 agent_list，`ask_for_help` 透明调远端。
+  - 导出：`A2AExporter(host, port)` 暴露 `/.well-known/agent.json` + `POST /a2a/v1/tasks/send`（aiohttp，optional `[a2a]`）。
+  - 来源跟踪：`register_agent(name, instance, *, source="internal"|"a2a:<url>")` + `agent_source()` / `list_internal_agents()` / `list_external_agents()`。
 
 ### Changed
 - **KB 子包结构重组**：50 个 `kb_*.py` 文件统一移到 `kb/` 子包，文件名去掉 `kb_` 前缀（子包名已表明是 KB）。`knowledge_base.py` → `kb/__init__.py`；`kb_cli.py` → `kb/cli.py`；测试移到 `tests/kb/`。
   - 新增 KB provider 路径明确：建 `kb/<area>_<provider>.py` + factory dict 1 行，**不动其他文件**。
   - 外部 import 路径：`from tangyuanAI.kb_X import ...` → `from tangyuanAI.kb.X import ...`。
   - `tangyuanAI` 顶层 + `kb/` 子包均导出 KB API（向后兼容：用户写 `from tangyuanAI import register_kb` 仍可用）。
-- **`docs/kb.md` 同步**：更新所有 import 路径 + 架构图（`kb/loader_*.py` 等新路径）。
-- **`pyproject.toml`**：`packages` 加 `"tangyuanAI.kb"`。
+- **弃用 OpenAI SDK，httpx 自建适配**：`kb/embedder_openai.py` 改用 `http_utils.AsyncHTTPClient`（httpx）；修 `/v1` 重复前缀 bug（base_url 含 /v1 时不再 `/v1/v1/rerank`）；`pyproject.toml` 删 `openai` required 依赖。
+- **`docs/kb.md` 同步**：更新所有 import 路径 + 架构图（`kb/loader_*.py` 等新路径）；厂商中立化（不绑定具体 vendor）。
+- **`pyproject.toml`**：`packages` 加 `"tangyuanAI.kb"`；新增 `[a2a]` extra。
+- **新增文档**：`docs/a2a.md`（A2A 互操作）。
 
 ### Fixed
 - **CI 失败**：`openmineru>=0.1` 在 PyPI 上不存在，导致 `uv sync` 解析失败。已从 `[project.optional-dependencies]` 移除 `kb-processor-openminerU`（provider 代码保留在 `kb/doc_processor_openmineru.py`，需手动从源码安装）；`ruff check .` 215 个错误（E401/F401/F841/I001/W292）已清理，`uv sync` / `ruff` / `pytest` 全绿。
