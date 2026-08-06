@@ -11,6 +11,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30   # 防止偶发挂起烧满 GitHub 默认 6h；慢平台实测 ~13min
     strategy:
       fail-fast: false
       matrix:
