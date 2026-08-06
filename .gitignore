@@ -70,3 +70,6 @@ AGENTS.md
 # 构建 / 调试产物（不入库）
 bundle.json
 .tangyuanAI_sessions.db
+
+# KB 数据目录（默认）
+.tangyuanAI_kbs/

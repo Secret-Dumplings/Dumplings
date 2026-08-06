@@ -33,7 +33,10 @@ from .kb_cache import get_global_cache
 from .logging_config import get_logger
 
 
-__all__ = ["add_document", "add_documents", "add_document_sync", "add_documents_sync", "get_vector_store"]
+__all__ = [
+    "add_document", "add_documents", "add_document_sync", "add_documents_sync",
+    "get_vector_store", "shutdown_kb",
+]
 
 
 _logger = get_logger("kb.ingest")
@@ -60,6 +63,19 @@ def get_vector_store(kb: KnowledgeBase) -> QdrantVectorStore:
             )
             _store_cache[key] = vs
         return vs
+
+
+def shutdown_kb() -> None:
+    """关闭所有缓存的 Qdrant client（应用退出时调用，避免资源泄漏）。"""
+    import asyncio as _aio
+    with _store_lock:
+        stores = list(_store_cache.values())
+        _store_cache.clear()
+    for vs in stores:
+        try:
+            _aio.run(vs.close())
+        except Exception:
+            pass
 
 
 def _content_hash(text: str) -> str:

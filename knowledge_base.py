@@ -59,6 +59,7 @@ from .kb_ingest import (
     add_document_sync,
     add_documents,
     add_documents_sync,
+    shutdown_kb,
 )
 from .kb_search import (
     list_documents,
@@ -92,6 +93,8 @@ __all__ = [
     "register_kb", "get_kb", "list_kbs", "delete_kb",
     # 文档
     "add_document", "add_document_sync", "add_documents", "add_documents_sync",
+    # 资源清理
+    "shutdown_kb",
     # 检索
     "search", "search_sync", "list_documents", "list_documents_sync",
     # 迁移
