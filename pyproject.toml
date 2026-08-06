@@ -57,6 +57,8 @@ kb-rerank-local  = ["sentence-transformers>=2.2", "torch>=2.0"]  # BGE / ColBERT
 kb-processor-mineru     = ["magic-pdf[full]>=0.6"]     # OpenDataLab 学术 PDF
 # kb-processor-openminerU 未列在 PyPI（开源矿拟开源 API 还在调整）；provider 代码在 kb/doc_processor_openmineru.py，需手动从源码安装。
 kb-processor-paddleocr  = ["paddleocr>=2.7", "paddlepaddle>=2.5"]
+# A2A 导出（把本地 agent 暴露为 A2A HTTP endpoint）
+a2a = ["aiohttp>=3.9"]
 
 [project.urls]
 Homepage = "https://github.com/secret-tangyuan/tangyuanAI"

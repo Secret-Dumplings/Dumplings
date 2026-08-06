@@ -242,18 +242,51 @@ def is_active(name: str) -> bool:
 # 注册表 API 包装（v0.4.2+）—— 替代直接 mutate agent_list dict
 # ---------------------------------------------------------------------------
 
-def register_agent(name: str, instance) -> None:
+# 来源跟踪（v1.0.0+，A2A 兼容）：name -> "internal" | "a2a:<url>"
+# 区分框架内定义的 agent 与从远端 A2A 发现的 agent。
+_agent_sources: dict = {}
+
+
+def register_agent(name: str, instance, *, source: str = "internal") -> None:
     """把 instance 注册到 agent_list（用 name 作 key）。
 
     不像 ``@register_agent`` 装饰器（已弃用），这是手动注册 API。
     多次注册同名会覆盖。
+
+    Args:
+        name: agent 名（agent_list 的 key）
+        instance: agent 实例
+        source: 来源标签。默认 "internal"（框架内定义）；
+                A2A 导入用 "a2a:<url>"（远端发现的 agent）
     """
     agent_list[name] = instance
+    _agent_sources[name] = source
 
 
 def unregister_agent(name: str) -> bool:
     """从 agent_list 注销。name 不存在不抛，返回是否真的删了。"""
+    _agent_sources.pop(name, None)
     return agent_list.pop(name, None) is not None
+
+
+def agent_source(name: str) -> str:
+    """返回 agent 的来源标签（"internal" 或 "a2a:<url>"）。"""
+    return _agent_sources.get(name, "internal")
+
+
+def list_internal_agents() -> list:
+    """列出框架内定义的 agent（source == "internal"）。"""
+    return [name for name, src in _agent_sources.items() if src == "internal"]
+
+
+def list_external_agents() -> list:
+    """列出从 A2A 导入的远端 agent（source 以 "a2a:" 开头）。"""
+    return [name for name, src in _agent_sources.items() if src.startswith("a2a:")]
+
+
+def list_agents_with_source() -> list:
+    """列出所有 agent 及其来源标签：[(name, source), ...]。"""
+    return [(name, _agent_sources.get(name, "internal")) for name in agent_list]
 
 
 # ---------------------------------------------------------------------------

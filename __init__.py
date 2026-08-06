@@ -75,10 +75,14 @@ from .agent import (
 from .Agent_list import (
     activate_template,
     agent_list,
+    agent_source,
     agent_template_pool,
     deactivate_template,
     get_template,
     is_active,
+    list_agents_with_source,
+    list_external_agents,
+    list_internal_agents,
     list_templates,
     register_agent,
     register_template,
@@ -109,6 +113,26 @@ except ImportError:
 # 从 skill 导入 Skill 相关功能
 from .skill import Skill, skill_registry
 from .skill_bridge import register_skill_as_tool, unregister_skill_from_tool
+
+# A2A 兼容层（v1.0.0+；导入 = 客户端，导出 = aiohttp server，均守卫）
+try:
+    from .kb.a2a_client import (
+        A2AAgentProxy,
+        discover,
+        register_a2a_agent,
+        send_task,
+        send_task_sync,
+    )
+    from .kb.a2a_exporter import A2AExporter
+    from .kb.a2a_protocol import (
+        extract_text_from_artifacts,
+        make_agent_card,
+        make_json_rpc_request,
+        make_json_rpc_response,
+        make_text_message,
+    )
+except ImportError:
+    pass
 
 # MCP 客户端类（#5 类化）
 try:
@@ -202,6 +226,7 @@ __all__ = [
     # 核心组件
     "register_agent",       # 手动注册 API（v0.4.2+）
     "unregister_agent",     # 手动注销 API（v0.4.2+）
+    "agent_source", "list_internal_agents", "list_external_agents", "list_agents_with_source",  # 来源跟踪（v1.0.0+）
     "template_agent",       # 模板池装饰器（v0.3.0+ 推荐）
     "activate_template",    # 模板池激活（v0.3.0+）
     "deactivate_template",  # 模板池反激活（v0.3.0+）
@@ -240,6 +265,12 @@ __all__ = [
     "unregister_skill_from_tool",
     # MCP 客户端类（v1.0.0+）
     "MCPClient",
+    # A2A 兼容（v1.0.0+）
+    "A2AExporter", "A2AAgentProxy",
+    "discover", "register_a2a_agent", "send_task", "send_task_sync",
+    "make_agent_card", "make_text_message",
+    "make_json_rpc_request", "make_json_rpc_response",
+    "extract_text_from_artifacts",
     # 持久化（v0.3.2+）
     "save_state",
     "load_state",

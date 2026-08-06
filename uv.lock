@@ -6225,6 +6225,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+a2a = [
+    { name = "aiohttp" },
+]
 kb-embed-cohere = [
     { name = "cohere" },
 ]
@@ -6256,6 +6259,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", marker = "extra == 'a2a'", specifier = ">=3.9" },
     { name = "beautifulsoup4", specifier = ">=4.14.2" },
     { name = "cohere", marker = "extra == 'kb-embed-cohere'", specifier = ">=5.5" },
     { name = "cohere", marker = "extra == 'kb-rerank-cohere'", specifier = ">=5.5" },
@@ -6280,7 +6284,7 @@ requires-dist = [
     { name = "voyageai", marker = "extra == 'kb-embed-voyage'", specifier = ">=0.2" },
     { name = "watchdog", specifier = ">=3.0" },
 ]
-provides-extras = ["kb-embed-cohere", "kb-embed-voyage", "kb-embed-jina", "kb-rerank-cohere", "kb-rerank-jina", "kb-rerank-local", "kb-processor-mineru", "kb-processor-paddleocr"]
+provides-extras = ["kb-embed-cohere", "kb-embed-voyage", "kb-embed-jina", "kb-rerank-cohere", "kb-rerank-jina", "kb-rerank-local", "kb-processor-mineru", "kb-processor-paddleocr", "a2a"]
 
 [package.metadata.requires-dev]
 dev = [
