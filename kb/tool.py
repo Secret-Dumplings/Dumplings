@@ -19,7 +19,6 @@ import json
 from ..agent_tool import tool_registry
 from ..logging_config import get_logger
 
-
 __all__ = ["register_kb_tools", "unregister_kb_tools"]
 
 _logger = get_logger("kb.tool")
@@ -39,8 +38,8 @@ def _format_search_results(results) -> str:
 
 def register_kb_tools(kb, *, allowed_agents=None) -> list[str]:
     """把 KB 注册为 3 个工具。返回注册的工具名列表。"""
-    from .search import search_sync, list_documents_sync
     from .ingest import add_document_sync
+    from .search import list_documents_sync, search_sync
 
     kb_name = kb.name
     names: list[str] = []

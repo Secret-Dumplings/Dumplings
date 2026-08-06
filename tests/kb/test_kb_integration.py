@@ -11,10 +11,8 @@ from __future__ import annotations
 import hashlib
 
 import pytest
-
 from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
 from tangyuanAI.kb.embedder_base import BaseEmbedder
-
 
 # ---------------------------------------------------------------------------
 # Fake embedder（deterministic hash 向量）
@@ -48,9 +46,8 @@ def _cfg(dim: int = 16, model: str = "fake-model", **kw) -> EmbedderConfig:
 
 @pytest.fixture(autouse=True)
 def _clean(monkeypatch, tmp_path):
-    import tangyuanAI.kb.registry as reg
-    import tangyuanAI.kb.ingest as ingest
     import tangyuanAI.kb.embedder_factory as factory
+    import tangyuanAI.kb.ingest as ingest
     from tangyuanAI.kb.registry import _kbs, _store_cache
 
     monkeypatch.setenv("TANGYUAN_KB_DIR", str(tmp_path))
@@ -77,8 +74,8 @@ def _clean(monkeypatch, tmp_path):
 class TestEndToEnd:
     def test_full_flow(self, tmp_path):
         """register → add 3 篇不同主题 md → 各主题搜索排第一 → migrate → 再搜。"""
-        from tangyuanAI.kb.registry import register_kb, get_kb
-        from tangyuanAI.kb.ingest import add_document_sync, add_documents_sync
+        from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         # 准备 3 篇不同主题的 md
@@ -90,7 +87,7 @@ class TestEndToEnd:
         for name, content in docs.items():
             (tmp_path / name).write_text(content, encoding="utf-8")
 
-        kb = register_kb(
+        register_kb(
             "test",
             embedder=_cfg(dim=16),
             qdrant_location=":memory:",
@@ -116,8 +113,8 @@ class TestEndToEnd:
 
     def test_add_documents_batch(self, tmp_path):
         """add_documents 批量 + 并发。"""
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_documents_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         for i in range(5):
@@ -134,9 +131,8 @@ class TestEndToEnd:
 
     def test_persistence_across_restart(self, tmp_path):
         """模拟重启：进程内清注册表 → 从持久化恢复 → 数据仍可搜。"""
-        from tangyuanAI.kb.registry import register_kb, _kbs, get_kb
         from tangyuanAI.kb.ingest import add_document_sync
-        from tangyuanAI.kb.search import search_sync
+        from tangyuanAI.kb.registry import _kbs, get_kb, register_kb
 
         register_kb("persist", embedder=_cfg(), qdrant_location=":memory:")
         add_document_sync("persist", "raw:hello", raw_text="持久化测试内容 vector search")
@@ -148,8 +144,8 @@ class TestEndToEnd:
 
     def test_rerank_path(self):
         """NoOp reranker 配置 + 搜索仍工作。"""
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         register_kb(
@@ -164,8 +160,8 @@ class TestEndToEnd:
 
     def test_threshold_only_filters_rerank(self, tmp_path):
         """threshold 只砍 rerank 分数，不砍 bm25/cosine。"""
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         register_kb(
@@ -179,8 +175,8 @@ class TestEndToEnd:
 
     def test_content_hash_dedup(self, tmp_path):
         """同一内容加 2 次 → 只入库 1 份。"""
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import list_documents_sync
 
         register_kb("dedup", embedder=_cfg(), qdrant_location=":memory:")

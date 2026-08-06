@@ -27,6 +27,9 @@ tangyuanAI 的所有显著变更记录。
 - **`docs/kb.md` 同步**：更新所有 import 路径 + 架构图（`kb/loader_*.py` 等新路径）。
 - **`pyproject.toml`**：`packages` 加 `"tangyuanAI.kb"`。
 
+### Fixed
+- **CI 失败**：`openmineru>=0.1` 在 PyPI 上不存在，导致 `uv sync` 解析失败。已从 `[project.optional-dependencies]` 移除 `kb-processor-openminerU`（provider 代码保留在 `kb/doc_processor_openmineru.py`，需手动从源码安装）；`ruff check .` 215 个错误（E401/F401/F841/I001/W292）已清理，`uv sync` / `ruff` / `pytest` 全绿。
+
 ## [1.0.0] - 2026-08-05
 
 > 首次 PyPI 发布。从 `dumplingsAI` 改名 `tangyuanAI` 是 breaking change：Python import / CLI 命令 / 环境变量 / .gitignore 目录名 / `.tas` 格式头全部更新。

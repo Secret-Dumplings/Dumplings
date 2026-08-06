@@ -17,10 +17,8 @@ from __future__ import annotations
 import hashlib
 
 import pytest
-
 from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
 from tangyuanAI.kb.embedder_base import BaseEmbedder
-
 
 # ---------------------------------------------------------------------------
 # 可替换组件
@@ -72,9 +70,8 @@ def _cfg(**kw) -> EmbedderConfig:
 
 @pytest.fixture(autouse=True)
 def _clean(monkeypatch, tmp_path):
-    import tangyuanAI.kb.registry as reg
-    import tangyuanAI.kb.ingest as ingest
     import tangyuanAI.kb.embedder_factory as factory
+    import tangyuanAI.kb.ingest as ingest
     import tangyuanAI.kb.reranker_factory as rfactory
     from tangyuanAI.kb.registry import _kbs, _store_cache
 
@@ -105,9 +102,9 @@ def _clean(monkeypatch, tmp_path):
 class TestReplaceable:
     def test_replace_cache_with_null(self):
         """缓存换成 NullCache 后 KB 仍工作。"""
-        from tangyuanAI.kb.cache import NullCache, set_global_cache, get_global_cache
-        from tangyuanAI.kb.registry import register_kb
+        from tangyuanAI.kb.cache import NullCache, get_global_cache, set_global_cache
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         # 换全局缓存为 NullCache
@@ -122,8 +119,8 @@ class TestReplaceable:
 
     def test_replace_embedder(self):
         """Fake embedder 替换 OpenAI-compatible 后 KB 仍工作（fixture 已替换）。"""
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         register_kb("e", embedder=_cfg(), qdrant_location=":memory:")
@@ -132,11 +129,10 @@ class TestReplaceable:
 
     def test_replace_reranker(self):
         """自定义 boost reranker 替换 NoOp 后 KB 仍工作，且 boost 生效。"""
-        from tangyuanAI.kb.registry import register_kb
-        from tangyuanAI.kb.ingest import add_document_sync
-        from tangyuanAI.kb.search import search_sync
         import tangyuanAI.kb.reranker_factory as rfactory
-        from tangyuanAI.kb.reranker_noop import NoOpReranker
+        from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
+        from tangyuanAI.kb.search import search_sync
 
         # 把 openai-compatible provider 替换为 BoostReranker（fixture 已注册 boost，这里覆盖）
         orig = rfactory._RERANKERS.get("openai-compatible")
@@ -164,8 +160,8 @@ class TestReplaceable:
 
     def test_replace_chunker_to_markdown(self):
         """markdown chunker 替换 recursive。"""
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         register_kb("md", embedder=_cfg(), qdrant_location=":memory:",
@@ -175,13 +171,13 @@ class TestReplaceable:
 
     def test_replace_doc_processor(self):
         """raw processor 处理 .md（fixture 默认）→ 走 RawTextProcessor。"""
-        from tangyuanAI.kb.registry import register_kb
-        from tangyuanAI.kb.ingest import add_document_sync
-        from tangyuanAI.kb.search import search_sync
-        from tangyuanAI.kb.doc_processor_factory import get_processor_for
-
         # raw 能处理 .md
         import tempfile
+
+        from tangyuanAI.kb.doc_processor_factory import get_processor_for
+        from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
+        from tangyuanAI.kb.search import search_sync
         with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False, encoding="utf-8") as f:
             f.write("doc processor replacement content")
             path = f.name

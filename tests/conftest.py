@@ -85,7 +85,7 @@ def _clean_global_state():
     except ImportError:
         pass
     try:
-        from tangyuanAI.kb.cache import get_global_cache, NullCache, set_global_cache
+        from tangyuanAI.kb.cache import NullCache, get_global_cache, set_global_cache
         _orig_cache = get_global_cache()
         if not isinstance(_orig_cache, NullCache):
             set_global_cache(NullCache())

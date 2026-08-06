@@ -18,10 +18,8 @@ import hashlib
 import time
 
 import pytest
-
 from tangyuanAI.kb.config import EmbedderConfig
 from tangyuanAI.kb.embedder_base import BaseEmbedder
-
 
 pytestmark = pytest.mark.benchmark
 
@@ -52,9 +50,8 @@ def _cfg(**kw) -> EmbedderConfig:
 
 @pytest.fixture(autouse=True)
 def _clean(monkeypatch, tmp_path):
-    import tangyuanAI.kb.registry as reg
-    import tangyuanAI.kb.ingest as ingest
     import tangyuanAI.kb.embedder_factory as factory
+    import tangyuanAI.kb.ingest as ingest
     from tangyuanAI.kb.registry import _kbs, _store_cache
 
     monkeypatch.setenv("TANGYUAN_KB_DIR", str(tmp_path))
@@ -85,8 +82,8 @@ def _make_docs(n: int, tmp_path) -> list[str]:
 
 class TestPerf:
     def test_500_doc_index_throughput(self, tmp_path):
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_documents_sync
+        from tangyuanAI.kb.registry import register_kb
 
         register_kb("perf_idx", embedder=_cfg(), qdrant_location=":memory:",
                     chunk_size=64, chunk_overlap=10)
@@ -102,8 +99,8 @@ class TestPerf:
         assert dt < 60.0  # 宽松上限（CI 慢机器）
 
     def test_50_concurrent_search_latency(self, tmp_path):
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_documents_sync
+        from tangyuanAI.kb.registry import register_kb
 
         register_kb("perf_search", embedder=_cfg(), qdrant_location=":memory:",
                     chunk_size=100, chunk_overlap=20)
@@ -122,8 +119,9 @@ class TestPerf:
 
     def test_batch_vs_single_embed(self):
         import asyncio
-        from tangyuanAI.kb.embedder_factory import create_embedder
+
         from tangyuanAI.kb.cache import NullCache
+        from tangyuanAI.kb.embedder_factory import create_embedder
 
         e = create_embedder(_cfg(), cache=NullCache())
         texts = [f"text {i} with some words to embed" for i in range(100)]
@@ -144,8 +142,9 @@ class TestPerf:
 
     def test_cache_hit_speedup(self):
         import asyncio
-        from tangyuanAI.kb.embedder_factory import create_embedder
+
         from tangyuanAI.kb.cache import get_global_cache
+        from tangyuanAI.kb.embedder_factory import create_embedder
 
         e = create_embedder(_cfg(), cache=get_global_cache())
         text = "cache benchmark text"

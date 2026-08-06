@@ -36,10 +36,10 @@ from tenacity import (
     wait_exponential,
 )
 
+from ..errors import APIError
 from .cache import get_global_cache
 from .config import RerankerConfig
 from .types import Chunk
-from ..errors import APIError
 
 
 def get_logger(name: str):

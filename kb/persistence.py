@@ -23,7 +23,7 @@ import json
 import sqlite3
 import threading
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from .types import DocMeta, KnowledgeBase
 
@@ -113,7 +113,7 @@ class KBMetaStore:
     def _init_schema(self) -> None:
         with self._lock:
             self._conn.executescript(_SCHEMA)
-            cur = self._conn.execute(
+            self._conn.execute(
                 "INSERT OR IGNORE INTO schema_meta (k, v) VALUES (?, ?)",
                 ("schema_version", str(self.SCHEMA_VERSION)),
             )

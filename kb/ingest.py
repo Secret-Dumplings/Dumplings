@@ -22,16 +22,14 @@ import threading
 import uuid
 from typing import Any
 
-from .types import Chunk, DocMeta, KnowledgeBase
-from .config import EmbedderConfig
-from .loader_factory import create_loader
+from ..logging_config import get_logger
+from .cache import get_global_cache
 from .chunker_factory import create_chunker
 from .embedder_factory import create_embedder
-from .vector_store import QdrantVectorStore
+from .loader_factory import create_loader
 from .persistence import KBMetaStore
-from .cache import get_global_cache
-from ..logging_config import get_logger
-
+from .types import Chunk, DocMeta, KnowledgeBase
+from .vector_store import QdrantVectorStore
 
 __all__ = [
     "add_document", "add_documents", "add_document_sync", "add_documents_sync",

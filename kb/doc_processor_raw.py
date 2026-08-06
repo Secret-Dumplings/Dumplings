@@ -13,7 +13,6 @@ from typing import Any
 
 from .doc_processor_base import BaseDocProcessor
 
-
 __all__ = ["RawTextProcessor"]
 
 

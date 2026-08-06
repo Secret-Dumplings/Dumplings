@@ -54,7 +54,7 @@ kb-rerank-jina   = []
 kb-rerank-local  = ["sentence-transformers>=2.2", "torch>=2.0"]  # BGE / ColBERT / MonoT5
 # KB doc processors
 kb-processor-mineru     = ["magic-pdf[full]>=0.6"]     # OpenDataLab 学术 PDF
-kb-processor-openminerU = ["openmineru>=0.1"]          # 开源版 minerU
+# kb-processor-openminerU 未列在 PyPI（开源矿拟开源 API 还在调整）；provider 代码在 kb/doc_processor_openmineru.py，需手动从源码安装。
 kb-processor-paddleocr  = ["paddleocr>=2.7", "paddlepaddle>=2.5"]
 
 [project.urls]

@@ -12,26 +12,21 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from tangyuanAI.kb.chunker_recursive import RecursiveCharChunker
-from tangyuanAI.kb.chunker_markdown import MarkdownChunker
-from tangyuanAI.kb.chunker_token import TokenChunker
-from tangyuanAI.kb.chunker_html import HTMLChunker
 from tangyuanAI.kb.chunker_factory import create_chunker, list_chunkers
-
-from tangyuanAI.kb.loader_file import FileLoader
-from tangyuanAI.kb.loader_raw import RawTextLoader
-from tangyuanAI.kb.loader_directory import DirectoryLoader
-from tangyuanAI.kb.loader_url import URLLoader
-from tangyuanAI.kb.loader_factory import create_loader
-
+from tangyuanAI.kb.chunker_html import HTMLChunker
+from tangyuanAI.kb.chunker_markdown import MarkdownChunker
+from tangyuanAI.kb.chunker_recursive import RecursiveCharChunker
+from tangyuanAI.kb.chunker_token import TokenChunker
+from tangyuanAI.kb.doc_processor_factory import get_processor_for, list_doc_processors
 from tangyuanAI.kb.doc_processor_raw import RawTextProcessor
 from tangyuanAI.kb.doc_processor_unstructured import UnstructuredProcessor
-from tangyuanAI.kb.doc_processor_factory import get_processor_for, list_doc_processors
-
-from tangyuanAI.kb.sparse import Bm25SparseVectorizer, SparseVector
+from tangyuanAI.kb.loader_directory import DirectoryLoader
+from tangyuanAI.kb.loader_factory import create_loader
+from tangyuanAI.kb.loader_file import FileLoader
+from tangyuanAI.kb.loader_raw import RawTextLoader
+from tangyuanAI.kb.loader_url import URLLoader
+from tangyuanAI.kb.sparse import Bm25SparseVectorizer
 from tangyuanAI.kb.vector_store import QdrantVectorStore
-
 
 # ---------------------------------------------------------------------------
 # Chunker

@@ -23,14 +23,12 @@ import datetime as _dt
 import time
 from typing import Any
 
-from .types import KnowledgeBase
+from ..logging_config import get_logger
+from .cache import get_global_cache
 from .config import EmbedderConfig
 from .embedder_factory import create_embedder
-from .cache import get_global_cache
 from .ingest import get_vector_store
 from .persistence import KBMetaStore
-from ..logging_config import get_logger
-
 
 __all__ = ["migrate_embedding_model", "migrate_embedding_model_sync"]
 

@@ -9,11 +9,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .loader_file import FileLoader
-from .loader_url import URLLoader
 from .loader_directory import DirectoryLoader
+from .loader_file import FileLoader
 from .loader_raw import RawTextLoader
-
+from .loader_url import URLLoader
 
 __all__ = ["create_loader", "list_loaders"]
 

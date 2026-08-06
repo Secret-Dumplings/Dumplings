@@ -14,9 +14,7 @@ import asyncio
 from typing import Any
 
 from .reranker_base import BaseReranker
-from .config import RerankerConfig
 from .types import Chunk
-
 
 __all__ = ["BGEReranker"]
 

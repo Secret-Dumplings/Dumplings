@@ -23,7 +23,6 @@ from typing import Iterable
 
 from pydantic import BaseModel, Field
 
-
 __all__ = ["Bm25SparseVectorizer", "SparseVectorizer"]
 
 

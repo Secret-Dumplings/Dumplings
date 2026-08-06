@@ -19,10 +19,7 @@ KB CLI 子命令（kb_cli.py）
 from __future__ import annotations
 
 import argparse
-import os
 import sys
-from typing import Optional
-
 
 __all__ = ["add_subparser", "main", "cmd_add", "cmd_search", "cmd_list", "cmd_show",
            "cmd_delete", "cmd_migrate", "cmd_providers", "cmd_processors", "cmd_cache"]
@@ -54,7 +51,10 @@ def _reranker_config_from_args(args):
 
 def cmd_add(args: argparse.Namespace) -> int:
     from . import (
-        EmbedderConfig, RerankerConfig, register_kb, add_document_sync,
+        EmbedderConfig,
+        RerankerConfig,
+        add_document_sync,
+        register_kb,
     )
 
     embedder = EmbedderConfig(**_embedder_config_from_args(args)) if args.embedder_provider else None

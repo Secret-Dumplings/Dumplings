@@ -11,10 +11,9 @@ from pathlib import Path
 from typing import Any
 
 from ..logging_config import get_logger
+from .doc_processor_factory import _EXT_DEFAULT
 from .loader_base import BaseLoader
 from .loader_file import FileLoader
-from .doc_processor_factory import _EXT_DEFAULT
-
 
 __all__ = ["DirectoryLoader"]
 

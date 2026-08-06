@@ -15,14 +15,11 @@ KB 全局注册表（kb_registry.py）
 from __future__ import annotations
 
 import threading
-import uuid
 from pathlib import Path
-from typing import Optional
 
-from .types import KnowledgeBase
-from .persistence import KBMetaStore
 from ..logging_config import get_logger
-
+from .persistence import KBMetaStore
+from .types import KnowledgeBase
 
 __all__ = ["register_kb", "get_kb", "list_kbs", "delete_kb", "_kbs"]
 
@@ -85,8 +82,9 @@ def register_kb(
         visibility: private / public
         overwrite: 已存在时是否覆盖
     """
-    from .types import Visibility
     import os as _os
+
+    from .types import Visibility
 
     # 默认 base_dir 从 env 读（测试隔离 / 生产配置用）
     if base_dir is None:

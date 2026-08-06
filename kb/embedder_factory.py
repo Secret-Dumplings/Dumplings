@@ -14,12 +14,11 @@ Embedder 工厂（kb_embedder_factory.py）
 from __future__ import annotations
 
 from .config import EmbedderConfig
-from .protocols import Embedder
-from .embedder_openai import OpenAICompatibleEmbedder
 from .embedder_cohere import CohereEmbedder
 from .embedder_jina import JinaEmbedder
+from .embedder_openai import OpenAICompatibleEmbedder
 from .embedder_voyage import VoyageEmbedder
-
+from .protocols import Embedder
 
 __all__ = ["create_embedder", "list_embedder_providers"]
 

@@ -18,10 +18,9 @@ Knowledge Base 配置模型（kb_config.py）
 from __future__ import annotations
 
 import os
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 
 # ---------------------------------------------------------------------------
 # EmbedderConfig

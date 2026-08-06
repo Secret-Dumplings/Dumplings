@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from .chunker_base import BaseChunker
 
-
 __all__ = ["RecursiveCharChunker"]
 
 

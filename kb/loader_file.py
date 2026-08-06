@@ -14,9 +14,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .loader_base import BaseLoader
 from .doc_processor_factory import get_processor_for
-
+from .loader_base import BaseLoader
 
 __all__ = ["FileLoader"]
 

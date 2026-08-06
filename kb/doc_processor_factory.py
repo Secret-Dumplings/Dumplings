@@ -11,12 +11,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .doc_processor_unstructured import UnstructuredProcessor
 from .doc_processor_mineru import MinerUProcessor
 from .doc_processor_openmineru import OpenMinerUProcessor
 from .doc_processor_paddleocr import PaddleOCRProcessor
 from .doc_processor_raw import RawTextProcessor
-
+from .doc_processor_unstructured import UnstructuredProcessor
 
 __all__ = ["get_processor_for", "list_doc_processors", "DOC_PROCESSOR_CATALOG"]
 

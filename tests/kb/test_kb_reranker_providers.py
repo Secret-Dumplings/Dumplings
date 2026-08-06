@@ -10,7 +10,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from tangyuanAI.kb.cache import NullCache
 from tangyuanAI.kb.config import RerankerConfig
 from tangyuanAI.kb.reranker_factory import create_reranker, list_reranker_providers
@@ -118,10 +117,11 @@ class TestLocalRerankers:
 
     def test_bge_local_no_model(self):
         """不装 sentence-transformers 时初始化应抛错。"""
-        from tangyuanAI.kb.reranker_bge import BGEReranker
-        from tangyuanAI.kb.reranker_base import RerankerError
         # 确保真的没装；移除缓存的导入
         import sys
+
+        from tangyuanAI.kb.reranker_base import RerankerError
+        from tangyuanAI.kb.reranker_bge import BGEReranker
         st_modules = [m for m in sys.modules if m.startswith("sentence_transformers")]
         for m in st_modules:
             del sys.modules[m]

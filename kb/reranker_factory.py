@@ -9,14 +9,13 @@ from __future__ import annotations
 
 from .config import RerankerConfig
 from .protocols import Reranker
+from .reranker_bge import BGEReranker
+from .reranker_cohere import CohereReranker
+from .reranker_colbert import ColBERTReranker
+from .reranker_jina import JinaReranker
+from .reranker_monot5 import MonoT5Reranker
 from .reranker_noop import NoOpReranker
 from .reranker_openai import OpenAICompatibleReranker
-from .reranker_cohere import CohereReranker
-from .reranker_jina import JinaReranker
-from .reranker_bge import BGEReranker
-from .reranker_colbert import ColBERTReranker
-from .reranker_monot5 import MonoT5Reranker
-
 
 __all__ = ["create_reranker", "list_reranker_providers"]
 

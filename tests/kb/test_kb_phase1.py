@@ -7,32 +7,7 @@ Phase 1 单元测试（test_kb_phase1.py）
 """
 from __future__ import annotations
 
-import os
-import tempfile
-import time
-
 import pytest
-
-from tangyuanAI.kb.types import (
-    Chunk,
-    Document,
-    DocMeta,
-    KnowledgeBase,
-    ScoreKind,
-    SearchResult,
-    Visibility,
-)
-from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
-from tangyuanAI.kb.protocols import (
-    Chunker,
-    DocProcessor,
-    Embedder,
-    EmbeddingCache,
-    Loader,
-    Reranker,
-    VectorStore,
-)
-from tangyuanAI.kb.persistence import KBMetaStore
 from tangyuanAI.kb.cache import (
     LRUDiskCache,
     NullCache,
@@ -40,7 +15,19 @@ from tangyuanAI.kb.cache import (
     make_cache_key,
     set_global_cache,
 )
-
+from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
+from tangyuanAI.kb.persistence import KBMetaStore
+from tangyuanAI.kb.protocols import (
+    Embedder,
+)
+from tangyuanAI.kb.types import (
+    Chunk,
+    DocMeta,
+    KnowledgeBase,
+    ScoreKind,
+    SearchResult,
+    Visibility,
+)
 
 # ---------------------------------------------------------------------------
 # kb_types

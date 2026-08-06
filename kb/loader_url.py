@@ -18,7 +18,6 @@ from typing import Any
 
 from .loader_base import BaseLoader
 
-
 __all__ = ["URLLoader"]
 
 _MAX_URL_SIZE = 10 * 1024 * 1024  # 10 MB

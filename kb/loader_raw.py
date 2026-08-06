@@ -12,7 +12,6 @@ from typing import Any
 
 from .loader_base import BaseLoader
 
-
 __all__ = ["RawTextLoader"]
 
 

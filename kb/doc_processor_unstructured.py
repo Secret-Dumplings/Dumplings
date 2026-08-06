@@ -9,11 +9,9 @@ Unstructured DocProcessor（kb_doc_processor_unstructured.py）
 """
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from .doc_processor_base import BaseDocProcessor
-
 
 __all__ = ["UnstructuredProcessor"]
 

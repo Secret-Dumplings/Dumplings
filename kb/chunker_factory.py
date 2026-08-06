@@ -7,11 +7,10 @@ Chunker 工厂（kb_chunker_factory.py）
 """
 from __future__ import annotations
 
-from .chunker_recursive import RecursiveCharChunker
-from .chunker_markdown import MarkdownChunker
-from .chunker_token import TokenChunker
 from .chunker_html import HTMLChunker
-
+from .chunker_markdown import MarkdownChunker
+from .chunker_recursive import RecursiveCharChunker
+from .chunker_token import TokenChunker
 
 __all__ = ["create_chunker", "list_chunkers"]
 

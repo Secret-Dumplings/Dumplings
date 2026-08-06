@@ -21,12 +21,10 @@ Qdrant VectorStore（kb_vector_store.py）
 """
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
-from .sparse import Bm25SparseVectorizer, SparseVector
 from ..logging_config import get_logger
-
+from .sparse import Bm25SparseVectorizer, SparseVector
 
 __all__ = ["QdrantVectorStore"]
 

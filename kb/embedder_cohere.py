@@ -11,8 +11,6 @@ from __future__ import annotations
 from typing import Any
 
 from .embedder_base import BaseEmbedder
-from .config import EmbedderConfig
-
 
 __all__ = ["CohereEmbedder"]
 

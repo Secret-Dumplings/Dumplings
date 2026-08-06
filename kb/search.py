@@ -17,14 +17,12 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from .types import Chunk, KnowledgeBase, ScoreKind, SearchResult
-from .config import EmbedderConfig
-from .embedder_factory import create_embedder
-from .reranker_factory import create_reranker
-from .cache import get_global_cache
-from .ingest import get_vector_store
 from ..logging_config import get_logger
-
+from .cache import get_global_cache
+from .embedder_factory import create_embedder
+from .ingest import get_vector_store
+from .reranker_factory import create_reranker
+from .types import Chunk, ScoreKind, SearchResult
 
 __all__ = ["search", "search_sync", "list_documents"]
 
@@ -152,8 +150,8 @@ def search_sync(
 
 async def list_documents(kb_id_or_name: str) -> list[dict[str, Any]]:
     """列出 KB 的文档（元数据，不返回向量）。"""
-    from .registry import get_kb as _get_kb
     from .persistence import KBMetaStore
+    from .registry import get_kb as _get_kb
 
     kb = _get_kb(kb_id_or_name)
     store = KBMetaStore(kb.base_dir)

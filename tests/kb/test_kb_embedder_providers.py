@@ -11,12 +11,11 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from tangyuanAI.kb.cache import NullCache
 from tangyuanAI.kb.config import EmbedderConfig
 from tangyuanAI.kb.embedder_factory import create_embedder, list_embedder_providers
-from tangyuanAI.kb.embedder_openai import OpenAICompatibleEmbedder
 from tangyuanAI.kb.embedder_jina import JinaEmbedder
+from tangyuanAI.kb.embedder_openai import OpenAICompatibleEmbedder
 
 
 def _cfg(provider: str, **kw) -> EmbedderConfig:

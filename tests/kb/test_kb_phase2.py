@@ -9,21 +9,17 @@ Base 类都用 stub 子类做单测，**不连真 API / 真实 Qdrant**。
 """
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
-
-from tangyuanAI.kb.cache import NullCache
-from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
-from tangyuanAI.kb.embedder_base import BaseEmbedder, EmbeddingError
-from tangyuanAI.kb.reranker_base import BaseReranker, RerankerError
-from tangyuanAI.kb.types import Chunk, Document, KnowledgeBase
-from tangyuanAI.kb.chunker_base import BaseChunker
-from tangyuanAI.kb.loader_base import BaseLoader
-from tangyuanAI.kb.doc_processor_base import BaseDocProcessor
-from tangyuanAI.kb.vector_store_base import BaseVectorStore
 from tangyuanAI.errors import APIError
-
+from tangyuanAI.kb.cache import NullCache
+from tangyuanAI.kb.chunker_base import BaseChunker
+from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
+from tangyuanAI.kb.doc_processor_base import BaseDocProcessor
+from tangyuanAI.kb.embedder_base import BaseEmbedder, EmbeddingError
+from tangyuanAI.kb.loader_base import BaseLoader
+from tangyuanAI.kb.reranker_base import BaseReranker, RerankerError
+from tangyuanAI.kb.types import Chunk
+from tangyuanAI.kb.vector_store_base import BaseVectorStore
 
 # ---------------------------------------------------------------------------
 # Fake Embedder（用于测 BaseEmbedder 公共逻辑）
@@ -55,7 +51,8 @@ def _cfg(**kw) -> EmbedderConfig:
         model="fake", embed_dim=4, max_retries=2,
     )
     # 过滤掉 bad_dim 这种不在 EmbedderConfig schema 里的字段
-    extra = {k: kw.pop(k) for k in list(kw) if k == "bad_dim"}
+    for k in [k for k in kw if k == "bad_dim"]:
+        kw.pop(k)
     base.update(kw)
     return EmbedderConfig(**base)
 

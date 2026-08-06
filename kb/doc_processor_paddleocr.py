@@ -9,12 +9,10 @@ PaddleOCR DocProcessor（kb_doc_processor_paddleocr.py）
 """
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 from typing import Any
 
 from .doc_processor_base import BaseDocProcessor
-
 
 __all__ = ["PaddleOCRProcessor"]
 
@@ -107,7 +105,8 @@ class PaddleOCRProcessor(BaseDocProcessor):
             # fallback pdf2image
             images = convert_from_path(pdf_path)
             tmp_paths: list[str] = []
-            import os, tempfile
+            import os
+            import tempfile
             os.makedirs(tmp_paths_dir := tempfile.mkdtemp(prefix="paddleocr_pdf_"), exist_ok=True)
             for i, img in enumerate(images):
                 p = os.path.join(tmp_paths_dir, f"page_{i:04d}.png")
@@ -116,7 +115,8 @@ class PaddleOCRProcessor(BaseDocProcessor):
             return tmp_paths
 
         # PyMuPDF
-        import os, tempfile
+        import os
+        import tempfile
         os.makedirs(tmp_dir := tempfile.mkdtemp(prefix="paddleocr_pdf_"), exist_ok=True)
         doc = fitz.open(pdf_path)
         paths: list[str] = []

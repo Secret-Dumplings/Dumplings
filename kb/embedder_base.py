@@ -26,9 +26,8 @@ Knowledge Base 嵌入器抽象基类（kb_embedder_base.py）
 from __future__ import annotations
 
 import asyncio
-import os
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 import tiktoken
 from tenacity import (
@@ -38,9 +37,9 @@ from tenacity import (
     wait_exponential,
 )
 
+from ..errors import APIError
 from .cache import get_global_cache, make_cache_key
 from .config import EmbedderConfig
-from ..errors import APIError
 
 
 def get_logger(name: str):

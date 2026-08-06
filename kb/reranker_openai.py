@@ -9,11 +9,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from .reranker_base import BaseReranker
-from .config import RerankerConfig
-from .types import Chunk
 from ..http_utils import AsyncHTTPClient
-
+from .reranker_base import BaseReranker
+from .types import Chunk
 
 __all__ = ["OpenAICompatibleReranker"]
 

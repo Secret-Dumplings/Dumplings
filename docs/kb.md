@@ -100,7 +100,7 @@ reranker = RerankerConfig(
 |---|---|---|---|
 | `unstructured`（默认） | PDF/DOCX/HTML/MD/EPUB/XLSX/CSV/JSON | 内置 | 通用 |
 | `minerU` | PDF | `magic-pdf[full]` | 学术论文 / 复杂排版 |
-| `openminerU` | PDF/DOCX/PPTX/图片 | `openmineru` | 开源 minerU |
+| `openminerU` | PDF/DOCX/PPTX/图片 | 手动装 `openmineru`（未上 PyPI） | 开源 minerU |
 | `paddleocr` | PDF/图片 | `paddleocr` | 中文扫描件 |
 | `raw` | txt/md/html/json | 内置 | 最轻量 |
 

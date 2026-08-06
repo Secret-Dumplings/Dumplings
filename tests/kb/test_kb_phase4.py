@@ -11,12 +11,8 @@ Qdrant 用 :memory: 真实例。
 from __future__ import annotations
 
 import pytest
-
-from tangyuanAI.kb.types import KnowledgeBase
-from tangyuanAI.kb.config import EmbedderConfig, RerankerConfig
+from tangyuanAI.kb.config import EmbedderConfig
 from tangyuanAI.kb.embedder_base import BaseEmbedder
-from tangyuanAI.kb.cache import NullCache, get_global_cache, set_global_cache
-
 
 # ---------------------------------------------------------------------------
 # Fake embedder（deterministic hash 向量）
@@ -56,9 +52,8 @@ def _fake_cfg(dim: int = 8, **kw) -> EmbedderConfig:
 @pytest.fixture(autouse=True)
 def _clean_kb_globals(monkeypatch, tmp_path):
     """每个测试清空 KB 注册表 + store cache，隔离 Qdrant，并注册 fake embedder。"""
-    import tangyuanAI.kb.registry as reg
-    import tangyuanAI.kb.ingest as ingest
     import tangyuanAI.kb.embedder_factory as factory
+    import tangyuanAI.kb.ingest as ingest
     from tangyuanAI.kb.registry import _kbs, _store_cache
 
     # 默认 base_dir 指向 tmp（隔离持久化）
@@ -89,7 +84,7 @@ def _clean_kb_globals(monkeypatch, tmp_path):
 
 class TestRegistry:
     def test_register_get(self):
-        from tangyuanAI.kb.registry import register_kb, get_kb, list_kbs, delete_kb
+        from tangyuanAI.kb.registry import get_kb, list_kbs, register_kb
 
         kb = register_kb("demo", embedder=_fake_cfg())
         assert kb.name == "demo"
@@ -110,14 +105,14 @@ class TestRegistry:
         assert kb2.id != kb1.id
 
     def test_delete(self):
-        from tangyuanAI.kb.registry import register_kb, delete_kb, get_kb
+        from tangyuanAI.kb.registry import delete_kb, get_kb, register_kb
         register_kb("demo", embedder=_fake_cfg())
         assert delete_kb("demo")
         with pytest.raises(KeyError):
             get_kb("demo")
 
     def test_persistence_restore(self):
-        from tangyuanAI.kb.registry import register_kb, _kbs, get_kb
+        from tangyuanAI.kb.registry import _kbs, get_kb, register_kb
         kb = register_kb("persist", embedder=_fake_cfg())
         # 模拟重启：清内存，从持久化恢复
         _kbs.clear()
@@ -137,8 +132,8 @@ class TestRegistry:
 
 class TestIngestSearch:
     def test_add_and_search(self):
-        from tangyuanAI.kb.registry import register_kb, get_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import search_sync
 
         # base_dir 指向 tmp（fixture 已把 meta store 指到 tmp；但 KB.base_dir 也要 tmp）
@@ -163,8 +158,8 @@ class TestIngestSearch:
         assert results[0].chunk.text
 
     def test_duplicate_dedup(self):
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
 
         register_kb("k", embedder=_fake_cfg(), qdrant_location=":memory:")
         d1 = add_document_sync("k", "raw:x", raw_text="same content here")
@@ -173,15 +168,15 @@ class TestIngestSearch:
         assert d1 == d2
 
     def test_no_embedder_raises(self):
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         register_kb("k", embedder=None, qdrant_location=":memory:")
         with pytest.raises(ValueError, match="no embedder"):
             add_document_sync("k", "raw:x", raw_text="hello")
 
     def test_list_documents(self):
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.search import list_documents_sync
 
         register_kb("k", embedder=_fake_cfg(), qdrant_location=":memory:")
@@ -197,12 +192,12 @@ class TestIngestSearch:
 
 class TestMigrate:
     def test_migrate_switches_model(self):
-        from tangyuanAI.kb.registry import register_kb, get_kb
         from tangyuanAI.kb.ingest import add_document_sync
-        from tangyuanAI.kb.search import search_sync
         from tangyuanAI.kb.migrate import migrate_embedding_model_sync
+        from tangyuanAI.kb.registry import get_kb, register_kb
+        from tangyuanAI.kb.search import search_sync
 
-        kb = register_kb("m", embedder=_fake_cfg(dim=8), qdrant_location=":memory:")
+        register_kb("m", embedder=_fake_cfg(dim=8), qdrant_location=":memory:")
         add_document_sync("m", "raw:x", raw_text="apple banana cherry document")
         assert search_sync("m", "apple", top_k=1)
 
@@ -218,8 +213,8 @@ class TestMigrate:
         assert len(results) >= 1
 
     def test_migrate_no_embedder(self):
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.migrate import migrate_embedding_model_sync
+        from tangyuanAI.kb.registry import register_kb
         register_kb("m2", embedder=None, qdrant_location=":memory:")
         with pytest.raises(ValueError, match="no current embedder"):
             migrate_embedding_model_sync("m2", _fake_cfg())
@@ -231,8 +226,8 @@ class TestMigrate:
 
 class TestTool:
     def test_register_tools(self):
-        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.ingest import add_document_sync
+        from tangyuanAI.kb.registry import register_kb
         from tangyuanAI.kb.tool import register_kb_tools, unregister_kb_tools
 
         kb = register_kb("toolk", embedder=_fake_cfg(), qdrant_location=":memory:")

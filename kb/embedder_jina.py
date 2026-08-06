@@ -10,10 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .embedder_base import BaseEmbedder
-from .config import EmbedderConfig
 from ..http_utils import AsyncHTTPClient
-
+from .embedder_base import BaseEmbedder
 
 __all__ = ["JinaEmbedder"]
 
