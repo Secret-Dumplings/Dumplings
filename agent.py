@@ -582,7 +582,7 @@ class _AgentCommon:
                         func, tool_name=name, timeout=self.tool_timeout, xml=str(arguments),
                     )
                     return result, async_id
-        return (f"找不到工具：{name}", None)
+        return (f"找不到工具或无权限：{name}", None)
 
     def _execute_tool_calls(self, work_history, tool_calls_list):
         """共享 FC 工具执行：解析参数 → hooks → Pydantic → ToolRunner → 结果回填。"""
@@ -827,12 +827,8 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
             info = tool_registry.get_tool_info(name)
             if info is not None:
                 tool_func = info["function"]
-        if tool_func is None and hasattr(self, name):
-            method = getattr(self, name)
-            if callable(method):
-                tool_func = method
         if tool_func is None:
-            raise ValueError(f"tool not found: {name}")
+            raise ValueError(f"工具未注册或无权限：{name}")
         return tool_func
 
     def _handle_xml_mode(self, work_history, full_content):
@@ -865,19 +861,14 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
                 if tool_info is not None:
                     tool_func = tool_info["function"]
 
-            if tool_func is None and hasattr(self, tool_name):
-                method = getattr(self, tool_name)
-                if callable(method):
-                    tool_func = method
-
             if tool_func is None:
                 available_tools = self.get_all_available_tools()
-                tool_error = f"工具错误：找不到工具 '{tool_name}'。"
+                tool_error = f"工具错误：工具 '{tool_name}' 未注册或无权限。"
                 if available_tools:
                     tool_error += f" 你可以使用以下工具：{', '.join(available_tools)}"
                 work_history.append({"role": "system", "content": tool_error})
                 tool_results.append({"error": tool_error})
-                logger.warning(f"工具 {tool_name} 未找到，可用工具: {available_tools}")
+                logger.warning(f"工具 {tool_name} 未注册或无权限，可用工具: {available_tools}")
                 continue
 
             params = {}

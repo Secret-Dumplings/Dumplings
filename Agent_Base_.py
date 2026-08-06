@@ -395,13 +395,8 @@ class Agent():
                     if tool_info is not None:
                         tool_func = tool_info['function']
 
-                if tool_func is None and hasattr(self, tool_name):
-                    method = getattr(self, tool_name)
-                    if callable(method):
-                        tool_func = method
-
                 if tool_func is None:
-                    error_msg = f"找不到工具 '{tool_name}'"
+                    error_msg = f"找不到工具或无权限：'{tool_name}'"
                     logger.warning(error_msg)
                     tool_results.append({
                         'tool_call_id': tool_id,
@@ -497,23 +492,14 @@ class Agent():
                     tool_func = tool_info['function']
                     tool_source = "工具注册器"
 
-            # 优先级2: 在类方法中查找
-            if tool_func is None and hasattr(self, tool_name):
-                method = getattr(self, tool_name)
-                if callable(method):
-                    tool_func = method
-                    tool_source = "类方法"
-
-            # 优先级3: 都没有找到
             if tool_func is None:
                 available_tools = self.get_all_available_tools()
-                tool_error = f"工具错误：找不到工具 '{tool_name}'。"
+                tool_error = f"工具错误：工具 '{tool_name}' 未注册或无权限。"
                 if available_tools:
                     tool_error += f" 你可以使用以下工具：{', '.join(available_tools)}"
-
                 work_history.append({"role": "system", "content": tool_error})
                 tool_results.append({"error": tool_error})
-                logger.warning(f"工具 {tool_name} 未找到，可用工具: {available_tools}")
+                logger.warning(f"工具 {tool_name} 未注册或无权限，可用工具: {available_tools}")
                 continue
 
             logger.debug(f"从 {tool_source} 找到工具 {tool_name}")
@@ -767,12 +753,8 @@ class Agent():
             info = tool_registry.get_tool_info(name)
             if info is not None:
                 tool_func = info["function"]
-        if tool_func is None and hasattr(self, name):
-            method = getattr(self, name)
-            if callable(method):
-                tool_func = method
         if tool_func is None:
-            raise ValueError(f"tool not found: {name}")
+            raise ValueError(f"工具未注册或无权限：{name}")
         return tool_func
 
     def pack(self, message=None, tool_model=False, tool_name=None, tool_parameter=None,

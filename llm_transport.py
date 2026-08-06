@@ -225,6 +225,7 @@ class HttpxOpenAITransport(LLMTransport):
                 self.endpoint,
                 headers={**self.headers, "Accept": "text/event-stream"},
                 json=payload,
+                stream=True,
             )
             async for evt in self._aiter_openai_sse(rsp):
                 yield evt
@@ -715,6 +716,7 @@ class HttpxAnthropicTransport(LLMTransport):
                 self.endpoint,
                 headers={**self.headers, "Accept": "text/event-stream"},
                 json=payload,
+                stream=True,
             )
             async for evt in self._aiter_anthropic_sse(rsp):
                 yield evt

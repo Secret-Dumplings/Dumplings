@@ -271,21 +271,25 @@ class AsyncHTTPClient:
         params: Any = None,
         timeout: Optional[float] = None,
         max_retries: Optional[int] = None,
+        stream: bool = False,
     ) -> httpx.Response:
-        """异步 POST，失败按策略重试。"""
+        """异步 POST，支持普通响应和可由调用方消费的流响应。"""
         attempts = self.max_retries if max_retries is None else max(0, int(max_retries))
         eff_timeout = self.default_timeout if timeout is None else float(timeout)
 
         last_exc: Optional[BaseException] = None
         for attempt in range(attempts + 1):
             try:
-                rsp = await self.client.post(
-                    url,
-                    headers=headers or {},
-                    json=json,
-                    content=content,
-                    params=params,
-                    timeout=eff_timeout,
+                rsp = await self.client.send(
+                    self.client.build_request(
+                        "POST",
+                        url,
+                        headers=headers or {},
+                        json=json,
+                        content=content,
+                        params=params,
+                    ),
+                    stream=stream,
                 )
             except httpx.TimeoutException as e:
                 last_exc = TangyuanTimeoutError(

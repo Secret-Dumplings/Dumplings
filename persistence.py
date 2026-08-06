@@ -42,6 +42,8 @@ import importlib
 import json
 import os
 import sqlite3
+import tempfile
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Protocol
@@ -735,6 +737,7 @@ class FileBackend:
     def __init__(self, base_dir: str = "./.tangyuanAI_sessions"):
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
 
     def _path_for(self, key: str) -> Path:
         if "/" in key or "\\" in key or ".." in key.split("/"):
@@ -761,13 +764,33 @@ class FileBackend:
         rendered = _SectionedFile.render(sections, header_comments=comments)
         if state.get("_history"):
             rendered += "[HISTORY]\n" + "\n".join(state["_history"]) + "\n"
-        self._path_for(key).write_text(rendered, encoding="utf-8")
+        path = self._path_for(key)
+        temp_path = None
+        with self._lock:
+            try:
+                fd, temp_name = tempfile.mkstemp(
+                    prefix=f".{path.name}.", suffix=".tmp", dir=str(self.base_dir)
+                )
+                temp_path = Path(temp_name)
+                with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+                    handle.write(rendered)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temp_path, path)
+                temp_path = None
+            finally:
+                if temp_path is not None:
+                    try:
+                        temp_path.unlink(missing_ok=True)
+                    except OSError:
+                        pass
 
     def load(self, key: str) -> Dict[str, Any]:
-        path = self._path_for(key)
-        if not path.exists():
-            raise FileNotFoundError(f"state not found: {key!r} (path={path})")
-        text = path.read_text(encoding="utf-8")
+        with self._lock:
+            path = self._path_for(key)
+            if not path.exists():
+                raise FileNotFoundError(f"state not found: {key!r} (path={path})")
+            text = path.read_text(encoding="utf-8")
         parsed = parse_state_string(text)
         return {
             "_meta": parsed["_meta"],
@@ -777,14 +800,16 @@ class FileBackend:
         }
 
     def delete(self, key: str) -> bool:
-        path = self._path_for(key)
-        if path.exists():
-            path.unlink()
-            return True
-        return False
+        with self._lock:
+            path = self._path_for(key)
+            if path.exists():
+                path.unlink()
+                return True
+            return False
 
     def list_keys(self) -> List[str]:
-        return sorted(p.stem for p in self.base_dir.glob(f"*{CURRENT_EXT}"))
+        with self._lock:
+            return sorted(p.stem for p in self.base_dir.glob(f"*{CURRENT_EXT}"))
 
 
 class SQLiteBackend:
@@ -808,11 +833,15 @@ class SQLiteBackend:
 
     def __init__(self, db_path: str = "./.tangyuanAI_sessions.db"):
         self.db_path = db_path
+        self.timeout = 30.0
         self._ensure_schema()
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=self.timeout)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout = 30000")
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA synchronous = NORMAL")
         return conn
 
     def _ensure_schema(self) -> None:

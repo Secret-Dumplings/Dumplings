@@ -838,7 +838,7 @@ class AnthropicAgent:
                         func, tool_name=name, timeout=self.tool_timeout, xml=str(arguments),
                     )
                 return result, async_id
-        return (f"找不到工具：{name}", None)
+        return (f"找不到工具或无权限：{name}", None)
 
     # ---------------- 内置工具（@builtin_tool 装饰器自动从签名推导 schema）----------------
 
