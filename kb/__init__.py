@@ -8,7 +8,7 @@ Knowledge Base 主入口（kb 包）
 **使用**：
 ```python
 import tangyuanAI as t
-from . import EmbedderConfig
+from tangyuanAI.kb import EmbedderConfig
 
 t.register_kb("demo", embedder=EmbedderConfig(
     provider="openai", api_base="https://api.openai.com/v1",

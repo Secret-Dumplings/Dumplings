@@ -5,6 +5,28 @@ tangyuanAI 的所有显著变更记录。
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Added
+- **Knowledge Base / RAG 子系统（kb/ 包）**：完整 RAG 检索增强生成能力。
+  - 混合检索：Qdrant dense（向量）+ sparse（BM25）+ RRF 融合；embedded 默认 + 可切 server。
+  - 嵌入模型：OpenAI / Cohere / Jina / Voyage / 任何 OpenAI-compatible 端点（Ollama / vLLM / Xinference / LM Studio / 私网关）；**不硬编码模型列表**，用户指定 provider + api_base + model + embed_dim。
+  - 重排模型：NoOp / Cohere / Jina / BGE（本地）/ ColBERT / MonoT5；token-aware 批处理 + 重试 + 缓存。
+  - 文档处理：unstructured（默认）/ minerU（学术 PDF）/ open minerU / Paddle OCR / raw；按扩展名自动派发，preferred 可覆盖。
+  - 生产级：嵌入缓存（进程内 LRU 10k + 磁盘 SQLite + msgpack 压缩，懒重连）；token-aware 批处理；失败重试；维度校验；模型迁移（原子 swap：建新 collection → re-embed → swap → 删旧）；持久化（SQLite WAL）；日志（复用 `logging_config`）；HTTP 复用 `http_utils`。
+  - 顶层 API（async + sync 包装）：`register_kb` / `get_kb` / `list_kbs` / `delete_kb` / `add_document` / `add_documents` / `search` / `migrate_embedding_model` / `register_kb_tools`。
+  - CLI：`tangyuanai kb {add,search,list,show,delete,migrate,providers,processors,cache}` 9 个子命令。
+  - 工具集成：`register_kb_tools(kb)` 注册 `kb_<name>_search / _list / _add` 给 Agent 用。
+  - 多文件拆分：每个 provider 一个文件（`kb/embedder_openai.py` 等），新增 provider = 加 1 文件 + factory 1 行，**不动其他文件**。
+
+### Changed
+- **KB 子包结构重组**：50 个 `kb_*.py` 文件统一移到 `kb/` 子包，文件名去掉 `kb_` 前缀（子包名已表明是 KB）。`knowledge_base.py` → `kb/__init__.py`；`kb_cli.py` → `kb/cli.py`；测试移到 `tests/kb/`。
+  - 新增 KB provider 路径明确：建 `kb/<area>_<provider>.py` + factory dict 1 行，**不动其他文件**。
+  - 外部 import 路径：`from tangyuanAI.kb_X import ...` → `from tangyuanAI.kb.X import ...`。
+  - `tangyuanAI` 顶层 + `kb/` 子包均导出 KB API（向后兼容：用户写 `from tangyuanAI import register_kb` 仍可用）。
+- **`docs/kb.md` 同步**：更新所有 import 路径 + 架构图（`kb/loader_*.py` 等新路径）。
+- **`pyproject.toml`**：`packages` 加 `"tangyuanAI.kb"`。
+
 ## [1.0.0] - 2026-08-05
 
 > 首次 PyPI 发布。从 `dumplingsAI` 改名 `tangyuanAI` 是 breaking change：Python import / CLI 命令 / 环境变量 / .gitignore 目录名 / `.tas` 格式头全部更新。

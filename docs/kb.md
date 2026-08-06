@@ -21,7 +21,7 @@ icon: DATABASE_OUTLINED
 
 ```python
 import tangyuanAI as t
-from tangyuanAI.knowledge_base import EmbedderConfig
+from tangyuanAI.kb import EmbedderConfig
 
 t.register_kb("demo", embedder=EmbedderConfig(
     provider="openai", api_base="https://api.openai.com/v1",
@@ -48,7 +48,7 @@ results = t.search_sync("demo", "怎么用", top_k=3)
 **不硬编码模型列表**。用户指定 provider + api_base + model + embed_dim。
 
 ```python
-from tangyuanAI.knowledge_base import EmbedderConfig
+from tangyuanAI.kb import EmbedderConfig
 
 # OpenAI
 cfg = EmbedderConfig(
@@ -76,7 +76,7 @@ API key 默认从 `TANGYUAN_<PROVIDER>_API_KEY` 环境变量读；OpenAI-compati
 ## 重排模型配置
 
 ```python
-from tangyuanAI.knowledge_base import RerankerConfig
+from tangyuanAI.kb import RerankerConfig
 
 # Cohere 重排
 reranker = RerankerConfig(
@@ -142,7 +142,7 @@ for r in results:
 重索引成本高，默认启用两级缓存（进程内 LRU 10k 条 + 磁盘 SQLite）。
 
 ```python
-from tangyuanAI.knowledge_base import get_global_cache, NullCache, set_global_cache
+from tangyuanAI.kb import get_global_cache, NullCache, set_global_cache
 
 get_global_cache().stats()     # {hits, misses, hit_rate, ...}
 set_global_cache(NullCache())  # 禁用缓存（调试用）
@@ -153,7 +153,7 @@ set_global_cache(NullCache())  # 禁用缓存（调试用）
 切换嵌入模型（自动 re-embed，原子 swap）：
 
 ```python
-from tangyuanAI.knowledge_base import EmbedderConfig, migrate_embedding_model_sync
+from tangyuanAI.kb import EmbedderConfig, migrate_embedding_model_sync
 
 migrate_embedding_model_sync("demo", EmbedderConfig(
     provider="openai", api_base="https://api.openai.com/v1",
@@ -206,15 +206,15 @@ add_document: Loader → DocProcessor → Chunker → Embedder → Qdrant → KB
 search:       Embedder(query) → Qdrant hybrid (dense+sparse+RRF) → Reranker → threshold
 
 模块拆分（每个可单独替换）：
-  kb_loader_*         加载（file / url / directory / raw）
-  kb_doc_processor_*  文档处理（unstructured / minerU / openminerU / paddleocr / raw）
-  kb_chunker_*        切分（recursive / markdown / token / html）
-  kb_embedder_*       嵌入（openai / cohere / jina / voyage）
-  kb_reranker_*       重排（noop / openai / cohere / jina / bge / colbert / monot5）
-  kb_vector_store     Qdrant（embedded + server）
-  kb_cache            嵌入缓存（LRUDisk / Null / 可换 Redis）
-  kb_persistence      KB 元数据持久化（SQLite / 可换 Postgres）
-  kb_search / kb_ingest / kb_migrate / kb_tool   编排层
+  kb/loader_*.py     加载（file / url / directory / raw）
+  kb/doc_processor_*.py文档处理（unstructured / minerU / openminerU / paddleocr / raw）
+  kb/chunker_*.py    切分（recursive / markdown / token / html）
+  kb/embedder_*.py   嵌入（openai / cohere / jina / voyage）
+  kb/reranker_*.py   重排（noop / openai / cohere / jina / bge / colbert / monot5）
+  kb/vector_store.py Qdrant（embedded + server）
+  kb/cache.py        嵌入缓存（LRUDisk / Null / 可换 Redis）
+  kb/persistence.py  KB 元数据持久化（SQLite / 可换 Postgres）
+  kb/{search,ingest,migrate,tool}.py  编排层
 ```
 
 ## 依赖
