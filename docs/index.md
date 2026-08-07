@@ -23,11 +23,12 @@ tangyuanAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像"
 | [builtin-tools.md](builtin-tools.md) | 8 个内建工具一览（`ask_for_help` / `attempt_completion` / 模板管理等） |
 | [protocols.md](protocols.md) | OpenAI 协议 vs Anthropic 协议、`Agent` 工厂基类、双协议对称性 |
 | [output-and-hooks.md](output-and-hooks.md) | `pack` / `out` 输出事件总线、工具调用钩子 |
-| [mcp-skills.md](mcp-skills.md) | MCP 协议桥接、Skill 开放标准（**测试功能**） |
+| [skill.md](skill.md) | Skill 类化：`class TimeSkill(Skill): path="..."` + SKILL.md 自动发现 |
+| [mcp.md](mcp.md) | MCPClient 类：`class NotionMCP(MCPClient): server_path="..."` |
 | [persistence.md](persistence.md) | Agent 状态持久化：`.tas` 文件格式 / 插件后端 / 实时自动保存 |
-| [kb.md](kb.md) | 知识库（RAG）：全文 + 向量 + 重排检索 / 文档处理 / 嵌入缓存 / 模型迁移 |
-| [a2a.md](a2a.md) | A2A 互操作：本地 agent 可被发现 / 可调远端 A2A agent / 来源跟踪 |
-| [image-generation.md](image-generation.md) | 图片生成：config 驱动的 provider 方言翻译 / 本地下载 / 添加新 provider |
+| [kb.md](kb.md) | 知识库（RAG）：Knowledge 类（多实例隔离）/ 全文 + 向量 + 重排检索 / 文档处理 |
+| [a2a.md](a2a.md) | A2A 互操作：导入（`register_a2a_agent`）/ 导出（`A2AExporter`）/ 来源跟踪 |
+| [image-generation.md](image-generation.md) | 图片生成：config 驱动的 provider 方言翻译 / plugin install / 本地下载 |
 | [plugin-install.md](plugin-install.md) | Plugin 安装：从中央 config 仓库 `tangyuanai plugin install` |
 
 > 本套文档就是本仓库自己搭的文档站：**https://docs.ai.secret-tangyuan.com/**（Cloudflare Pages 构建，push 自动更新，见 [docs-site/README.md](../docs-site/README.md)）。

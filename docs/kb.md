@@ -30,6 +30,50 @@ t.add_document_sync("demo", source="README.md")
 results = t.search_sync("demo", "怎么用", top_k=3)
 ```
 
+> `register_kb/get_kb/search_sync` 是**向后兼容**的全局 API（内部转 `Knowledge` 实例）。**新代码推荐用 `Knowledge` 类**（多实例 + 隔离 + AI 可直接持有对象）。
+
+## Knowledge 类（多实例、隔离、AI 可持有）
+
+`Knowledge` 类 = 单个 KB 实例。可创建多个、完全隔离（独立 Qdrant collection + 独立 meta DB + 独立 id），AI 可直接持有实例调方法。
+
+**用法 1：subclass + 类属性**（模板复用）：
+```python
+from tangyuanAI.kb import Knowledge, EmbedderConfig
+
+class ResearchKB(Knowledge):
+    embedder = EmbedderConfig(provider="openai", api_base="https://api.openai.com/v1",
+                              model="text-embedding-3-small", embed_dim=1536)
+    doc_processor = "minerU"
+    chunk_size = 512
+    chunk_overlap = 50
+
+kb1 = ResearchKB("research_2025")   # 同一模板多个实例
+kb2 = ResearchKB("research_2026", chunk_size=1024)   # 实例可覆盖类属性
+```
+
+**用法 2：直接构造**（无 subclass）：
+```python
+kb = Knowledge("adhoc", embedder=EmbedderConfig(...),
+               doc_processor="unstructured", chunk_size=256)
+```
+
+**实例方法（async）**：
+```python
+doc_ids = await kb.add("paper.pdf")                # 加文档
+await kb.add_many(["./a.md", "https://..."], concurrency=8)  # 批量并发
+results = await kb.search("向量检索", top_k=5)     # 搜索
+docs = await kb.list_documents()                   # 列文档
+await kb.migrate(new_embedder_config)              # 模型迁移
+tools = kb.register_tools()                        # 注册工具给 Agent
+await kb.shutdown()                                # 释放 Qdrant 连接
+```
+
+**多实例隔离**：
+- 每个实例独立 Qdrant collection（`kb__<name>__<id8>`）+ 独立 meta DB + 独立 id
+- `kb1` 和 `kb2` 互不干扰，可同时使用
+
+**`register_kb/get_kb` 全局 API 向后兼容**（返回 `Knowledge` 实例）：`t.register_kb("demo", ...)` / `t.get_kb("demo")` / `t.list_kbs()` / `t.delete_kb("demo")`。
+
 ## KB 字段（用户配置）
 
 | 字段 | 类型 | 默认 | 说明 |

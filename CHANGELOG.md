@@ -45,7 +45,8 @@ tangyuanAI 的所有显著变更记录。
 - **弃用 OpenAI SDK，httpx 自建适配**：`kb/embedder_openai.py` 改用 `http_utils.AsyncHTTPClient`（httpx）；修 `/v1` 重复前缀 bug（base_url 含 /v1 时不再 `/v1/v1/rerank`）；`pyproject.toml` 删 `openai` required 依赖。
 - **`docs/kb.md` 同步**：更新所有 import 路径 + 架构图（`kb/loader_*.py` 等新路径）；厂商中立化（不绑定具体 vendor）。
 - **`pyproject.toml`**：`packages` 加 `"tangyuanAI.kb"`；新增 `[a2a]` extra。
-- **新增文档**：`docs/a2a.md`（A2A 互操作）。
+- **新增文档**：`docs/a2a.md`（A2A 互操作）；`docs/skill.md`（Skill 类化）；`docs/mcp.md`（MCPClient 类）；`docs/image-generation.md`（图片生成子系统）；`docs/plugin-install.md`（plugin 安装）。
+- **`docs/index.md`**：文档站新增 skill.md / mcp.md / image-generation.md / plugin-install.md 条目。
 - **文档站整合落地页（docs-site）**：`/` 变成落地页（`landing/`，BOLD-MINIMAL 设计系统，深浅色跟随系统 + 手动切换），文档迁移到 `/docs/*`；`sync-docs.mjs` 同步到 `docs-build/docs/`，`generate-api-data.mjs` 相应改读该目录；启动命令不变（`pnpm dev` → `http://localhost:5173`）。顺手修：frontmatter 解析兼容 CRLF（侧栏标题不再显示原始文件名）、主题 CSS 首行笔误、补 `public/logo.svg`。
 
 ### Fixed

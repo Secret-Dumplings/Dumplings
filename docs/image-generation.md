@@ -9,6 +9,19 @@ icon: IMAGE_OUTLINED
 
 > **v1.0.0+**。config 驱动的图片生成 —— 每个 provider 自己的"方言"（请求体结构 / 字段名 / 嵌套层级）在 `tangyuanai.config.json` 描述，**不需要写 Python 代码新增 provider**。
 
+## 支持的 provider（plugin install 即可用）
+
+| Provider | 中央仓库模板 | 特点 |
+|---|---|---|
+| SiliconFlow | `image_generation.json` | flat body，`Authorization: Bearer`，URL 1h 有效 |
+| DashScope（阿里百炼） | `image_generation_dashscope.json` | nested OpenAI chat body，`${env:WORKSPACE_ID}` URL 占位 |
+| MiniMax | `image_generation_minimax.json` | `aspect_ratio` / `n`，响应 `data.image_urls` 是 URL **数组** |
+| 火山引擎豆包 Seedream | `image_generation_doubao.json` | OpenAI images 兼容，`guidance_scale` / `watermark` / `sequential_image_generation` |
+
+**0 代码新增厂商**：
+1. 协议匹配（HTTP JSON + Bearer/Token 鉴权 + URL 响应）→ 复制一个 `.json` 改字段即可
+2. 协议特殊（form-data / base64 响应 / 动态签名）→ 写 `provider_impl` 插件
+
 ## 快速开始（SiliconFlow）
 
 ### 1. 安装 plugin（从中央仓库）
