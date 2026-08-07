@@ -46,6 +46,7 @@ tangyuanAI 的所有显著变更记录。
 - **`docs/kb.md` 同步**：更新所有 import 路径 + 架构图（`kb/loader_*.py` 等新路径）；厂商中立化（不绑定具体 vendor）。
 - **`pyproject.toml`**：`packages` 加 `"tangyuanAI.kb"`；新增 `[a2a]` extra。
 - **新增文档**：`docs/a2a.md`（A2A 互操作）。
+- **文档站整合落地页（docs-site）**：`/` 变成落地页（`landing/`，BOLD-MINIMAL 设计系统，深浅色跟随系统 + 手动切换），文档迁移到 `/docs/*`；`sync-docs.mjs` 同步到 `docs-build/docs/`，`generate-api-data.mjs` 相应改读该目录；启动命令不变（`pnpm dev` → `http://localhost:5173`）。顺手修：frontmatter 解析兼容 CRLF（侧栏标题不再显示原始文件名）、主题 CSS 首行笔误、补 `public/logo.svg`。
 
 ### Fixed
 - **CI 失败**：`openmineru>=0.1` 在 PyPI 上不存在，导致 `uv sync` 解析失败。已从 `[project.optional-dependencies]` 移除 `kb-processor-openminerU`（provider 代码保留在 `kb/doc_processor_openmineru.py`，需手动从源码安装）；`ruff check .` 215 个错误（E401/F401/F841/I001/W292）已清理，`uv sync` / `ruff` / `pytest` 全绿。

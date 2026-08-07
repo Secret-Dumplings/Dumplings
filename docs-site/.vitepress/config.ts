@@ -4,10 +4,13 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-// markdown 源目录：docs-site/docs-build/（构建前由 scripts/sync-docs.mjs 从 ../docs 同步）
+// 页面根目录（srcDir）：docs-site/docs-build/（构建前由 scripts/sync-docs.mjs 生成），
+// 内含 / 落地页（index.md + Landing.vue）与 /docs/ 子目录（docs/*.md）。
 // 必须放在 docs-site/ 内（与 node_modules 同层），否则 pnpm 依赖隔离下
 // docs/*.md 里的 vue 依赖解析不到，干净环境（Cloudflare Pages / CI）构建会挂。
-const DOCS_DIR = resolve(__dirname, '../docs-build')
+const PAGES_DIR = resolve(__dirname, '../docs-build')
+// 文档 markdown 目录（侧栏数据源）：docs-build/docs/
+const DOCS_DIR = resolve(__dirname, '../docs-build/docs')
 
 interface DocMeta {
   file: string
@@ -16,12 +19,12 @@ interface DocMeta {
   icon: string
 }
 
-/** 极简 frontmatter 解析（只取 slug/title/order/icon 标量字段，够用即可） */
+/** 极简 frontmatter 解析（只取 slug/title/order/icon 标量字段，够用即可；兼容 CRLF/LF 换行） */
 function parseFrontmatter(raw: string): Record<string, string | number> {
-  const m = raw.match(/^---\n([\s\S]*?)\n---/)
+  const m = raw.match(/^---[\r\n]+([\s\S]*?)[\r\n]+---/)
   if (!m) return {}
   const meta: Record<string, string | number> = {}
-  for (const line of m[1].split('\n')) {
+  for (const line of m[1].split(/\r?\n/)) {
     const idx = line.indexOf(':')
     if (idx <= 0) continue
     const key = line.slice(0, idx).trim()
@@ -51,8 +54,8 @@ function loadDocs(): DocMeta[] {
 
 const docs = loadDocs()
 
-/** 文件名 → 路由链接（index 是首页） */
-const linkOf = (file: string) => (file === 'index' ? '/' : `/${file}`)
+/** 文件名 → 路由链接（文档挂在 /docs/ 下；index 是文档首页） */
+const linkOf = (file: string) => (file === 'index' ? '/docs/' : `/docs/${file}`)
 
 const sidebarItems = docs.map((d) => ({ text: d.title, link: linkOf(d.file) }))
 
@@ -60,20 +63,28 @@ export default defineConfig({
   title: 'tangyuanAI',
   description: '轻量、模块化的多智能体协作框架',
 
-  // srcDir 指向构建目录 docs-build/（构建前由 scripts/sync-docs.mjs 从 ../docs 同步），
+  // srcDir 指向构建目录 docs-build/（构建前由 scripts/sync-docs.mjs 生成），
   // 必须放在 docs-site/ 内（与 node_modules 同层），否则 pnpm 依赖隔离下
   // docs/*.md 里的 vue 依赖解析不到，干净环境（Cloudflare Pages / CI）构建会挂。
-  srcDir: DOCS_DIR,
+  srcDir: PAGES_DIR,
   // public/（如 _redirects）相对 docs-site/ 根，显式指定避免受 srcDir 影响
   publicDir: resolve(__dirname, '../public'),
   cleanUrls: true,
   lastUpdated: true,
   ignoreDeadLinks: true,
 
+  head: [
+    ['link', { rel: 'icon', href: 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%23BBDDFF%27/%3E%3C/svg%3E' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
+    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700;900&display=swap' }],
+  ],
+
   themeConfig: {
     logo: '/logo.svg',
     nav: [
       { text: '首页', link: '/' },
+      { text: '文档', link: '/docs/' },
       { text: 'GitHub', link: 'https://github.com/secret-tangyuan/tangyuanAI' },
     ],
     sidebar: [

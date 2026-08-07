@@ -1,20 +1,20 @@
 // scripts/generate-api-data.mjs
-// 构建时从 docs-build/*.md 生成 api-data.json，供 Cloudflare Pages Functions 使用。
+// 构建时从 docs-build/docs/*.md 生成 api-data.json，供 Cloudflare Pages Functions 使用。
 // 保证 /api/* 端点在 Pages 上与 FastAPI 后端行为一致。
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DOCS_DIR = resolve(__dirname, '../docs-build')
+const DOCS_DIR = resolve(__dirname, '../docs-build/docs')
 const OUT = resolve(__dirname, '../api-data.json')
 
-// 极简 frontmatter 解析（与 config.ts 保持一致）
+// 极简 frontmatter 解析（与 config.ts 保持一致；兼容 CRLF/LF 换行）
 function parseFrontmatter(raw) {
-  const m = raw.match(/^---\n([\s\S]*?)\n---/)
+  const m = raw.match(/^---[\r\n]+([\s\S]*?)[\r\n]+---/)
   if (!m) return {}
   const meta = {}
-  for (const line of m[1].split('\n')) {
+  for (const line of m[1].split(/\r?\n/)) {
     const idx = line.indexOf(':')
     if (idx <= 0) continue
     const key = line.slice(0, idx).trim()
