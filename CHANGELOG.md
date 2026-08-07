@@ -7,6 +7,10 @@ tangyuanAI 的所有显著变更记录。
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-07
+
+> v1.0.0 之后的新增与改进。主要是 Knowledge Base / RAG 子系统、Image Generation 子系统、类化重构（Knowledge / Skill / MCPClient）、A2A 互操作，以及文档补齐。
+
 ### Added
 - **Knowledge Base / RAG 子系统（kb/ 包）**：完整 RAG 检索增强生成能力。
   - 混合检索：Qdrant dense（向量）+ sparse（BM25）+ RRF 融合；embedded 默认 + 可切 server。
@@ -316,7 +320,9 @@ tangyuanAI 的所有显著变更记录。
 - `BaseAgent` 抽象基类
 - CLI 入口 `main.py`
 
-[Unreleased]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/secret-tangyuan/tangyuanAI/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/secret-tangyuan/tangyuanAI/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.2...v1.0.0
 [0.2.2]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/secret-tangyuan/tangyuanAI/compare/v0.1.1...v0.2.0
