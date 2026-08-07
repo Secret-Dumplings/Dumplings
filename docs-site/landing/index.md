@@ -2,8 +2,8 @@
 layout: page
 navbar: false
 sidebar: false
-title: tangyuanAI — 让 LLM 像公司团队一样分工完成任务
-description: tangyuanAI：一个轻量、模块化的多智能体协作框架。一个 Agent 类、一个 protocol 字段，写一次，跑遍所有 LLM。
+title: tangyuanAI — 快速对接 LLM API，简洁构建 Agent
+description: tangyuanAI：一个轻量、模块化的 Agent 框架。一个 Agent 类、一个 protocol 字段，快速对接 OpenAI / Anthropic / 自家网关，几行代码构建 Agent。
 ---
 
 <script setup>

@@ -61,12 +61,12 @@ onUnmounted(() => {
     <section class="hero">
       <div class="hero__inner">
         <div class="hero__main">
-          <p class="kicker reveal">TANGYUANAI · MULTI-AGENT FRAMEWORK</p>
-          <h1 class="hero__title reveal">让 LLM 像公司团队<br>
-            <mark class="hl">分工完成任务</mark>
+          <p class="kicker reveal">TANGYUANAI · QUICK API · SIMPLE AGENTS</p>
+          <h1 class="hero__title reveal">快速对接 LLM API<br>
+            <mark class="hl">简洁构建 Agent</mark>
           </h1>
-          <p class="hero__sub reveal">一个轻量、模块化的多智能体协作框架。<br class="br-desktop">
-            一个 <code>Agent</code> 类、一个 <code>protocol</code> 字段——写一次，跑遍所有 LLM。</p>
+          <p class="hero__sub reveal">一个轻量、模块化的 Agent 框架。<br class="br-desktop">
+            一个 <code>Agent</code> 类、一个 <code>protocol</code> 字段——快速对接 OpenAI / Anthropic / 自家网关，几行代码构建 Agent。</p>
           <div class="hero__actions reveal">
             <button class="btn btn--primary btn--lg" data-copy="uv add tangyuanAI">
               uv add tangyuanAI
@@ -115,7 +115,7 @@ tangyuanAI.agent_list[<span class="s">"weather"</span>].conversation_with_tool(
     <!-- ══════════ Provider strip ══════════ -->
     <section class="strip" aria-label="支持的协议与供应商">
       <div class="strip__inner">
-        <span class="strip__label mono">支持协议</span>
+        <span class="strip__label mono">对接协议</span>
         <div class="strip__items">
           <span class="chip">OpenAI · Chat Completions</span>
           <span class="chip">OpenAI · Responses</span>
@@ -130,7 +130,7 @@ tangyuanAI.agent_list[<span class="s">"weather"</span>].conversation_with_tool(
     <section class="section" id="problem">
       <div class="section__head reveal">
         <p class="kicker">THE PROBLEM</p>
-        <h2>每家 LLM 都有自己的<br><strong class="hl">协议方言</strong></h2>
+        <h2>每家 LLM API 都是<br><strong class="hl">另一种方言</strong></h2>
       </div>
       <p class="section__lead reveal">OpenAI 要 <code>role="tool"</code> 块；Anthropic 要 <code>tool_use_id</code> 回声；Responses 要 <code>input</code> 列表；你公司机房的网关，又讲另一种话。<strong>写死一个 SDK，就把自己锁死在一个 provider。</strong></p>
 
@@ -188,15 +188,15 @@ tangyuanAI.agent_list[<span class="s">"weather"</span>].conversation_with_tool(
         </figure>
       </div>
 
-      <p class="punch reveal">如果每换一次 provider 就要重写一遍循环，<br>那不是你在做架构，是协议在做你。</p>
+      <p class="punch reveal">如果每对接一个 API 都要重写一遍循环，<br>那不是在做 Agent，是在做集成。</p>
     </section>
 
     <!-- ══════════ Pillars ══════════ -->
     <section class="section section--alt" id="pillars">
       <div class="section__head reveal">
         <p class="kicker">THE PITCH</p>
-        <h2>三个支柱，撑起<strong class="hl">一个薄层</strong></h2>
-        <p class="section__lead">tangyuanAI 把协议差异收拢到一个地方。它们不是功能清单——全部源于同一个动机：<em>别再因为底层 transport 动一下就重写 agent。</em></p>
+        <h2>三个支柱，撑起<strong class="hl">简洁 Agent 构建</strong></h2>
+        <p class="section__lead">tangyuanAI 把 LLM API 的差异收拢到一个地方。目的不是功能堆叠——而是让你<em>几分钟对接新 API，几行代码构建 Agent。</em></p>
       </div>
 
       <div class="grid grid--3">
@@ -217,9 +217,13 @@ tangyuanAI.agent_list[<span class="s">"weather"</span>].conversation_with_tool(
 
         <article class="card pillar reveal">
           <span class="pillar__num mono">03</span>
-          <h3>多 Agent 协作<br>就是 <code>ask_for_help</code></h3>
-          <p>同列表的 Agent 互相调用，循环检测 + 深度限制焊进 worker pool。调度器扇出 50 个研究员，不爆栈、不卡死。</p>
-          <pre class="pillar__code" v-pre><code><span class="p">.</span><span class="k">ask_for_help</span>(agent_id=<span class="s">"writer"</span>)</code></pre>
+          <h3>Agent 模板池<br><code>装饰器即配置</code></h3>
+          <p>继承 Agent + 类属性 = 一种 Agent。<code>@template_agent</code> 注册到池，<code>activate_template("name")</code> 一行激活。同一份代码，换 provider = 改一个字段。</p>
+          <pre class="pillar__code" v-pre><code><span class="k">@</span>tangyuanAI.template_agent(<span class="s">"writer"</span>,
+    description=<span class="s">"写作助手"</span>)
+<span class="k">class</span> <span class="t">Writer</span>(tangyuanAI.BaseAgent):
+    <span class="k">protocol</span>   = <span class="s">"openai"</span>
+    model_name  = <span class="s">"gpt-5"</span></code></pre>
         </article>
       </div>
     </section>
@@ -320,30 +324,33 @@ $ export API_KEY="sk-…"
     <!-- ══════════ Compare ══════════ -->
     <section class="section" id="compare">
       <div class="section__head reveal">
-        <p class="kicker">PROTOCOL SIMPLICITY</p>
-        <h2>从零写个 A2A 客户端？<br><strong class="hl">1 行</strong> 就够了</h2>
+        <p class="kicker">API INTEGRATION</p>
+        <h2>从零接一个 LLM API？<br><strong class="hl">1 行</strong>就够了</h2>
       </div>
 
       <div class="compare">
         <div class="compare__side compare__side--old reveal">
           <div class="compare__label">
-            <span class="mono">FROM SCRATCH · A2A CLIENT</span>
-            <span class="mono">50+ 行</span>
+            <span class="mono">FROM SCRATCH · LLM SDK</span>
+            <span class="mono">100+ 行</span>
           </div>
-          <pre class="compare__code" v-pre><code><span class="c"># 发现 agent card</span>
-card = <span class="k">await</span> client.get(
-    <span class="s">"/.well-known/agent.json"</span>)
-<span class="c"># 构造 JSON-RPC 2.0</span>
-req = <span class="p">{</span><span class="s">"jsonrpc"</span>: <span class="s">"2.0"</span>, <span class="s">"id"</span>: <span class="k">1</span>,
-  <span class="s">"method"</span>: <span class="s">"tasks/sendSubscribe"</span>,
-  <span class="s">"params"</span>: <span class="p">{</span>…<span class="p">}</span><span class="p">}</span>
-<span class="c"># SSE 流式订阅 + 状态机</span>
-<span class="k">async for</span> line <span class="k">in</span> r.aiter_lines():
-    <span class="k">if</span> state == <span class="s">"input-required"</span>: …
-    <span class="k">elif</span> state <span class="k">in</span> <span class="p">(</span><span class="s">"completed"</span>,
-        <span class="s">"failed"</span>, <span class="s">"canceled"</span><span class="p">)</span>: …
-<span class="c"># 错误重试 + 重连 + 流装配…</span></code></pre>
-          <p class="compare__foot">50+ 行，且只连通一家。</p>
+          <pre class="compare__code" v-pre><code><span class="c"># 自己接一个新 LLM API</span>
+client = httpx.AsyncClient(headers=<span class="p">{</span>
+    <span class="s">"Authorization"</span>: <span class="s">f"Bearer </span><span class="p">{</span>key<span class="p">}</span><span class="s">"</span><span class="p">}</span>)
+<span class="k">async def</span> <span class="t">chat</span>(messages):
+    payload = <span class="p">{</span><span class="s">"model"</span>: MODEL,
+        <span class="s">"messages"</span>: messages<span class="p">}</span>
+    <span class="k">async for</span> chunk <span class="k">in</span> client.stream(
+        <span class="s">"POST"</span>, url, json=payload):
+        <span class="k">if</span> chunk[<span class="s">"type"</span>] == <span class="s">"tool_call"</span>:
+            result = <span class="k">await</span> run_tool(
+                chunk[<span class="s">"name"</span>], chunk[<span class="s">"input"</span>])
+            messages.append(
+                tool_msg(chunk[<span class="s">"id"</span>], result))
+        <span class="k">elif</span> chunk[<span class="s">"type"</span>] == <span class="s">"error"</span>:
+            <span class="k">await</span> backoff_retry()
+<span class="c"># 鉴权 / 流式 / 工具桥接 / 重试…</span></code></pre>
+          <p class="compare__foot">100+ 行，且只连通一家。</p>
         </div>
 
         <div class="compare__divider" aria-hidden="true">
@@ -355,16 +362,14 @@ req = <span class="p">{</span><span class="s">"jsonrpc"</span>: <span class="s">
             <span class="mono">TANGYUANAI</span>
             <span class="mono mono-mint">1 行</span>
           </div>
-          <pre class="compare__code" v-pre><code>result = tangyuanAI.agent_list[<span class="s">"scheduling"</span>].<span class="t">ask_for_help</span>(
-    agent_id=<span class="s">"writer_agent"</span>,
-    message=<span class="s">"请帮我查一下北京今天天气"</span>,
-)</code></pre>
+          <pre class="compare__code" v-pre><code><span class="k">class</span> <span class="t">AnyAgent</span>(tangyuanAI.BaseAgent):
+    <span class="k">protocol</span> = <span class="s">"openai"</span>   <span class="c"># ← 改这一行切 API</span></code></pre>
           <ul class="compare__builtin">
-            <li><span class="ck" aria-hidden="true"></span>循环检测</li>
-            <li><span class="ck" aria-hidden="true"></span>深度限制</li>
-            <li><span class="ck" aria-hidden="true"></span>worker 池</li>
-            <li><span class="ck" aria-hidden="true"></span>XML ↔ FC 桥接</li>
+            <li><span class="ck" aria-hidden="true"></span>鉴权</li>
             <li><span class="ck" aria-hidden="true"></span>流式装配</li>
+            <li><span class="ck" aria-hidden="true"></span>工具桥接</li>
+            <li><span class="ck" aria-hidden="true"></span>自动重试</li>
+            <li><span class="ck" aria-hidden="true"></span>超时控制</li>
           </ul>
         </div>
       </div>
@@ -373,8 +378,8 @@ req = <span class="p">{</span><span class="s">"jsonrpc"</span>: <span class="s">
     <!-- ══════════ CTA ══════════ -->
     <section class="cta">
       <p class="kicker reveal">GET STARTED</p>
-      <h2 class="cta__title reveal">今晚就让你的 LLM<br><strong class="hl">开一家公司</strong></h2>
-      <p class="cta__sub reveal">薄薄一层。写一次，跑遍所有协议。</p>
+      <h2 class="cta__title reveal">几分钟，接入你的 API<br><strong class="hl">构建你的 Agent</strong></h2>
+      <p class="cta__sub reveal">一个 <code>protocol</code> 字段 = 对接一个 LLM API。</p>
       <div class="cta__actions reveal">
         <button class="btn btn--primary btn--lg" data-copy="uv add tangyuanAI">uv add tangyuanAI</button>
         <a class="btn btn--default btn--lg" href="https://github.com/secret-tangyuan/tangyuanAI" target="_blank" rel="noopener">GitHub</a>
