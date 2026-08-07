@@ -6,7 +6,7 @@
       "enabled": true,
       "config": {
         "provider": "siliconflow",
-        "api_base": "https://api.siliconflow.cn/v1",
+        "api_base": "https://api.siliconflow.cn/v1/images/generations",
         "api_key_env": "TANGYUAN_IMAGE_API_KEY",
         "default_model": "Qwen/Qwen-Image-Edit-2509",
         "default_image_size": "1024x1024",
@@ -66,7 +66,7 @@
       "enabled": false,
       "config": {
         "provider": "minimax",
-        "api_base": "https://api.minimaxi.com",
+        "api_base": "https://api.minimaxi.com/v1/image_generation",
         "api_key_env": "MINIMAX_API_KEY",
         "default_model": "image-01",
         "request_template": {
@@ -82,6 +82,30 @@
           "aigc_watermark": "${aigc_watermark}"
         },
         "response_image_url_path": "data.image_urls"
+      }
+    },
+    {
+      "name": "image_generation_doubao",
+      "type": "image_generation",
+      "enabled": false,
+      "config": {
+        "provider": "doubao",
+        "api_base": "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+        "api_key_env": "ARK_API_KEY",
+        "default_model": "doubao-seedream-4-0-250828",
+        "request_template": {
+          "model": "${model}",
+          "prompt": "${prompt}",
+          "image": "${image}",
+          "size": "${image_size}",
+          "seed": "${seed}",
+          "sequential_image_generation": "${sequential_image_generation}",
+          "guidance_scale": "${guidance_scale}",
+          "output_format": "${output_format}",
+          "response_format": "${response_format}",
+          "watermark": "${watermark}"
+        },
+        "response_image_url_path": "data.0.url"
       }
     }
   ]

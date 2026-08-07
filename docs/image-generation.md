@@ -74,7 +74,7 @@ python -m tangyuanAI image-gen "a cat on the moon" --image-size 1024x1024
       "enabled": true,
       "config": {
         "provider": "siliconflow",       // provider 名
-        "api_base": "https://api.siliconflow.cn/v1",   // 支持 ${env:VAR} 占位
+        "api_base": "https://api.siliconflow.cn/v1/images/generations",   // ★ 完整端点 URL（含路径）+ ${env:VAR} 占位
         "api_key_env": "TANGYUAN_IMAGE_API_KEY",       // env 变量名（key 从 env 读）
         "default_model": "Qwen/Qwen-Image-Edit-2509",
         "default_image_size": "1024x1024",
@@ -169,6 +169,38 @@ CLI（MiniMax 的 `aspect_ratio`/`n` 非 CLI 标准 flag → 用顶层 API 传 k
 python -m tangyuanAI image-gen "a man at venice beach" --feature image_generation_minimax --download
 ```
 
+## 火山引擎豆包（Seedream）
+
+```bash
+# 安装（默认禁用，需手动 enabled）
+tangyuanai plugin install image_generation_doubao
+
+# 设 env（火山引擎方舟 API key）
+export ARK_API_KEY=xxx
+
+# 编辑本地 tangyuanai.config.json：把 image_generation_doubao 的 enabled 改 true
+```
+
+豆包方言要点：
+- 端点：`POST https://ark.cn-beijing.volces.com/api/v3/images/generations`（OpenAI images 兼容）
+- 尺寸用 `size`（`image_size` 映射）；组图用 `sequential_image_generation`（auto/disabled）
+- 输入图 `image`（数组，URL 或 base64，编辑模式）
+- `response_format` 支持 `url`（24h 有效）/ `b64_json`；`watermark` / `guidance_scale` / `output_format` 等
+- 响应 `data[]`（含 `url` / `size`），`response_image_url_path: "data.0.url"`
+
+```python
+import asyncio, tangyuanAI as t
+async def main():
+    g = t.ImageGenerator()
+    urls = await g.generate('image_generation_doubao',
+                             prompt='夕阳下的雪山，胶片感',
+                             image_size='2048x2048',
+                             guidance_scale=5.0, watermark=False)
+    for u in urls: print(u)
+    await g.close()
+asyncio.run(main())
+```
+
 ## 添加新 provider（不需要写 Python）
 
 1. 复制任一现有 `.json` 作为模板
@@ -259,7 +291,7 @@ class ZImageProvider:
 
 - **URL 1 小时过期**（SiliconFlow 提示）。用 `download=True` 或 CLI `--download` 自动落盘
 - config 里只写 `api_key_env` 变量名，**不写明文 key**
-- `api_base` 支持 `${env:VAR}` 占位符（如 DashScope 的 workspace_id 子域）
+- `api_base` 必须是**完整端点 URL（含路径）**，支持 `${env:VAR}` 占位符（如 DashScope 的 workspace_id 子域）
 
 ## 顶层 API
 
