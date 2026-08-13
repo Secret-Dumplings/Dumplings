@@ -27,6 +27,7 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "httpx>=0.27",
     "loguru>=0.7.3",
+    "lxml>=6.0.2",          # XML 解析（test_xml_protocol 用，BeautifulSoup 'xml' feature 依赖）
     "mcp>=1.14.1",
     "pydantic>=2.6",
     "python-dotenv>=1.0",  # mcp 间接依赖（pydantic_settings 需要）
@@ -37,16 +38,17 @@ dependencies = [
 [project.optional-dependencies]
 # A2A 导出（核心原生支持；把本地 agent 暴露为 A2A HTTP endpoint）
 a2a = ["aiohttp>=3.9"]
-# 插件（v1.1.0+）：KB / 图片生成 拆分为独立插件包，通过 [all] 一起安装。
-# 也可以单独安装：pip install tangyuanai-rag-plus / tangyuanai-image-plus
-# 插件（v1.1.0+）：KB / 图片生成 拆分为独立插件包，通过 [all] 一起安装。
-# 也可以单独安装：pip install tangyuanai-rag-plus / tangyuanai-image-plus
-kb = ["tangyuanai-rag-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_RAG_plus.git@main"]
-image = ["tangyuanai-image-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_image_plus.git@main"]
-all = [
-    "tangyuanai-image-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_image_plus.git@main",
-    "tangyuanai-rag-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_RAG_plus.git@main",
-]
+
+# KB 和 Image 子系统已拆为独立插件包（v1.1.0+）。
+# 安装方式（先装核心再装插件）：
+#     pip install tangyuanAI
+#     pip install tangyuanai-rag-plus        # KB
+#     pip install tangyuanai-image-plus      # 图片生成
+# 或者用 core 自带的 plugin 命令装（central config 仓库 → 本地 tangyuanai.config.json）：
+#     tangyuanai plugin install rag
+#     tangyuanai plugin install image
+# 注：插件的 Python 包不在主仓 optional-dependencies，避免 uv sync 在主仓 dev 模式下
+# 解析冲突（plugin 的 tangyuanAI 依赖 vs 主仓 editable install）。
 
 [project.urls]
 Homepage = "https://github.com/secret-tangyuan/tangyuanAI"
