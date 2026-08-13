@@ -9,6 +9,8 @@ icon: LAN_OUTLINED
 
 > **v1.0.0+**。tangyuanAI 支持 Google A2A 协议：本地 agent 可被发现、可被远端调用；也可发现并调用远端 A2A agent。
 
+> **A2A 为核心原生支持（v1.1.0+ 起不随插件迁移）**。导出需要 aiohttp：`pip install "tangyuanAI[a2a]"`；未装 aiohttp 时导出相关 API 给出清晰报错。
+
 ## 什么是 A2A
 
 [Google A2A 协议](https://a2a-protocol.org)（Agent-to-Agent）是 agent 间互操作的标准：

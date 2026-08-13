@@ -1,84 +1,44 @@
 # -*- coding: utf-8 -*-
-"""
-Knowledge Base 主入口（kb 包）
-==============================
+"""tangyuanai.kb —— Knowledge Base 命名空间桥（实现由 RAG 插件提供）。
 
-**职责**：re-export 全部 KB 顶层 API + 数据模型。**只聚合，不含实现**（实现在各子模块）。
+- 安装了 RAG 插件（``tangyuanai-rag-plus``，entry point ``rag``，type=knowledge_base）时：
+  本包整体别名到插件 API。``from tangyuanAI.kb.config import EmbedderConfig`` 等价于
+  ``from tangyuanAI_rag_plus.config import EmbedderConfig``（含深层子模块）。
+- 未安装时：``import tangyuanAI.kb`` 本身可导入，但取任何 API 会得到清晰的安装提示。
 
-**使用**：
-```python
-import tangyuanAI as t
-from tangyuanAI.kb import EmbedderConfig
+安装：
+    pip install "tangyuanAI[all]"            # 安装全部插件
+    pip install tangyuanai-rag-plus          # 只装 RAG 插件
 
-t.register_kb("demo", embedder=EmbedderConfig(
-    provider="openai", api_base="https://api.openai.com/v1",
-    model="text-embedding-3-small", embed_dim=1536))
-t.add_document_sync("demo", source="README.md")
-results = t.search_sync("demo", "怎么用", top_k=3)
-```
+接口文档：docs/plugin-dev.md
 """
 from __future__ import annotations
 
-# === 缓存（kb_cache.py） ===
-from .cache import (
-    LRUDiskCache,
-    NullCache,
-    get_global_cache,
-    set_global_cache,
-)
-from .chunker_factory import create_chunker, list_chunkers
+from ..plugin_api import PLUGIN_TYPE_KNOWLEDGE_BASE
+from ..plugin_loader import install_module_alias, resolve_plugin_for_namespace
 
-# === 配置（kb_config.py） ===
-from .config import EmbedderConfig, RerankerConfig
-from .doc_processor_factory import get_processor_for, list_doc_processors
+_impl = resolve_plugin_for_namespace(PLUGIN_TYPE_KNOWLEDGE_BASE)
+if _impl is not None:
+    install_module_alias(__name__, _impl)
+    _SELF = _impl
+else:
+    _SELF = None
 
-# === 工厂 / 目录 ===
-from .embedder_factory import create_embedder, list_embedder_providers
-from .ingest import (
-    add_document,
-    add_document_sync,
-    add_documents,
-    add_documents_sync,
-    shutdown_kb,
-)
 
-# === 核心类（kb_knowledge.py）===
-from .knowledge import Knowledge
-from .loader_factory import create_loader, list_loaders
-from .migrate import migrate_embedding_model, migrate_embedding_model_sync
+def __getattr__(name):
+    if _SELF is None:
+        raise ImportError(
+            "RAG 插件未安装，无法访问 tangyuanAI.kb API。"
+            "安装方式：pip install 'tangyuanAI[all]' 或 pip install tangyuanai-rag-plus"
+        )
+    return getattr(_SELF, name)
 
-# === 协议（kb_protocols.py） ===
-from .protocols import (
-    Chunker,
-    DocProcessor,
-    Embedder,
-    EmbeddingCache,
-    Loader,
-    Reranker,
-    VectorStore,
-)
 
-# === 编排层 ===
-from .registry import delete_kb, get_kb, list_kbs, register_kb
-from .reranker_factory import create_reranker, list_reranker_providers
-from .search import (
-    list_documents,
-    list_documents_sync,
-    search,
-    search_sync,
-)
-from .tool import register_kb_tools, unregister_kb_tools
+def __dir__():
+    if _SELF is not None:
+        return sorted(set(globals()) | set(dir(_SELF)))
+    return sorted(globals())
 
-# === 数据模型（kb_types.py） ===
-from .types import (
-    Chunk,
-    DocMeta,
-    Document,
-    KnowledgeBase,
-    ScoreKind,
-    SearchResult,
-    Visibility,
-)
 
 __all__ = [
     # 数据模型

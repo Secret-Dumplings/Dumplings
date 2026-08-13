@@ -3,6 +3,12 @@
 Knowledge Base 快速上手（examples/kb_quickstart.py）
 ====================================================
 
+**前置（v1.1.0+ 已插件化）**：先装 RAG 插件：
+    pip install "tangyuanAI[all]"
+    # 或 pip install tangyuanai-rag-plus
+
+====================================================
+
 **零外部 API 也能跑**：用本地 Ollama（openai-compatible）或直接跑 demo。
 
 用法：

@@ -7,6 +7,31 @@ tangyuanAI 的所有显著变更记录。
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-13
+
+> 知识库（RAG）与图片生成**插件化**：实现迁移到独立插件包，核心通过 entry point 发现/替换；新增插件接口文档与 `tangyuanAI[all]` 一键安装。
+
+### Added
+- **插件架构（v1.1.0+）**：
+  - 新增 `tangyuanai/plugin_api.py` + `tangyuanai/plugin_loader.py`：`tangyuanai.plugins` entry point 发现、惰性加载、命名空间桥接（`tangyuanAI.kb` / `tangyuanAI.imaging`，含深层子模块别名）。
+  - 新增 `tangyuanai plugin status` 子命令；`plugin install` 支持已知插件名自动匹配中央仓库、已安装代码包内置 config 离线安装。
+  - `pyproject.toml` 新增 extras：`tangyuanAI[kb]` / `tangyuanAI[image]` / `tangyuanAI[all]`（git 安装两个官方插件包）。
+  - 新增接口文档 `docs/plugin-dev.md`：插件级契约（entry point）+ 能力级契约（Protocol）+ 中央 config 仓库发布流程。
+- **官方插件包**：
+  - [tangyuanai-rag-plus](https://github.com/secret-tangyuan/tangyuanAI_RAG_plus)：知识库 / RAG（原 `kb/` 实现迁移；`PLUGIN_TYPE=knowledge_base`；重依赖不再随核心安装；provider extras 随之迁移）。
+  - [tangyuanai-image-plus](https://github.com/secret-tangyuan/tangyuanAI_image_plus)：图片生成（原 `imaging/` 实现迁移；`PLUGIN_TYPE=image_generation`；含中央仓库 config JSON）。
+
+### Changed
+- `tangyuanAI.kb` / `tangyuanAI.imaging` 从"捆绑实现"改为"命名空间桥"：插件装好后行为不变，未装时给出安装提示。
+- **A2A 保持核心原生**：`tangyuanAI.a2a_client` / `a2a_exporter` / `a2a_protocol` 迁到顶层模块（原 `kb/a2a_*`），不随 RAG 插件迁移。
+- 核心 `dependencies` 移除 KB 重依赖（qdrant-client / unstructured / langchain-text-splitters / tenacity / msgpack / tiktoken / lxml）。
+- 核心 `kb-*` 可选依赖 extras 迁移到 `tangyuanai-rag-plus`；`a2a` extra 保留在核心（A2A 核心原生支持）。
+- `tests/kb/`、`tests/test_image_generation.py` 迁移到对应插件仓库（各自带 CI）。
+
+### Removed
+- 核心不再捆绑 `kb/` 与 `imaging/` 实现代码（保留桥接 `__init__.py`）。
+
+
 ## [1.0.1] - 2026-08-07
 
 > v1.0.0 之后的新增与改进。主要是 Knowledge Base / RAG 子系统、Image Generation 子系统、类化重构（Knowledge / Skill / MCPClient）、A2A 互操作，以及文档补齐。

@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tangyuanAI"
-version = "1.0.1"
+version = "1.1.0"
 description = "Lightweight multi-agent collaboration framework on top of LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [{ name = "Secret Tangyuan" }]
-keywords = ["llm", "agent", "multi-agent", "mcp", "ai-framework", "anthropic", "claude", "async"]
+keywords = ["llm", "agent", "multi-agent", "mcp", "ai-framework", "anthropic", "claude", "async", "plugin", "rag", "image"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: AsyncIO",
@@ -27,38 +27,26 @@ dependencies = [
     "beautifulsoup4>=4.14.2",
     "httpx>=0.27",
     "loguru>=0.7.3",
-    "lxml>=6.0.2",
     "mcp>=1.14.1",
     "pydantic>=2.6",
     "python-dotenv>=1.0",  # mcp 间接依赖（pydantic_settings 需要）
     "pyyaml>=6.0",
-    "tiktoken>=0.7",
     "watchdog>=3.0",
-    # Knowledge Base 子系统（v1.0.0+）
-    "qdrant-client>=1.10",             # 向量库（embedded + server 双模式）
-    "langchain-text-splitters>=0.3",   # 文本切分
-    "unstructured>=0.15",              # 文档加载（PDF/DOCX/HTML/MD/...）
-    "tenacity>=9.0",                   # 失败重试
-    "msgpack>=1.0",                    # 嵌入缓存压缩
-    # OpenAI-compatible 端点（OpenAI / SiliconFlow / Ollama / vLLM / 等）走 http_utils 自建 httpx，
-    # 不需要 openai SDK；其他 provider 各自的 SDK 在 optional 组里。
 ]
 
 [project.optional-dependencies]
-# KB embedder providers
-kb-embed-cohere = ["cohere>=5.5"]
-kb-embed-voyage  = ["voyageai>=0.2"]
-kb-embed-jina    = []
-# KB reranker providers
-kb-rerank-cohere = ["cohere>=5.5"]
-kb-rerank-jina   = []
-kb-rerank-local  = ["sentence-transformers>=2.2", "torch>=2.0"]  # BGE / ColBERT / MonoT5
-# KB doc processors
-kb-processor-mineru     = ["magic-pdf[full]>=0.6"]     # OpenDataLab 学术 PDF
-# kb-processor-openminerU 未列在 PyPI（开源矿拟开源 API 还在调整）；provider 代码在 kb/doc_processor_openmineru.py，需手动从源码安装。
-kb-processor-paddleocr  = ["paddleocr>=2.7", "paddlepaddle>=2.5"]
-# A2A 导出（把本地 agent 暴露为 A2A HTTP endpoint）
+# A2A 导出（核心原生支持；把本地 agent 暴露为 A2A HTTP endpoint）
 a2a = ["aiohttp>=3.9"]
+# 插件（v1.1.0+）：KB / 图片生成 拆分为独立插件包，通过 [all] 一起安装。
+# 也可以单独安装：pip install tangyuanai-rag-plus / tangyuanai-image-plus
+# 插件（v1.1.0+）：KB / 图片生成 拆分为独立插件包，通过 [all] 一起安装。
+# 也可以单独安装：pip install tangyuanai-rag-plus / tangyuanai-image-plus
+kb = ["tangyuanai-rag-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_RAG_plus.git@main"]
+image = ["tangyuanai-image-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_image_plus.git@main"]
+all = [
+    "tangyuanai-image-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_image_plus.git@main",
+    "tangyuanai-rag-plus @ git+https://github.com/secret-tangyuan/tangyuanAI_RAG_plus.git@main",
+]
 
 [project.urls]
 Homepage = "https://github.com/secret-tangyuan/tangyuanAI"
@@ -74,7 +62,7 @@ url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 default = true
 
 [tool.setuptools]
-packages = ["tangyuanAI", "tangyuanAI.kb"]
+packages = ["tangyuanAI", "tangyuanAI.kb", "tangyuanAI.imaging"]
 package-dir = {"tangyuanAI" = "."}
 include-package-data = true
 
@@ -93,12 +81,12 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-# 默认跑：单测（跳过 benchmark + flaky）。跑 benchmark 用 ``pytest -m benchmark``，
-# 跑 flaky（网络敏感/并发竞态）用 ``pytest -m flaky`` 显式跑。
+# 默认跑：单测（跳过 benchmark + flaky）。跑 benchmark 用 ``pytest -m benchmark``；
+# 跑 flaky（网络敏感/并发竞争）用 ``pytest -m flaky`` 显式跑。
 addopts = "-ra -m 'not benchmark and not flaky'"
 markers = [
     "benchmark: 性能基准测试（默认跳过；用 -m benchmark 显式跑）",
-    "flaky: 已知不稳定（网络敏感 / mock 队列竞态），默认跳过；用 -m flaky 显式跑",
+    "flaky: 已知不稳定（网络敏感 / mock 队列竞争），默认跳过；用 -m flaky 显式跑",
 ]
 asyncio_mode = "auto"
 

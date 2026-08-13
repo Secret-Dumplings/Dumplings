@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-A2A 兼容层测试（tests/kb/test_a2a.py）
+A2A 兼容层测试（tests/test_a2a.py，核心原生）
 =====================================
 
 验证 #6：
@@ -14,8 +14,8 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from tangyuanAI.kb import a2a_protocol
-from tangyuanAI.kb.a2a_client import A2AAgentProxy, register_a2a_agent
+from tangyuanAI import a2a_protocol
+from tangyuanAI.a2a_client import A2AAgentProxy, register_a2a_agent
 
 # ---------------------------------------------------------------------------
 # 协议层
@@ -65,7 +65,7 @@ class TestProtocol:
 # ---------------------------------------------------------------------------
 
 class TestClient:
-    @patch("tangyuanAI.kb.a2a_client.httpx.AsyncClient")
+    @patch("tangyuanAI.a2a_client.httpx.AsyncClient")
     async def test_discover(self, MockClient):
         fake_resp = MagicMock()
         fake_resp.json.return_value = {"name": "remote", "description": "远端"}
@@ -77,7 +77,7 @@ class TestClient:
         mock_client.__aexit__ = AsyncMock(return_value=None)
         MockClient.return_value = mock_client
 
-        from tangyuanAI.kb.a2a_client import discover
+        from tangyuanAI.a2a_client import discover
         got = await discover("http://host:9000")
         assert got["name"] == "remote"
 
@@ -85,13 +85,13 @@ class TestClient:
         """A2AAgentProxy.conversation_with_tool 转发到远端（mock send_task_sync）。"""
         proxy = A2AAgentProxy(name="a2a_remote", url="http://host:9000", description="远端")
         assert proxy.source == "a2a:http://host:9000"
-        with patch("tangyuanAI.kb.a2a_client.send_task_sync", return_value={
+        with patch("tangyuanAI.a2a_client.send_task_sync", return_value={
             "artifacts": [{"parts": [{"kind": "text", "text": "远端回复"}]}]
         }):
             reply = proxy.conversation_with_tool("你好")
         assert reply == "远端回复"
 
-    @patch("tangyuanAI.kb.a2a_client.discover")
+    @patch("tangyuanAI.a2a_client.discover")
     @patch("tangyuanAI.Agent_list.register_agent")
     def test_register_a2a_agent(self, mock_reg, mock_discover):
         """register_a2a_agent 发现 + 注册，source 标记 a2a:<url>。"""
@@ -128,7 +128,7 @@ class TestExporter:
     @pytest.mark.asyncio
     async def test_agent_card_endpoint(self, fake_agent):
         from aiohttp.test_utils import TestClient, TestServer
-        from tangyuanAI.kb.a2a_exporter import A2AExporter
+        from tangyuanAI.a2a_exporter import A2AExporter
 
         exporter = A2AExporter(agent_list={"writer": fake_agent}, port=9001)
         app = exporter.app()
@@ -143,8 +143,8 @@ class TestExporter:
     @pytest.mark.asyncio
     async def test_tasks_send(self, fake_agent):
         from aiohttp.test_utils import TestClient, TestServer
-        from tangyuanAI.kb.a2a_exporter import A2AExporter
-        from tangyuanAI.kb.a2a_protocol import make_json_rpc_request, make_text_message
+        from tangyuanAI.a2a_exporter import A2AExporter
+        from tangyuanAI.a2a_protocol import make_json_rpc_request, make_text_message
 
         exporter = A2AExporter(agent_list={"writer": fake_agent}, port=9001)
         app = exporter.app()

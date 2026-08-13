@@ -6,10 +6,18 @@ tangyuanai 命令行入口（Python 模块名 tangyuanAI）
 ::
 
     tangyuanai --help        全部子命令
-    tangyuanai --doctor      环境自检（Python / httpx / pydantic / API Key）
+    tangyuanai --doctor      环境自检（Python / httpx / pydantic / API Key / 插件）
     tangyuanai --demo        跑一个最小离线示例（不连真 LLM）
 
 也可以通过 ``python -m tangyuanAI`` 进入。
+
+插件化（v1.1.0+）
+-----------------
+- ``tangyuanai plugin install <name>`` 从中央 config 仓库下载并启用插件
+- ``kb`` / ``image-gen`` 子命令由已安装的插件包提供：
+  - RAG 插件（``tangyuanai-rag-plus``）→ ``kb`` 子命令
+  - 图片插件（``tangyuanai-image-plus``）→ ``image-gen`` 子命令
+  - 未安装时子命令不可用（``--doctor`` 会提示安装方式）
 """
 from __future__ import annotations
 
@@ -30,14 +38,14 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="tangyuanai",
         description=(
             "tangyuanAI 命令行入口（CLI 命令 = tangyuanai）。\n"
-            "主要用途：环境自检 + 离线 demo + Agent/工具/会话管理。\n"
+            "主要用途：环境自检 + 离线 demo + Agent/工具/插件管理。\n"
             "通过 `pip install tangyuanAI` 安装后可执行 `tangyuanai --help`。"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument(
         "--doctor", action="store_true",
-        help="环境自检：Python 版本 / 关键依赖 / API Key / Agent 注册",
+        help="环境自检：Python 版本 / 关键依赖 / API Key / Agent 注册 / 插件",
     )
     p.add_argument(
         "--demo", action="store_true",
@@ -52,118 +60,148 @@ def _build_parser() -> argparse.ArgumentParser:
         help="打印版本号并退出",
     )
 
-    # KB 子命令（kb.cli）
+    subparsers = p.add_subparsers(dest="cmd", help="子命令")
+
+    # 核心：plugin 管理（不依赖任何插件包）
+    _add_plugin_subparsers(subparsers)
+
+    # 旧版兼容：若核心仍捆绑 kb 子包（升级前残留），尝试挂载
     try:
         from .kb.cli import add_subparser
-        subparsers = p.add_subparsers(dest="cmd", help="子命令")
         add_subparser(subparsers)
     except ImportError:
-        # KB 依赖未装时，kb 子命令不可用（不影响其他命令）
-        subparsers = None
-
-    # Image Gen 子命令 + Plugin 管理
-    try:
-        if subparsers is None:
-            subparsers = p.add_subparsers(dest="cmd", help="子命令")
-        _add_imaging_subparsers(subparsers)
-    except ImportError:
         pass
+
+    # 插件子命令：已安装的插件包注册 kb / image-gen 等
+    _add_plugin_command_subparsers(subparsers)
 
     return p
 
 
-def _add_imaging_subparsers(subparsers) -> None:
-    """image-gen + plugin 子命令。"""
-
-    # image-gen
-    img_p = subparsers.add_parser("image-gen", help="图片生成（config 启用，provider 自定）")
-    img_p.add_argument("prompt", help="文本提示词")
-    img_p.add_argument("--feature", default="image_generation", help="config 里的 feature 名")
-    img_p.add_argument("--config", help="tangyuanai.config.json 路径")
-    img_p.add_argument("--model", default=None, help="覆盖 config 里的 default_model")
-    img_p.add_argument("--download", action="store_true", help="下载到本地（URL 1 小时过期）")
-    img_p.add_argument("--download-dir", default="./images", help="下载目录")
-    img_p.add_argument("--negative-prompt", dest="negative_prompt", default=None)
-    img_p.add_argument("--image-size", dest="image_size", default=None)
-    img_p.add_argument("--seed", type=int, default=None)
-    img_p.add_argument("--num-inference-steps", dest="num_inference_steps", type=int, default=None)
-    img_p.add_argument("--batch-size", dest="batch_size", type=int, default=None)
-    img_p.add_argument("--guidance-scale", dest="guidance_scale", type=float, default=None)
-    img_p.add_argument("--cfg", type=float, default=None)
-    img_p.add_argument("--image", default=None, help="base64 或 URL（编辑模式）")
-    img_p.add_argument("--image2", dest="image2", default=None)
-    img_p.add_argument("--image3", dest="image3", default=None)
-    img_p.set_defaults(func=cmd_image_gen)
-
-    # plugin
-    plug_p = subparsers.add_parser("plugin", help="plugin 管理（install / list）")
+def _add_plugin_subparsers(subparsers) -> None:
+    """plugin 管理子命令（核心自带，不依赖插件包）。"""
+    plug_p = subparsers.add_parser("plugin", help="plugin 管理（install / list / status）")
     plug_sub = plug_p.add_subparsers(dest="plugin_action", required=True)
 
-    pi = plug_sub.add_parser("install", help="从中央仓库下载并启用 plugin")
+    pi = plug_sub.add_parser("install", help="从中央仓库下载并启用 plugin config")
     pi.add_argument("name", help="plugin 名（中央仓库 <name>.json）")
     pi.add_argument("--config", help="tangyuanai.config.json 路径")
     pi.add_argument("--no-enable", action="store_true", help="只装不启用")
     pi.add_argument("--owner", default="secret-tangyuan", help="中央仓库 owner")
-    pi.add_argument("--repo", default="tangyuanAI_image_plus", help="中央仓库 repo")
+    pi.add_argument("--repo", default=None, help="中央仓库 repo（默认按插件名自动匹配）")
     pi.add_argument("--branch", default="main", help="中央仓库 branch")
     pi.set_defaults(func=cmd_plugin_install)
 
-    pl = plug_sub.add_parser("list", help="列出本地已启用的 plugin")
+    pl = plug_sub.add_parser("list", help="列出本地 config 已启用的 plugin")
     pl.add_argument("--config", help="tangyuanai.config.json 路径")
-    pl.set_defaults(func=cmd_plugin_install)
+    pl.set_defaults(func=cmd_plugin_list)
+
+    ps = plug_sub.add_parser("status", help="已安装插件包 + 中央仓库插件状态")
+    ps.set_defaults(func=cmd_plugin_status)
 
 
-def cmd_image_gen(args) -> int:
-    """tangyuanai image-gen "prompt" → 打印图片 URL 或本地路径。"""
-    import asyncio
+def _add_plugin_command_subparsers(subparsers) -> None:
+    """已安装插件包的 add_cli_subparsers()（kb / image-gen 等）。"""
+    from .plugin_loader import PluginError, discover_plugins
 
-    from .imaging import ImageGenerator
+    for name in sorted(discover_plugins()):
+        try:
+            from .plugin_loader import load_plugin
+            mod = load_plugin(name)
+        except PluginError:
+            continue
+        add = getattr(mod, "add_cli_subparsers", None)
+        if callable(add):
+            try:
+                add(subparsers)
+            except Exception:
+                continue
 
-    g = ImageGenerator(config_path=args.config)
-    kwargs = {}
-    for k in ("negative_prompt", "image_size", "seed",
-              "num_inference_steps", "batch_size", "guidance_scale", "cfg",
-              "image", "image2", "image3"):
-        v = getattr(args, k, None)
-        if v is not None:
-            kwargs[k] = v
-    try:
-        paths = asyncio.run(g.generate(
-            feature_name=args.feature,
-            prompt=args.prompt,
-            model=args.model,
-            download=args.download,
-            download_dir=args.download_dir,
-            **kwargs,
-        ))
-        for u in paths:
-            print(u)
-        return 0 if paths else 1
-    finally:
-        asyncio.run(g.close())
+
+# ---------------------------------------------------------------------------
+# plugin 命令
+# ---------------------------------------------------------------------------
 
 
 def cmd_plugin_install(args) -> int:
-    """tangyuanai plugin install/list。"""
+    """tangyuanai plugin install <name> → 下载 config 合并到本地，并提示代码包安装。"""
     import asyncio
 
-    from .plugin_store import install_plugin, list_installed
+    from .plugin_store import install_plugin
 
-    if getattr(args, "plugin_action", None) == "list":
-        for f in list_installed(args.config):
-            print(f"  enabled: {f.get('name')!r}  type={f.get('type')!r}")
-        return 0
-
-    asyncio.run(install_plugin(
-        plugin_name=args.name,
-        config_path=args.config,
-        enable=not args.no_enable,
-        owner=args.owner,
-        repo=args.repo,
-        branch=args.branch,
-    ))
-    print(f"plugin 已安装: {args.name}")
+    repo = args.repo
+    try:
+        feat = asyncio.run(install_plugin(
+            plugin_name=args.name,
+            config_path=args.config,
+            enable=not args.no_enable,
+            owner=args.owner,
+            repo=repo,
+            branch=args.branch,
+        ))
+    except Exception as e:
+        print(f"plugin 安装失败: {e}")
+        return 1
+    print(f"plugin config 已安装并{'启用' if not args.no_enable else '未启用'}: {args.name}")
+    _print_code_install_hint(feat)
     return 0
+
+
+def cmd_plugin_list(args) -> int:
+    """tangyuanai plugin list → 列出本地 config 已启用 features。"""
+    from .plugin_store import list_installed
+
+    feats = list_installed(args.config)
+    if not feats:
+        print("(没有已启用的 plugin)")
+        return 0
+    for f in feats:
+        print(f"  enabled: {f.get('name')!r}  type={f.get('type')!r}")
+    return 0
+
+
+def cmd_plugin_status(_args) -> int:
+    """tangyuanai plugin status → 已安装插件包 + 可用性自检。"""
+    from .plugin_loader import discover_plugins
+
+    entries = discover_plugins()
+    if not entries:
+        print("未安装任何插件包。")
+        print("安装全部插件：pip install 'tangyuanAI[all]'")
+        return 0
+    for name in sorted(entries):
+        try:
+            from .plugin_loader import load_plugin
+            mod = load_plugin(name)
+            ok = True
+            info = ""
+            check = getattr(mod, "check", None)
+            if callable(check):
+                try:
+                    ok, info = check()
+                except Exception as e:
+                    ok, info = False, str(e)
+        except Exception as e:
+            ok, info = False, str(e)
+        title = getattr(mod, "PLUGIN_TITLE", name) if "mod" in dir() else name
+        print(f"  {'✓' if ok else '✗'} {name}  ({title}){(' — ' + info) if info else ''}")
+    return 0
+
+
+def _print_code_install_hint(feat: dict) -> None:
+    """config 装完后，提示代码包（Python 实现）怎么装。"""
+    cfg = feat.get("config", {}) or {}
+    package = cfg.get("package") or cfg.get("pip_package")
+    if not package:
+        return
+    print(f"  代码包: {package}")
+    print(f"    单独安装：pip install {package}")
+    print("    或安装全部插件：pip install 'tangyuanAI[all]'")
+
+
+# ---------------------------------------------------------------------------
+# doctor / demo
+# ---------------------------------------------------------------------------
 
 
 def _check_python_version() -> tuple[bool, str]:
@@ -205,6 +243,23 @@ def _check_agents() -> tuple[bool, list[str]]:
         return False, [f"import agent_list 失败：{e}"]
 
 
+def _check_plugins() -> list[tuple[str, str, bool]]:
+    """返回 [(entry_point_name, title_or_module, ok)]。"""
+    from .plugin_loader import discover_plugins
+
+    entries = discover_plugins()
+    out: list[tuple[str, str, bool]] = []
+    for name in sorted(entries):
+        try:
+            from .plugin_loader import load_plugin
+            mod = load_plugin(name)
+            title = getattr(mod, "PLUGIN_TITLE", "")
+            out.append((name, title or "", True))
+        except Exception as e:
+            out.append((name, str(e), False))
+    return out
+
+
 def cmd_doctor(_args: argparse.Namespace) -> int:
     """环境自检"""
     print("tangyuanAI Doctor\n" + "=" * 50)
@@ -233,6 +288,15 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
             print("  ─ (尚未注册任何 Agent)")
     else:
         print(f"  ✗ {names[0]}")
+
+    # 插件
+    print("  ─ 插件（Plugin）")
+    plugs = _check_plugins()
+    if not plugs:
+        print("    ─ 未安装插件包（pip install 'tangyuanAI[all]' 安装 kb + image）")
+    else:
+        for name, title, ok in plugs:
+            print(f"    {'✓' if ok else '✗'} {name}  {title}")
 
     print()
     if not ok_py:
@@ -303,22 +367,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    # kb 子命令委派
-    if getattr(args, "cmd", None) == "kb":
-        try:
-            from .kb.cli import main as kb_main
-            return kb_main(args)
-        except ImportError:
-            print("KB 子命令不可用（依赖未装？）。")
-            return 1
-
-    # image-gen / plugin 子命令委派
-    if getattr(args, "cmd", None) in ("image-gen", "plugin"):
+    # 子命令统一委派（kb / image-gen / plugin 等都有 func）
+    cmd = getattr(args, "cmd", None)
+    if cmd is not None:
         func = getattr(args, "func", None)
-        if func is None:
-            print("子命令参数缺失。")
-            return 1
-        return func(args)
+        if func is not None:
+            return func(args)
+        # 旧版兼容：kb 子命令走旧入口
+        if cmd == "kb":
+            try:
+                from .kb.cli import main as kb_main
+                return kb_main(args)
+            except ImportError:
+                print("KB 子命令不可用（RAG 插件未安装？）。")
+                return 1
+        print("子命令参数缺失。")
+        return 1
 
     if args.quiet:
         silence_banner()

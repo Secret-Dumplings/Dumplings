@@ -26,10 +26,11 @@ tangyuanAI 是一个轻量、模块化的多智能体协作框架，让 LLM 像"
 | [skill.md](skill.md) | Skill 类化：`class TimeSkill(Skill): path="..."` + SKILL.md 自动发现 |
 | [mcp.md](mcp.md) | MCPClient 类：`class NotionMCP(MCPClient): server_path="..."` |
 | [persistence.md](persistence.md) | Agent 状态持久化：`.tas` 文件格式 / 插件后端 / 实时自动保存 |
-| [kb.md](kb.md) | 知识库（RAG）：Knowledge 类（多实例隔离）/ 全文 + 向量 + 重排检索 / 文档处理 |
-| [a2a.md](a2a.md) | A2A 互操作：导入（`register_a2a_agent`）/ 导出（`A2AExporter`）/ 来源跟踪 |
-| [image-generation.md](image-generation.md) | 图片生成：config 驱动的 provider 方言翻译 / plugin install / 本地下载 |
-| [plugin-install.md](plugin-install.md) | Plugin 安装：从中央 config 仓库 `tangyuanai plugin install` |
+| [kb.md](kb.md) | 知识库（RAG，v1.1.0+ 插件）：Knowledge 类（多实例隔离）/ 全文 + 向量 + 重排检索 / 文档处理 |
+| [a2a.md](a2a.md) | A2A 互操作（核心原生）：导入 / 导出 / 来源跟踪 |
+| [image-generation.md](image-generation.md) | 图片生成（v1.1.0+ 插件）：config 驱动的 provider 方言翻译 / plugin install / 本地下载 |
+| [plugin-install.md](plugin-install.md) | Plugin 安装：`tangyuanai plugin install` / `tangyuanAI[all]` 一键装齐 |
+| [plugin-dev.md](plugin-dev.md) | **插件开发 / 接口文档**：写兼容插件替换 RAG / 图片实现 |
 
 > 本套文档就是本仓库自己搭的文档站：**https://docs.ai.secret-tangyuan.com/**（Cloudflare Pages 构建，push 自动更新，见 [docs-site/README.md](../docs-site/README.md)）。
 

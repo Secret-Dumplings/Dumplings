@@ -22,7 +22,7 @@ from typing import Any, Optional
 
 import httpx
 
-from ..logging_config import logger
+from tangyuanAI.logging_config import logger
 
 __all__ = ["discover", "send_task", "send_task_sync", "register_a2a_agent", "A2AAgentProxy"]
 
@@ -144,7 +144,7 @@ def register_a2a_agent(
 
     Returns: A2AAgentProxy 实例（已注册到 agent_list，source="a2a:<url>"）
     """
-    from ..Agent_list import register_agent as _register
+    from tangyuanAI.Agent_list import register_agent as _register
 
     card = asyncio.run(discover(url))
     name = alias or f"a2a_{card['name']}"

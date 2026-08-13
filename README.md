@@ -108,6 +108,18 @@ export API_KEY="sk-…"                      # OpenAI 协议
 export ANTHROPIC_API_KEY="sk-ant-…"        # Anthropic 协议
 ```
 
+
+**可选插件（v1.1.0+）**：知识库（RAG）与图片生成已插件化，需要时一起装：
+
+```bash
+pip install "tangyuanAI[all]"              # RAG 知识库 + 图片生成
+# 或单独：pip install tangyuanai-rag-plus / tangyuanai-image-plus
+tangyuanai plugin status                   # 查看已安装插件
+tangyuanai kb --help                       # RAG 子命令（装插件后可用）
+```
+
+接口文档（如何写兼容插件替换官方实现）：[docs/plugin-dev.md](docs/plugin-dev.md)。
+
 ```python
 import os
 import tangyuanAI

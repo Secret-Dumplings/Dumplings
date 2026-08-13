@@ -7,7 +7,20 @@ icon: IMAGE_OUTLINED
 
 # 图片生成（Image Generation）
 
-> **v1.0.0+**。config 驱动的图片生成 —— 每个 provider 自己的"方言"（请求体结构 / 字段名 / 嵌套层级）在 `tangyuanai.config.json` 描述，**不需要写 Python 代码新增 provider**。
+> **v1.1.0+：图片生成已插件化**。实现迁移到独立插件包 [tangyuanai-image-plus](https://github.com/secret-tangyuan/tangyuanAI_image_plus)。
+> 使用前先装插件：
+>
+> ```bash
+> pip install "tangyuanAI[all]"        # 推荐：Image + RAG 一起装
+> # 或 pip install tangyuanai-image-plus
+> tangyuanai plugin install image_generation   # 可选：把 provider config 记到本地
+> ```
+>
+> 未安装时 `tangyuanAI.imaging` 相关 API 会给出安装提示；接口/替换方法见 [plugin-dev.md](plugin-dev.md)。
+>
+> ---
+>
+>  —— 每个 provider 自己的"方言"（请求体结构 / 字段名 / 嵌套层级）在 `tangyuanai.config.json` 描述，**不需要写 Python 代码新增 provider**。
 
 ## 支持的 provider（plugin install 即可用）
 

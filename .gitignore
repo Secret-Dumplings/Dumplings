@@ -76,3 +76,13 @@ bundle.json
 
 # 本地临时文件（plan / todo / scratch）
 temp/
+
+# 本地插件仓库开发目录（独立 git 仓库，不入核心库）
+_plugins/
+
+# 本地构建 / 虚拟环境产物（含插件仓库构建）
+dist_*/
+dist-*/
+_venv*/
+.pytest_cache/
+.ruff_cache/

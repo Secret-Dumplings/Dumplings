@@ -10,7 +10,7 @@ A2A Exporter（kb/a2a_exporter.py）
 
 **用法**：
 ```python
-from tangyuanAI.kb.a2a_exporter import A2AExporter
+from tangyuanAI.a2a_exporter import A2AExporter
 
 exporter = A2AExporter(host="127.0.0.1", port=9000)  # 默认用全局 agent_list
 # 或指定 agent 子集
@@ -34,7 +34,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Optional
 
-from ..logging_config import logger
+from tangyuanAI.logging_config import logger
 
 __all__ = ["A2AExporter"]
 
@@ -60,7 +60,7 @@ class A2AExporter:
     def _get_agent_list(self) -> dict[str, Any]:
         if self.agent_list is not None:
             return self.agent_list
-        from ..Agent_list import agent_list
+        from tangyuanAI.Agent_list import agent_list
         return agent_list
 
     # === Agent Card ===

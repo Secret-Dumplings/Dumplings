@@ -111,20 +111,31 @@ except ImportError:
     pass
 
 # 从 skill 导入 Skill 相关功能
+# 插件协议 / 加载器（v1.1.0+）：KB 与图片生成由插件包提供，这里只暴露协议与发现 API
+from .plugin_api import PluginEntry, PluginError  # noqa: F401  (re-exported)
+from .plugin_loader import (  # noqa: F401  (re-exported)
+    discover_plugins,
+    get_plugin_api,
+    get_plugin_api_by_type,
+    install_module_alias,
+    load_plugin,
+    plugin_available,
+    plugin_installed,
+)
 from .skill import Skill, skill_registry
 from .skill_bridge import register_skill_as_tool, unregister_skill_from_tool
 
-# A2A 兼容层（v1.0.0+；导入 = 客户端，导出 = aiohttp server，均守卫）
+# A2A 兼容层（v1.0.0+，核心原生支持；导入 = 客户端，导出 = aiohttp server，均守卫）
 try:
-    from .kb.a2a_client import (
+    from .a2a_client import (
         A2AAgentProxy,
         discover,
         register_a2a_agent,
         send_task,
         send_task_sync,
     )
-    from .kb.a2a_exporter import A2AExporter
-    from .kb.a2a_protocol import (
+    from .a2a_exporter import A2AExporter
+    from .a2a_protocol import (
         extract_text_from_artifacts,
         make_agent_card,
         make_json_rpc_request,
@@ -244,6 +255,10 @@ __all__ = [
     "unregister_agent",     # 手动注销 API（v0.4.2+）
     "agent_source", "list_internal_agents", "list_external_agents", "list_agents_with_source",  # 来源跟踪（v1.0.0+）
     "template_agent",       # 模板池装饰器（v0.3.0+ 推荐）
+    # 插件协议 / 加载器（v1.1.0+）
+    "discover_plugins", "plugin_installed", "plugin_available", "load_plugin",
+    "get_plugin_api", "get_plugin_api_by_type", "install_module_alias",
+    "PluginEntry", "PluginError",
     "activate_template",    # 模板池激活（v0.3.0+）
     "deactivate_template",  # 模板池反激活（v0.3.0+）
     "register_template",    # 函数式入池（v0.3.0+）
