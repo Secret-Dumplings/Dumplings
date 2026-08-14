@@ -1,54 +1,88 @@
-﻿---
+---
 slug: plugin-install
-title: Plugin 安装（中央 config 仓库 + 代码包）
+title: 第三方插件安装（CLI install-git）
 order: 12
 icon: PACKAGE_OUTLINED
 ---
 
-# Plugin 安装（中央 config 仓库 + 代码包）
+# 第三方插件安装
 
-> **v1.1.0+**。插件 = **代码包**（pip 安装，entry point 注册）+ **config**（合并到本地 `tangyuanai.config.json`）。
-> `tangyuanai plugin install <name>` 负责 config；代码包用 `pip install "tangyuanAI[all]"` 或单独 `pip install`。
+> **v1.1.0+**。KB / 图片生成的**官方实现已 vendor 在主包**（`pip install tangyuanai` 自带）。
+> 第三方插件 = 替换默认实现的兼容包（通过 `tangyuanai.plugins` entry point 注册）。
+> 推荐安装路径：`tangyuanai plugin install-git <git-url>`。
 
-## 一、装代码包（实现）
+## 一、官方默认（vendor）— 开箱即用
 
 ```bash
-# 官方两个插件一起装（RAG 知识库 + 图片生成）
-pip install "tangyuanAI[all]"
-
-# 单独装
-pip install tangyuanai-rag-plus        # 知识库 / RAG
-pip install tangyuanai-image-plus      # 图片生成
+pip install tangyuanAI
+tangyuanai plugin status
+# KB  : vendored 默认实现（主包内置）
+# Image: vendored 默认实现（主包内置）
 ```
 
-装完即注册插件，CLI 自动出现 `kb` / `image-gen` 子命令：
+不需要任何额外操作就能 `from tangyuanAI.kb import Knowledge` / `from tangyuanAI.imaging import ImageGenerator`。
+
+## 二、装第三方插件
+
+### 方式 A：从 git URL 装（推荐）
+
+```bash
+# 官方子仓作示例（保留作可选插件源）
+tangyuanai plugin install-git https://github.com/secret-tangyuan/tangyuanAI_RAG_plus.git
+tangyuanai plugin install-git https://github.com/secret-tangyuan/tangyuanAI_image_plus.git
+
+# 自己的 fork / 第三方包都行
+tangyuanai plugin install-git https://github.com/your-fork/tangyuanai-kb-alt.git
+
+# editable 模式（开发期常用）
+tangyuanai plugin install-git https://github.com/your-fork/tangyuanai-kb-alt.git --editable
+
+# 单仓多包（plugin 是 monorepo 时用）
+tangyuanai plugin install-git https://github.com/some/monorepo.git --dir plugins/kb
+```
+
+参数：
+- `--branch` / `--branch` 默认 `main`
+- `--dir` 指定仓内子目录（plugin 是 monorepo 时用）
+- `--editable` / `-e` editable 安装
+
+### 方式 B：标准 pip 装（包已发 PyPI）
+
+```bash
+pip install tangyuanai-kb-alt        # 第三方 KB 替代
+pip install tangyuanai-image-alt     # 第三方图片替代
+```
+
+第三方包必须：
+- 在 `[project.entry-points."tangyuanai.plugins"]` 注册 entry point
+- name + module 对应 `kb` / `image`（或自定义），type 对应 `knowledge_base` / `image_generation`
+
+### 方式 C：传统 `tangyuanai plugin install <name>`
+
+仅适用**装 config 模板**（JSON 合并到本地 `tangyuanai.config.json`），不装代码：
+
+```bash
+tangyuanai plugin list
+tangyuanai plugin install rag
+tangyuanai plugin install image_generation
+tangyuanai plugin install image_generation --no-enable   # 只下载不启用
+```
+
+## 三、验证
 
 ```bash
 tangyuanai plugin status
-tangyuanai --doctor
-tangyuanai --help          # 应看到 {plugin,kb,image-gen}
-```
-
-## 二、装 config（可选，配置/启用 feature）
-
-```bash
-# 列出本地已启用的 plugin
-tangyuanai plugin list
-
-# 安装并启用（代码包已装时直接用包内置 config，离线可用）
-tangyuanai plugin install rag
-tangyuanai plugin install image_generation
-
-# 只下载不启用
-tangyuanai plugin install image_generation --no-enable
+# 已装插件包 + KB/Image 子系统:
+#   KB  : 第三方插件接管 (tangyuanai_kb_alt)
+#   Image: vendored 默认实现（主包内置）
 ```
 
 ## 中央 config 仓库
 
-| 仓库 | 内容 | 文件 |
-|---|---|---|
-| https://github.com/secret-tangyuan/tangyuanAI_image_plus | 图片生成 provider 配置 | `image_generation*.json` |
-| https://github.com/secret-tangyuan/tangyuanAI_RAG_plus | RAG 插件清单 | `rag.json` |
+| 仓库 | 内容 |
+|---|---|
+| https://github.com/secret-tangyuan/tangyuanAI_image_plus | 图片生成 provider 配置（`image_generation*.json`） |
+| https://github.com/secret-tangyuan/tangyuanAI_RAG_plus | （已迁回主包，仓保留作可选 git 装源） |
 
 raw URL 模板：`https://raw.githubusercontent.com/secret-tangyuan/<repo>/main/<name>.json`
 已知插件名自动匹配仓库（`plugin_store.PLUGIN_REPO_MAP`），无需 `--repo`；也可显式指定：
@@ -71,4 +105,4 @@ tangyuanai plugin install image_generation \
 ## 开发自己的插件 / 替换实现
 
 见 [plugin-dev.md](plugin-dev.md)（接口文档）：实现 `tangyuanai.plugins` entry point +
-能力 Protocol，装进环境即替换官方 RAG / 图片插件，核心零改动。
+能力 Protocol，装进环境即替换官方 KB / 图片插件，核心零改动。

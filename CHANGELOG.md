@@ -9,10 +9,42 @@ tangyuanAI 的所有显著变更记录。
 
 ## [1.1.0] - 2026-08-13
 
-> 知识库（RAG）与图片生成**插件化**：实现迁移到独立插件包，核心通过 entry point 发现/替换；新增插件接口文档与 `tangyuanAI[all]` 一键安装。
+> 知识库（RAG）与图片生成 **vendor 回主包 + 第三方可替换**：
+> 默认实现进主仓（单 wheel 体验，零 `@git+`），`tangyuanAI.kb` / `tangyuanAI.imaging` 是
+> bridge（有 vendored fallback，第三方 entry point 可接管）。
 
 ### Added
-- **插件架构（v1.1.0+）**：
+- **vendor 默认（v1.1.0+）**：
+  - `tangyuanAI/kb/` 完整 KB 实现（51 .py）+ `tangyuanAI/imaging/` 图片生成（generator + provider）全部进主包。
+  - `kb/__init__.py` / `imaging/__init__.py` 是 bridge：先查 `tangyuanai.plugins` entry point；
+    找到用 `install_module_alias` 接管命名空间；没装第三方直接 import vendored 子模块（fallback）。
+  - 核心 `dependencies` 加回 KB / Image 依赖（qdrant-client / unstructured /
+    langchain-text-splitters / tenacity / msgpack / tiktoken / lxml）。
+- **第三方插件安装路径**（推荐）：
+  - 新增 `tangyuanai plugin install-git <git-url>` 子命令（`--branch` / `--dir` / `--editable`），
+    内部走 `uv pip install git+...@branch[#subdirectory=...]`。
+  - 兼容原 `pip install <pkg>`：第三方包按 `tangyuanai.plugins` entry point 规范注册即可接管默认。
+- **接口文档**：`docs/plugin-install.md` 重写（CLI install-git 为推荐路径）；
+  `docs/plugin-dev.md` 保留（写兼容插件的入口契约）。
+- **官方子仓**保留作可选 git 装源：[tangyuanAI_RAG_plus](https://github.com/secret-tangyuan/tangyuanAI_RAG_plus) /
+  [tangyuanAI_image_plus](https://github.com/secret-tangyuan/tangyuanAI_image_plus)（**不再上 PyPI**）。
+
+### Changed
+- 移除 `pyproject.toml` 的 `[kb]` / `[image]` / `[all]` @git+ extras（避免解析冲突、保持单 wheel 体验）。
+- `cmd_plugin_status` 加上 `KB / Image 子系统: vendored 默认实现 vs 第三方插件接管` 状态展示。
+- `tangyuanai.kb` / `tangyuanai.imaging` 重新有实现（不再纯桥），但保留插件扩展点（entry point 接管）。
+
+### Removed
+- 删 `tests/kb/`、`tests/test_image_generation.py`、`tests/_fake_imaging_provider.py`
+  （KB / Image 测试在各自的子仓跑，避免主仓测试矩阵臃肿）。
+
+## [1.1.0-alpha] - 2026-08-13
+
+> 知识库（RAG）与图片生成**插件化**：实现迁移到独立插件包，核心通过 entry point 发现/替换；
+> 新增插件接口文档与 `tangyuanAI[all]` 一键安装。
+
+### Added
+- **插件架构（v1.1.0-alpha）**：
   - 新增 `tangyuanai/plugin_api.py` + `tangyuanai/plugin_loader.py`：`tangyuanai.plugins` entry point 发现、惰性加载、命名空间桥接（`tangyuanAI.kb` / `tangyuanAI.imaging`，含深层子模块别名）。
   - 新增 `tangyuanai plugin status` 子命令；`plugin install` 支持已知插件名自动匹配中央仓库、已安装代码包内置 config 离线安装。
   - `pyproject.toml` 新增 extras：`tangyuanAI[kb]` / `tangyuanAI[image]` / `tangyuanAI[all]`（git 安装两个官方插件包）。

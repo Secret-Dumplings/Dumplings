@@ -7,16 +7,16 @@ icon: IMAGE_OUTLINED
 
 # 图片生成（Image Generation）
 
-> **v1.1.0+：图片生成已插件化**。实现迁移到独立插件包 [tangyuanai-image-plus](https://github.com/secret-tangyuan/tangyuanAI_image_plus)。
-> 使用前先装插件：
+> **v1.1.0+：图片生成默认 vendor 在主包**。`pip install tangyuanAI` 自带完整实现，开箱即用。
+> 第三方替换方式见 [plugin-install.md](plugin-install.md)（CLI `install-git` 或 `pip install`）。
 >
 > ```bash
-> pip install "tangyuanAI[all]"        # 推荐：Image + RAG 一起装
-> # 或 pip install tangyuanai-image-plus
-> tangyuanai plugin install image_generation   # 可选：把 provider config 记到本地
+> pip install tangyuanAI               # 含完整图片生成实现
+> # 第三方替换：
+> tangyuanai plugin install-git https://github.com/your-fork/image-alt.git
 > ```
 >
-> 未安装时 `tangyuanAI.imaging` 相关 API 会给出安装提示；接口/替换方法见 [plugin-dev.md](plugin-dev.md)。
+> 未装第三方时 `tangyuanAI.imaging` 自动走 vendored 默认实现。
 >
 > ---
 >

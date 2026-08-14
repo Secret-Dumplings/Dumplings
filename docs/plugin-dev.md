@@ -1,4 +1,4 @@
-﻿---
+---
 slug: plugin-dev
 title: 插件开发（Plugin / 接口文档）
 order: 13
@@ -7,50 +7,57 @@ icon: EXTENSION_OUTLINED
 
 # 插件开发（Plugin / 接口文档）
 
-> **v1.1.0+**。`tangyuanAI` 核心不再捆绑知识库（RAG）与图片生成实现，改为**插件包**。
+> **v1.1.0+**。`tangyuanAI` 主仓 **vendor 默认 KB / Image 实现**，单 wheel 体验。
+> 第三方插件通过 entry point **接管/替换** 默认实现（vendored 作为 fallback）。
 > 本页是编写/替换插件的接口文档：核心与插件之间只有两个契约——**插件级契约**（entry point）与**能力级契约**（Python Protocol）。
 
 ## 1. 插件架构
 
 ```
-┌────────────────────────────── tangyuanAI（核心）──────────────────────────────┐
-│  agent / tool / mcp / skill / persistence / config / plugin_loader            │
-│  CLI：tangyuanai plugin install|list|status                                    │
-│  命名空间桥：tangyuanAI.kb / tangyuanAI.imaging（插件没装时给清晰报错）         │
-└───────┬──────────────────────────────────────┬────────────────────────────────┘
+┌────────────────────────── tangyuanAI（核心）──────────────────────────┐
+│  agent / tool / mcp / skill / persistence / config / plugin_loader    │
+│  CLI：tangyuanai plugin install|install-git|list|status                 │
+│  vendor：tangyuanAI.kb/ (51 .py) / tangyuanAI.imaging/ (2 .py)          │
+│  命名空间桥：tangyuanAI.kb / tangyuanAI.imaging                          │
+│    ├─ 先查 tangyuanai.plugins entry point → 第三方插件接管             │
+│    └─ 没装第三方 → 直接 import vendored 默认实现                       │
+└───────┬──────────────────────────────────────┬─────────────────────────┘
         │ entry point `tangyuanai.plugins`     │ entry point `tangyuanai.plugins`
         ▼                                      ▼
 ┌──────────────────────┐          ┌──────────────────────────┐
 │ tangyuanai-rag-plus  │          │ tangyuanai-image-plus    │
 │ tangyuanAI_rag_plus  │          │ tangyuanAI_image_plus    │
 │ type=knowledge_base  │          │ type=image_generation    │
+│ （保留作可选 git 装源）│          │ （保留作可选 git 装源）   │
 └──────────────────────┘          └──────────────────────────┘
 ```
 
-- **核心** = 框架 + 插件协议。`pip install tangyuanAI` 只有基础能力。
-- **插件** = 独立 pip 包，通过 entry point 注册实现。`pip install "tangyuanAI[all]"` 一次装齐两个官方插件。
-- **可替换**：任何第三方包实现同样的 entry point + Protocol，装进环境即替换/新增能力，核心零改动。
+- **核心** = 框架 + vendored 默认实现 + 插件协议。`pip install tangyuanAI` 完整可用。
+- **可替换**：任何第三方包实现同样的 entry point + Protocol，装进环境即替换默认实现。
+- **fallback**：未装第三方时 `tangyuanAI.kb` / `tangyuanAI.imaging` 自动走 vendored 默认，**用户体验零变化**。
 
-## 2. 安装插件
+## 2. 安装第三方插件
 
 ```bash
-# 官方两个插件一起装（RAG + Image）
-pip install "tangyuanAI[all]"
+# 推荐：从 git URL 装（跨开发期都能用）
+tangyuanai plugin install-git https://github.com/your-fork/my-kb-alt.git
+tangyuanai plugin install-git https://github.com/your-fork/my-kb-alt.git --editable
+tangyuanai plugin install-git https://github.com/some/monorepo.git --dir plugins/kb
 
-# 只装某一个
-pip install tangyuanai-rag-plus
-pip install tangyuanai-image-plus
+# 标准 pip（包已发 PyPI 时）
+pip install my-kb-alt
 
-# 从源码装
-pip install git+https://github.com/secret-tangyuan/tangyuanAI_RAG_plus.git
-pip install git+https://github.com/secret-tangyuan/tangyuanAI_image_plus.git
-
-# 查看插件状态
+# 验证
 tangyuanai plugin status
-tangyuanai --doctor
+# 已装插件包:
+#   my-kb (My KB) — OK
+#
+# KB / Image 子系统:
+#   KB  : 第三方插件接管 (my_kb_alt)
+#   Image: vendored 默认实现（主包内置）
 ```
 
-插件 config 记录到本地 `tangyuanai.config.json`（可选，离线时用包内置 config）：
+可选 config 模板（合并到本地 `tangyuanai.config.json`）：
 
 ```bash
 tangyuanai plugin install rag
@@ -81,8 +88,8 @@ entry point 指向的模块必须暴露（核心用 `importlib.metadata` 发现�
 
 **命名空间桥接**：`PLUGIN_TYPE="knowledge_base"` 时，核心把 `get_api()` 返回的模块树
 别名注册到 `tangyuanAI.kb`（含子模块，`from tangyuanAI.kb.config import X` 也生效）；
-`image_generation` 同理桥接到 `tangyuanAI.imaging`。未装插件时这两个命名空间可导入，
-但取 API 会抛出带安装提示的 `ImportError`。
+`image_generation` 同理桥接到 `tangyuanAI.imaging`。未装插件时这两个命名空间自动走
+**vendored 默认实现**（v1.1.0+ 主包内含完整代码），取任何 API 都不报错。
 
 **多个同类型插件**：按 entry point 名排序，**名字靠后者覆盖前者**（`tangyuanAI.kb` 指向最后加载的插件）。
 

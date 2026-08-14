@@ -9,16 +9,16 @@ icon: DATABASE_OUTLINED
 
 > **v1.0.0+**。让 Agent 回答"基于私有语料"的问题（PDF / DOCX / HTML / Markdown / URL / 扫描件）。
 
-> **v1.1.0+：KB 已插件化**。实现迁移到独立插件包 [tangyuanai-rag-plus](https://github.com/secret-tangyuan/tangyuanAI_RAG_plus)，
-> 不再随核心 `tangyuanAI` 安装。使用前先装插件：
+> **v1.1.0+：KB 默认 vendor 在主包**。`pip install tangyuanAI` 自带完整 KB 实现，开箱即用。
+> 第三方替换方式见 [plugin-install.md](plugin-install.md)（CLI `install-git` 或 `pip install`）。
 >
 > ```bash
-> pip install "tangyuanAI[all]"     # 推荐：RAG + 图片一起装
-> # 或 pip install tangyuanai-rag-plus
-> tangyuanai plugin install rag      # 可选：把插件 config 记到本地
+> pip install tangyuanAI              # 含完整 KB 实现
+> # 第三方替换：
+> tangyuanai plugin install-git https://github.com/your-fork/kb-alt.git
 > ```
 >
-> 未安装时 `tangyuanAI.kb` 相关 API 会给出安装提示；接口/替换方法见 [plugin-dev.md](plugin-dev.md)。
+> 未装第三方时 `tangyuanAI.kb` 自动走 vendored 默认实现。
 
 ## 功能一览
 
