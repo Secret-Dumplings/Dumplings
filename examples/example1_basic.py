@@ -17,8 +17,9 @@ load_dotenv()
     uuid="001",
     description="简单问答 Agent 模板",
 )
-class SimpleAgent(tangyuanAI.BaseAgent):
+class SimpleAgent(tangyuanAI.Agent):
     """一个简单的问答助手 Agent"""
+    protocol = "openai"  # 一行声明走 OpenAI Chat Completions 协议
     prompt = "你是一个名为汤圆 AI 的简单问答助手，友好地回答用户的问题"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")

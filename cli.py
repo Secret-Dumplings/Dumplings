@@ -240,11 +240,13 @@ def cmd_plugin_status(_args) -> int:
 
     entries = discover_plugins()
     for name in sorted(entries):
+        mod = None
+        ok = False
+        info = ""
         try:
             from .plugin_loader import load_plugin
             mod = load_plugin(name)
             ok = True
-            info = ""
             check = getattr(mod, "check", None)
             if callable(check):
                 try:
@@ -252,8 +254,8 @@ def cmd_plugin_status(_args) -> int:
                 except Exception as e:
                     ok, info = False, str(e)
         except Exception as e:
-            ok, info = False, str(e)
-        title = getattr(mod, "PLUGIN_TITLE", name) if "mod" in dir() else name
+            info = str(e)
+        title = getattr(mod, "PLUGIN_TITLE", name) if mod is not None else name
         print(f"  {'✓' if ok else '✗'} {name}  ({title}){(' — ' + info) if info else ''}")
 
     print()

@@ -38,15 +38,10 @@ from tenacity import (
 )
 
 from tangyuanAI.errors import APIError
+from tangyuanAI.logging_config import get_logger
 
 from .cache import get_global_cache, make_cache_key
 from .config import EmbedderConfig
-
-
-def get_logger(name: str):
-    from tangyuanAI.logging_config import get_logger as _real
-    return _real(name)
-
 
 __all__ = ["BaseEmbedder"]
 

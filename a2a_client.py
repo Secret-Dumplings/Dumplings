@@ -90,7 +90,15 @@ async def send_task(
 
 def send_task_sync(url: str, message: str, **kwargs) -> dict[str, Any]:
     """同步版 send_task。"""
-    return asyncio.run(send_task(url, message, **kwargs))
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(send_task(url, message, **kwargs))
+    # 已有 running loop：在该 loop 里调度 + 阻塞等结果
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        future = ex.submit(asyncio.run, send_task(url, message, **kwargs))
+        return future.result()
 
 
 class A2AAgentProxy:
@@ -146,7 +154,17 @@ def register_a2a_agent(
     """
     from tangyuanAI.Agent_list import register_agent as _register
 
-    card = asyncio.run(discover(url))
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop is None:
+        card = asyncio.run(discover(url))
+    else:
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+            card = ex.submit(asyncio.run, discover(url)).result()
     name = alias or f"a2a_{card['name']}"
     proxy = A2AAgentProxy(
         name=name,

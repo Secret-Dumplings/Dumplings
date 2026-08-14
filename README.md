@@ -153,8 +153,9 @@ def get_weather(city: str) -> str:
     uuid="weather-uuid-1",
     description="天气查询助手",
 )
-class WeatherAgent(tangyuanAI.BaseAgent):
-    prompt = "你是天气助手，用 get_weather 工具回答问题"
+class WeatherAgent(tangyuanAI.Agent):                       # 协议无关的 Agent 工厂基类
+    protocol    = "openai"                                  # 一行声明走哪个协议
+    prompt      = "你是天气助手，用 get_weather 工具回答问题"
     api_provider = os.getenv("API_BASE", "https://api.openai.com/v1/chat/completions")
     model_name   = os.getenv("MODEL",    "gpt-5")
     api_key      = os.getenv("API_KEY")
@@ -332,8 +333,8 @@ def search_web(query: str) -> str:        # type=string / required=query 都是�
                 └───────────────┬─────────────────────────────┘
                                 │
                 ┌───────────────▼───────────────────────┐
-                │  Agent (BaseAgent / AnthropicAgent)    │  ← 你写一份的代码
-                │                                       │     / The code you write once
+                │  Agent (protocol = "openai" | "anthropic"│  ← 你写一份的代码
+                │             | "openai-responses")        │     / The code you write once
                 │  — prompt / tools / hooks / memory     │
                 └───────────────┬───────────────────────┘
                                 │ conversation_with_tool(...)

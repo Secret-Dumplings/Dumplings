@@ -51,14 +51,20 @@ python example5_custom_output.py
 
 ### Agent 注册
 
+**推荐写法**：继承 `tangyuanAI.Agent` + 类属性 `protocol = "openai" | "anthropic" | "openai-responses"`。
+
 ```python
-@tangyuanAI.register_agent("uuid", "name")
-class MyAgent(tangyuanAI.BaseAgent):
+@tangyuanAI.template_agent("uuid-1", "my_agent")
+class MyAgent(tangyuanAI.Agent):         # ← 推荐基类
+    protocol = "openai"                  # ← 一行切协议
     prompt = "系统提示词"
     api_provider = "API 端点"
     model_name = "模型名称"
     api_key = os.getenv("API_KEY")
 ```
+
+> 旧写法 `class MyAgent(tangyuanAI.BaseAgent)` 仍兼容，但会在 import 时打 `DeprecationWarning`，
+> 计划在 **v1.3.0** 删除（[changelog](https://github.com/secret-tangyuan/tangyuanAI/blob/main/CHANGELOG.md)）。
 
 ### 工具注册
 

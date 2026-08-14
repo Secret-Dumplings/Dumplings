@@ -539,14 +539,28 @@ class HttpxOpenAIResponsesTransport(LLMTransport):
 # ============================================================================
 
 class _ResponsesSSEState:
-    """Responses API SSE 解析状态（同步 / 异步两条流共用）。"""
+    """Responses API SSE 解析状态（同步 / 异步两条流共用）。
+
+    单轮 Responses API 可发多个 function_call，因此 tool_calls 用 list 累积。
+    """
 
     def __init__(self, parse_usage):
         self.parse_usage = parse_usage
         self.text_chunks: List[str] = []
-        self.tool_call: Dict[str, Any] = {"id": "", "name": "", "arguments": ""}
+        self.tool_calls: List[Dict[str, Any]] = []
+        self._current_idx: int = 0
         self.final_usage: Optional[UsageInfo] = None
         self.final_stop_reason: Optional[str] = None
+
+    def _current_call(self) -> Dict[str, Any]:
+        """拿到当前 in-progress tool_call 槽位；必要时补一个空槽。"""
+        while len(self.tool_calls) <= self._current_idx:
+            self.tool_calls.append({"id": "", "name": "", "arguments": ""})
+        return self.tool_calls[self._current_idx]
+
+    def _next_call(self) -> None:
+        """前进到下一个 tool_call 槽位。"""
+        self._current_idx += 1
 
 
 def _process_responses_sse_line(line, state) -> List[LLMEvent]:
@@ -559,13 +573,32 @@ def _process_responses_sse_line(line, state) -> List[LLMEvent]:
       response.output_item.done / response.completed
     """
     out: List[LLMEvent] = []
-    if not line or not line.startswith(b"data: "):
+    if not line or not line.startswith("data: "):
         return out
-    payload_bytes = line[len(b"data: "):]
-    if payload_bytes == b"[DONE]":
+    payload = line[len("data: "):]
+    if payload == "[DONE]":
+        # flush 累积的所有 tool_calls（同一轮 Responses API 可发多个 function_call）
+        for slot in state.tool_calls:
+            args_raw = slot["arguments"]
+            try:
+                args = json.loads(args_raw) if args_raw else {}
+            except json.JSONDecodeError:
+                args = {"_raw": args_raw}
+            if not isinstance(args, dict):
+                args = {}
+            out.append(LLMEvent(
+                type="tool_call",
+                tool_call=ToolCall(
+                    id=slot["id"] or str(_uuid.uuid4()),
+                    name=slot["name"],
+                    arguments=args,
+                ),
+                raw=None,
+            ))
+        state.tool_calls.clear()
         return out
     try:
-        evt = json.loads(payload_bytes)
+        evt = json.loads(payload)
     except json.JSONDecodeError:
         return out
 
@@ -576,9 +609,12 @@ def _process_responses_sse_line(line, state) -> List[LLMEvent]:
             state.text_chunks.append(delta)
             out.append(LLMEvent(type="text", text=delta, raw=evt))
     elif etype == "response.function_call_arguments.delta":
-        state.tool_call["arguments"] += evt.get("delta", "")
+        # 把累积挂到当前 slot
+        cur = state._current_call()
+        cur["arguments"] += evt.get("delta", "")
     elif etype == "response.function_call_arguments.done":
-        args_raw = state.tool_call["arguments"]
+        cur = state._current_call()
+        args_raw = cur["arguments"]
         try:
             args = json.loads(args_raw) if args_raw else {}
         except json.JSONDecodeError:
@@ -588,22 +624,29 @@ def _process_responses_sse_line(line, state) -> List[LLMEvent]:
         out.append(LLMEvent(
             type="tool_call",
             tool_call=ToolCall(
-                id=state.tool_call["id"] or str(_uuid.uuid4()),
-                name=state.tool_call["name"],
+                id=cur["id"] or str(_uuid.uuid4()),
+                name=cur["name"],
                 arguments=args,
             ),
             raw=evt,
         ))
-        state.tool_call = {"id": "", "name": "", "arguments": ""}
+        state._next_call()
     elif etype == "response.output_item.added":
         item = evt.get("item", {})
         if item.get("type") == "function_call":
-            state.tool_call["id"] = item.get("call_id", item.get("id", ""))
-            state.tool_call["name"] = item.get("name", "")
+            slot = state._current_call()
+            slot["id"] = item.get("call_id", item.get("id", ""))
+            slot["name"] = item.get("name", "")
     elif etype == "response.completed":
         resp = evt.get("response", {})
         state.final_usage = state.parse_usage(resp)
         state.final_stop_reason = resp.get("status")
+        out.append(LLMEvent(
+            type="done",
+            stop_reason=state.final_stop_reason,
+            usage=state.final_usage,
+            raw=evt,
+        ))
     elif etype == "error":
         out.append(LLMEvent(type="error", text=evt.get("message", ""), raw=evt))
     return out

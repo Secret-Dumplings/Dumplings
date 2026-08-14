@@ -22,7 +22,8 @@ from tangyuanAI import template_agent
 from tangyuanAI.Agent_list import activate_template
 
 @template_agent("my_agent", uuid="my-uuid", description="一句话说明用途")
-class MyAgent(tangyuanAI.BaseAgent):
+class MyAgent(tangyuanAI.Agent):                                # ← 推荐：协议无关工厂基类
+    protocol = "openai"                                          # ← 一行切协议
     prompt = "..."
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")
@@ -38,7 +39,8 @@ agent = tangyuanAI.agent_list["my_agent"]
 ```python
 from tangyuanAI.Agent_list import register_template, activate_template
 
-class MyAgent(tangyuanAI.BaseAgent):
+class MyAgent(tangyuanAI.Agent):
+    protocol = "openai"
     prompt = "..."
     api_provider = "..."
     model_name = os.getenv("OPENAI_MODEL")
@@ -62,11 +64,11 @@ Agent 自带 `activate_template(name)` / `deactivate_template(name)` / `list_tem
 agent.conversation_with_tool("需要写文章的 Agent，先把 'writer' 模板激活")
 ```
 
-## 旧写法（v0.3.0 起已弃用）
+## 旧写法（v0.3.0 起已弃用；`BaseAgent` / `AnthropicAgent` 直继承计划 v1.3.0 删除）
 
 ```python
 @tangyuanAI.register_agent("my-uuid", "my_agent", "一句话说明 Agent 用途")
-class MyAgent(tangyuanAI.BaseAgent):
+class MyAgent(tangyuanAI.BaseAgent):                            # noqa: v1.3.0 删除；用 Agent + protocol
     prompt       = "..."
     api_provider = "..."
     model_name   = "..."
@@ -84,29 +86,32 @@ class MyAgent(tangyuanAI.BaseAgent):
 @register_agent("uuid", "name", "desc")
 class A(BaseAgent): ...
 
-# 新
+# 新（推荐）
 @template_agent("name", uuid="uuid", description="desc")
-class A(BaseAgent): ...
-activate_template("name")  # 显式激活（或由 LLM 在对话中触发）
+class A(tangyuanAI.Agent):                       # ← 改用 Agent + protocol
+    protocol = "openai"                         # ← 加 protocol 字段
+activate_template("name")                       # 显式激活（或由 LLM 在对话中触发）
 ```
 
 `@register_agent` 仍可用，调用时通过库内 `logger.warning(...)` 输出迁移提示。
+`Agent_Base_.py` / `anthropic_agent.py` 模块**已 deprecated**（v1.0.0 起）；import 时打 `DeprecationWarning`，v1.3.0 删除。
 
 ## 子类必填类属性
 
 每个 Agent 子类必须实现 4 个类属性（与协议无关）：
 
 ```python
-class MyAgent(tangyuanAI.Agent):  # 或 BaseAgent / AnthropicAgent
+class MyAgent(tangyuanAI.Agent):                  # 推荐写法：Agent + protocol
+    protocol      = "openai"                     # "openai" | "anthropic" | "openai-responses"
     prompt        = "..."          # 系统提示词
     api_provider  = "https://..."  # 必填；缺则 _endpoint() 抛 ValueError
     model_name    = os.getenv("OPENAI_MODEL")  # 推荐走 os.getenv，不硬编码
     api_key       = os.getenv("API_KEY")
 ```
 
-`Agent`（带 `protocol` 字段，v0.2.2+）是协议无关工厂基类；写 `protocol = "openai" | "anthropic"` 自动选 `BaseAgent` / `AnthropicAgent`。直接继承 `BaseAgent` / `AnthropicAgent` 也兼容。
-
-详见 [protocols.md](protocols.md)。
+> 注：旧写法 `class MyAgent(tangyuanAI.BaseAgent): ...` 仍兼容（v0.4.2+），但已 deprecated。
+> `_ProtocolMeta` metaclass 在类创建时根据 `protocol` 字段把 `Agent` 占位基类替换成
+> `_OpenAIBase` / `_AnthropicBase` / `_OpenAIResponsesBase` 中相应的一个，运行时零开销。
 
 ## 模板池 API 速查
 

@@ -205,6 +205,8 @@ def deactivate_template(name: str) -> bool:
     uid = tpl.get("uuid") or name
     agent_list.pop(uid, None)
     agent_list.pop(name, None)
+    _agent_sources.pop(uid, None)
+    _agent_sources.pop(name, None)
     return True
 
 

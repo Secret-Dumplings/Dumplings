@@ -17,8 +17,9 @@ load_dotenv()
     uuid="custom-uuid",
     description="自定义输出格式 Agent 模板",
 )
-class CustomAgent(tangyuanAI.BaseAgent):
+class CustomAgent(tangyuanAI.Agent):
     """具有自定义输出处理的 Agent"""
+    protocol = "openai"
     prompt = "你是一个具有自定义输出格式的助手"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")

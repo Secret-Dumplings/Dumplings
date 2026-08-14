@@ -19,8 +19,9 @@ load_dotenv()
     uuid="time-uuid",
     description="时间 Agent：响应时间查询（演示用，返回固定日期）",
 )
-class TimeAgent(tangyuanAI.BaseAgent):
+class TimeAgent(tangyuanAI.Agent):
     """时间管理者，负责提供当前时间"""
+    protocol = "openai"
     prompt = "你是时间管理者，当被询问时间时，直接回答当前时间是 2026 年 3 月 15 日"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")
@@ -34,8 +35,9 @@ class TimeAgent(tangyuanAI.BaseAgent):
     uuid="schedule-uuid",
     description="调度 Agent：通过 ask_for_help 委托子 Agent 完成子任务",
 )
-class SchedulingAgent(tangyuanAI.BaseAgent):
+class SchedulingAgent(tangyuanAI.Agent):
     """调度助手，可以请求其他 Agent 帮助"""
+    protocol = "openai"
     prompt = "你是一个调度助手，当需要查询时间时，使用 ask_for_help 工具请求 time_agent 帮助"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")

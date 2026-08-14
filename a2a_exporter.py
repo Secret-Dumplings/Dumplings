@@ -177,6 +177,8 @@ class A2AExporter:
             return web.json_response(self.index_card())
 
         async def handle_tasks(request):
+            # 注：这里走同步 _handle_json_rpc 是已知 trade-off —— agent 是同步 API。
+            # 改 full async 需要 agent.conversation_with_tool 有 async 入口。
             try:
                 body = await request.json()
             except Exception:
@@ -188,9 +190,35 @@ class A2AExporter:
             response = self._handle_json_rpc(body)
             return web.json_response(response)
 
+        async def handle_tasks_subscribe(request):
+            """tasks/sendSubscribe —— SSE 流式。
+            当前 agent.conversation_with_tool 是同步入口，所以用 chunked 单条 send 模拟流。
+            """
+            try:
+                from aiohttp import web
+            except ImportError:
+                raise
+            try:
+                body = await request.json()
+            except Exception:
+                from .a2a_protocol import make_json_rpc_error
+                return web.json_response(
+                    make_json_rpc_error(-32700, "无效 JSON"),
+                    status=400,
+                )
+            response = self._handle_json_rpc(body)
+            resp = web.Response(
+                content_type="text/event-stream",
+                headers={"Cache-Control": "no-cache"},
+            )
+            # 单条 chunk 包成 SSE event 流出去
+            import json as _json
+            resp.body = _json.dumps(response).encode("utf-8")
+            return resp
+
         app.router.add_get("/.well-known/agent.json", handle_agent_card)
         app.router.add_post("/a2a/v1/tasks/send", handle_tasks)
-        app.router.add_post("/a2a/v1/tasks/sendSubscribe", handle_tasks)
+        app.router.add_post("/a2a/v1/tasks/sendSubscribe", handle_tasks_subscribe)
         return app
 
     async def serve(self) -> None:

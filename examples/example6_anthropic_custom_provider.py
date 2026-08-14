@@ -1,5 +1,8 @@
 """
-示例：AnthropicAgent 使用自定义服务商
+示例：Agent（protocol = "anthropic"）使用自定义服务商
+
+`Agent` 工厂基类 + `protocol` 字段切换协议是推荐写法；
+不再需要 import `AnthropicAgent`（v1.2.0 后该别名会从 `tangyuanAI.anthropic_agent` 移除）。
 
 AnthropicAgent 不只面向官方 api.anthropic.com —— 你可以指向任意兼容
 Anthropic Messages API 的服务。
@@ -9,7 +12,7 @@ Anthropic Messages API 的服务。
   2) 第三方代理 / 加速网关:  https://your-proxy.example.com
   3) AWS Bedrock:           bedrock-runtime.<region>.amazonaws.com
                            (需要通过 InvokeModel 接口，通常需要自定义 header)
-  4) 自家 LLM 网关（OpenRouter / one-api / newapi 等）:
+  4) 自家 LLM 网关（OpenRouter / one-api / newapi 等):
                            https://your-gateway.example.com/anthropic
   5) 本地代理（litellm / claude-code-router）:
                            http://127.0.0.1:4000
@@ -27,7 +30,6 @@ import os
 
 import tangyuanAI
 from dotenv import load_dotenv
-from tangyuanAI import AnthropicAgent
 from tangyuanAI.Agent_list import activate_template
 
 load_dotenv()
@@ -39,8 +41,9 @@ load_dotenv()
     uuid="official-anthropic-uuid",
     description="官方 Anthropic API Agent 模板",
 )
-class OfficialAgent(AnthropicAgent):
+class OfficialAgent(tangyuanAI.Agent):
     """走官方 api.anthropic.com —— 必须显式写 api_provider（v0.2.2+ 不留默认）"""
+    protocol = "anthropic"                                       # 一行切协议
     prompt = "你是一个简洁的助手。"
     api_provider = "https://api.anthropic.com"                 # 必须显式给出
     model_name = os.getenv("ANTHROPIC_MODEL")
@@ -53,8 +56,9 @@ class OfficialAgent(AnthropicAgent):
     uuid="proxy-anthropic-uuid",
     description="第三方 Anthropic 兼容代理 Agent 模板",
 )
-class ProxyAgent(AnthropicAgent):
+class ProxyAgent(tangyuanAI.Agent):
     """走你自己的 Anthropic 兼容代理"""
+    protocol = "anthropic"
     prompt = "你是一个简洁的助手。"
     api_provider = "https://your-proxy.example.com"          # 框架会自动拼成 /v1/messages
     model_name = os.getenv("ANTHROPIC_MODEL")
@@ -67,8 +71,9 @@ class ProxyAgent(AnthropicAgent):
     uuid="full-url-uuid",
     description="完整 endpoint URL Agent 模板（不重复拼 /v1/messages）",
 )
-class FullUrlAgent(AnthropicAgent):
+class FullUrlAgent(tangyuanAI.Agent):
     """如果你已经拿到完整的 messages URL，直接填进去即可（不会重复拼）"""
+    protocol = "anthropic"
     prompt = "你是一个简洁的助手。"
     api_provider = "https://your-proxy.example.com/v1/messages"
     model_name = os.getenv("ANTHROPIC_MODEL")
@@ -81,10 +86,11 @@ class FullUrlAgent(AnthropicAgent):
     uuid="custom-header-uuid",
     description="自定义 HTTP header Agent 模板（网关要求 X-Tenant-Id 等）",
 )
-class CustomHeaderAgent(AnthropicAgent):
+class CustomHeaderAgent(tangyuanAI.Agent):
     """如果网关需要额外 header（如 Authorization bearer / X-Tenant-Id），
     在 __init__ 里覆盖 self.headers 即可。"""
 
+    protocol = "anthropic"
     prompt = "你是一个简洁的助手。"
     api_provider = "https://your-gateway.example.com/anthropic"
     model_name = os.getenv("ANTHROPIC_MODEL")

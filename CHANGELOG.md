@@ -7,6 +7,61 @@ tangyuanAI 的所有显著变更记录。
 
 ## [Unreleased]
 
+## [1.1.1-rc1] - 2026-08-14
+
+> 严格审查 + 兼容性补丁 + 弃用预告。`Agent + protocol` 工厂基类正式成为推荐写法。
+> 完整 plugin 重构（Anthropic Claude Code Plugin + OpenAI ChatGPT Plugin 1.0 双识别）
+> 见 [v1.2.0 计划](#120---)。
+
+### Fixed
+- **`llm_transport.py` Responses SSE bytes/str 不匹配 bug**：`_process_responses_sse_line` 用 `line.startswith(b"data: ")` 配 `httpx.Response.iter_lines()` 返回的 `str`，直接 `TypeError`。现改为 `str`；同步把 `_ResponsesSSEState.tool_call`（单 dict）改成 `tool_calls: list` + `_current_idx`，单轮 Responses API 可发多个 function_call 不再互相覆盖。
+- **`agent.py` `out()` 吞 `tool_result` 事件**：之前 `tool_result` 事件因带 `tool_name` 字段被第一分支命中后直接 `return`，结果内容从未打印；现 `tool_result` 优先匹配，新增 `[工具结果] name → result` 输出。
+- **`agent.py` `pack(finish_task=True)` 误发于 usage 事件**：`usage` 只是模型流尾附带的 token 计数，**不是终止信号**；`pack(finish_task=True)` 会误打 `[完成]`。stream / 非流式两条路径都改为只在 `evt.type == "done"` 或对话真正结束时打 finish_task。
+- **`agent.py` f-string 漏空格**：`f"no return for the tool{tool_name}"` → `f"no return for the tool {tool_name}"`（之前输出 `"...toolfoo"` 这种粘连）。
+- **`agent.py` XML 模式正则不匹配中文工具名**：`<(\w+)>` 的 `\w` 不含中文；改为 `[\w一-鿿㐀-䶿]+` 支持中文工具名。
+- **`agent.py` XML 分支 TypeError 漏 catch**：第一分支（`has_kwargs or param_count == 0`）的 `tool_func(**params)` 不在 try 里，现补上。
+- **`agent.py` `_collect_stream_events` 收到 `done` 不结束循环**：原代码收到 `usage` 就 `stream_run=False` 后还在等下一帧，新加 `evt.type == "done"` 分支显式处理。
+- **`agent.py` `_OpenAIResponsesBase` 复用 OpenAI Chat Completions ping**：之前 `_ping_endpoint` 走 Chat Completions，但 Responses API endpoint 是 `/v1/responses`，ping 必失败；新增 `_ping_endpoint` / `_ping_payload` override。
+- **`agent.py` `_connectivity` 后台线程泄漏 `HTTPClient`**：每个 Agent 都 `new HTTPClient()` 但永不 `close()`；加 `finally` 关闭连接池。
+- **`agent.py` `os_main_folder` 未知平台 AttributeError**：BSD / AIX 等平台未赋值；加 `else: os.path.expanduser("~")` 兜底。
+- **`agent.py` 工具结果回填遍历 `tool_results` 用 `n` 索引 parallel 遍历 `tool_names`**：用 `zip(tool_names, tool_results)` 替代，无对齐错位风险。
+- **`errors.py` `__getattr__` 弃用提示文案反的 bug**：`TangyuanConnectionError` / `TangyuanTimeoutError` 的 `DeprecationWarning` 提示文案原本指向「自己」（copy-paste bug）；现改为指向 `ConnectionError` / `TimeoutError`（`APIError` 子类）。
+- **`errors.py` 删无意义自赋值 + 死变量**：删 `TangyuanError = TangyuanError`（no-op）和 `_OLD_NAME_USED = {"__init__"}`（从未引用）。
+- **`mcp_bridge.py` 模块级 `asyncio.Lock()` import 期创建**：Python 3.10+ 不推荐；改为 `_get_session_lock()` 懒初始化。
+- **`mcp_bridge.py` `asyncio.get_event_loop()` 过时**：3.10+ `DeprecationWarning`，3.12+ `RuntimeError`；先 `get_running_loop()`，fallback 才走 `_event_loop`。
+- **`mcp_bridge.py` `list_resources` 不存在时整个 init 失败**：MCP 规范允许 server 不实现 resources；现 try/except 后置空 `resources`。
+- **`mcp_bridge.py` `start_health_check / stop_health_check` 在已有 running loop 的线程里跑会 raise**：先 `get_running_loop()`，fallback 才用模块级 loop。
+- **`a2a_client.py` `send_task_sync` / `register_a2a_agent` 在已有 running loop 时炸**：用 `concurrent.futures.ThreadPoolExecutor(max_workers=1)` 在子线程跑 `asyncio.run`；主线程 blocking 等结果。
+- **`a2a_exporter.py` `tasks/sendSubscribe` 与 `tasks/send` 走同一个 sync handler（sse 流假实现）**：现拆为 `handle_tasks`（普通 JSON）和 `handle_tasks_subscribe`（SSE chunk）。
+- **`Agent_list.py` `deactivate_template` 不清 `_agent_sources`**：之前 deactivate 后 `_agent_sources` 残留；现同步 pop 两个 key。
+- **`cli.py` `cmd_plugin_status` 用 `"mod" in dir()` 判断 import 成功**：脆弱；改为 `mod = None` 显式跟踪。
+- **`kb/embedder_base.py` 无意义 `get_logger` wrapper**：删，直接 `from tangyuanAI.logging_config import get_logger`。
+- **`tool_runner.py` `_Task.arguments` 只存 kwargs 不存 args**：`get_status(task_id)["arguments"]` 拿不到位置参数；加 `args: tuple = ()` 字段。
+- **`anthropic_agent.py` `if new_load: self.history = [] else: self.history = []`**：两分支相同；加注释说明「else 分支历史走持久化恢复，迁移到 `persistence.load_state()` 后 init 不再做；保留为兼容子类覆写」。
+
+### Deprecated
+- **`Agent_Base_.py` / `anthropic_agent.py`**：从 v1.0.0 起已 deprecation；**计划在 v1.3.0 移除**。DeprecationWarning 文案升级：
+  ```
+  tangyuanAI.Agent_Base_ 已弃用；**计划在 v1.3.0 删除**。新代码请用 tangyuanAI.BaseAgent。
+  ```
+- **`BaseAgent` / `AnthropicAgent` 别名**：保留作为 `tangyuanAI.BaseAgent` / `tangyuanAI.AnthropicAgent`（始终指向 `_OpenAIBase` / `_AnthropicBase`）的过渡别名；`BaseAgent` / `AnthropicAgent` 直接继承仍兼容（v0.4.2+），但**强烈推荐** `Agent + protocol` 写法。
+
+### Changed
+- **README + docs + examples 推荐写法统一为 `Agent + protocol`**：
+  - `examples/example1-5`：`BaseAgent` → `Agent` + `protocol = "openai"`
+  - `examples/example6_anthropic_custom_provider.py`：`AnthropicAgent` → `Agent` + `protocol = "anthropic"`
+  - `examples/example7_unified_agent.py`：保留旧写法对比，但所有推荐路径都用 `Agent + protocol`
+  - `examples/README.md`、`docs/agent-registration.md`、`docs/getting-started.md`、`docs/protocols.md`、`docs/output-and-hooks.md`：默认示例全部 `Agent + protocol` 写法
+  - `agent_tool.py` docstring 示例同步
+- **`anthropic_agent.py` `_AnthropicBase`（兼容壳）`pack / out / 8 个 builtin_tool` 仍兼容**；推荐迁移见 `tangyuanAI.AnthropicAgent`（始终指向 `_AnthropicBase`）。
+
+### Verified
+- `uv run ruff check .` → All checks passed
+- `uv run pytest -q` → **232 passed, 2 skipped**（aiohttp 未装，2 个 a2a 测试 skip），无回归
+- rollback 锚点：commit `a03eaba`（v1.1.1 之前的最后状态），tag `rollback-pre-fix-v1.1.1`
+
+---
+
 ## [1.1.0] - 2026-08-13
 
 > 知识库（RAG）与图片生成 **vendor 回主包 + 第三方可替换**：

@@ -17,8 +17,9 @@ load_dotenv()
     uuid="mcp-agent",
     description="MCP 工具调用 Agent 模板",
 )
-class MCPAgent(tangyuanAI.BaseAgent):
+class MCPAgent(tangyuanAI.Agent):
     """可以使用 MCP 服务器工具的 Agent"""
+    protocol = "openai"
     prompt = "你是一个可以使用 MCP 服务器工具的助手"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")

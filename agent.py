@@ -189,6 +189,8 @@ class _AgentCommon:
             self.os_main_folder = os.path.expanduser("~")
         elif self.os_name == "Darwin":
             self.os_main_folder = os.getenv("HOME")
+        else:  # 其它平台（BSD / AIX / ...）兜底
+            self.os_main_folder = os.path.expanduser("~")
 
         if self.enable_connectivity:
             threading.Thread(target=self._connectivity, daemon=True).start()
@@ -441,6 +443,9 @@ class _AgentCommon:
 
     def out(self, content: dict) -> None:
         """默认打印；通过重写可劫持输出。"""
+        if content.get("tool_result") is not None:
+            print(f"\n[工具结果] {content.get('tool_name', '')} → {content.get('tool_result')}")
+            return
         if content.get("tool_name"):
             print(f"\n[工具] {content.get('tool_name')} 参数={content.get('tool_parameter')}")
             return
@@ -508,6 +513,7 @@ class _AgentCommon:
         from .errors import APIError
         from .http_utils import HTTPClient
 
+        client = None
         try:
             client = HTTPClient()
             rsp = client.post(
@@ -523,6 +529,12 @@ class _AgentCommon:
         except Exception as e:
             logger.error(f"{self.name} 连接异常：{e}")
             return False
+        finally:
+            if client is not None:
+                try:
+                    client.client.close()
+                except Exception:
+                    pass
         if ok:
             logger.info(f"{self.name} 连接正常")
         else:
@@ -649,14 +661,15 @@ class _AgentCommon:
                     },
                 })
             elif evt.type == "usage" and evt.usage is not None:
-                self.stream_run = False
-                self.pack(finish_task=True)
+                # usage 不是终止信号；对话可能继续带 tool_calls。只打印用量。
                 self.pack(
                     f"\n本次请求用量：提示 {evt.usage.prompt_tokens} tokens，"
                     f"生成 {evt.usage.completion_tokens} tokens，"
                     f"总计 {evt.usage.total_tokens} tokens。",
                     other=True,
                 )
+            elif evt.type == "done":
+                self.stream_run = False
         return full_content, tool_calls_list
 
     def _collect_plain_response(self, llm_rsp: LLMResponse):
@@ -675,7 +688,6 @@ class _AgentCommon:
                 },
             })
         if llm_rsp.usage is not None:
-            self.pack(finish_task=True)
             self.pack(
                 f"\n本次请求用量：提示 {llm_rsp.usage.prompt_tokens} tokens，"
                 f"生成 {llm_rsp.usage.completion_tokens} tokens，"
@@ -834,7 +846,8 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
     def _handle_xml_mode(self, work_history, full_content):
         """OpenAI XML 模式：解析 <tool_name>...</tool_name> 块（fc_model=False 时）。"""
         from bs4 import BeautifulSoup
-        xml_pattern = re.compile(r"<(\w+)>.*?</\1>", flags=re.S)
+        # \w 不匹配中文；用更宽的字符类（含 ASCII + Unicode 字母数字 / 下划线）。
+        xml_pattern = re.compile(r"<([\w一-鿿㐀-䶿]+)>.*?</\1>", flags=re.S)
         clean_pattern = re.compile(r"</?(out_text|thinking)>", flags=re.S)
         clean_content = clean_pattern.sub('', full_content)
         xml_blocks = [m.group(0) for m in xml_pattern.finditer(clean_content)]
@@ -898,7 +911,10 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
                                and p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)])
             has_kwargs = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
             if has_kwargs or param_count == 0:
-                result = tool_func(**params) if params else tool_func()
+                try:
+                    result = tool_func(**params) if params else tool_func()
+                except TypeError:
+                    result = tool_func(block)
             elif param_count == 1 and len(params) == 1:
                 result = tool_func(list(params.values())[0])
             else:
@@ -911,7 +927,7 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
             self.pack(tool_result=result, tool_name=tool_name)
 
             if not result:
-                result = f"no return for the tool{tool_name}"
+                result = f"no return for the tool {tool_name}"
             tool_results.append(result)
             tool_names.append(tool_name)
 
@@ -919,13 +935,8 @@ class _OpenAIBase(_AgentCommon, metaclass=_ProtocolMeta):
             self.pack("\n[系统] AI 已标记任务完成，程序退出。", tool_name="attempt_completion")
 
         if tool_results:
-            n = 0
-            for i in tool_results:
-                try:
-                    work_history.append({"role": "system", "content": f"{tool_names[n]} results: {i}"})
-                    n += 1
-                except Exception:
-                    break
+            for name, res in zip(tool_names, tool_results):
+                work_history.append({"role": "system", "content": f"{name} results: {res}"})
             return self.conversation_with_tool(tool=True)
         return full_content
 
@@ -1169,6 +1180,17 @@ class _OpenAIResponsesBase(_AgentCommon, metaclass=_ProtocolMeta):
 
     protocol: str = "openai-responses"
     _transport_cls = HttpxOpenAIResponsesTransport
+
+    def _ping_endpoint(self) -> str:
+        """Responses API 走 ``/v1/responses``，与 Chat Completions 的 ``/v1/chat/completions`` 不同。"""
+        return self._endpoint()
+
+    def _ping_payload(self) -> dict:
+        return {
+            "model": self.model_name,
+            "input": "ping",
+            "max_output_tokens": 1,
+        }
 
 
 # ============================================================================

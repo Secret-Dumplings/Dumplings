@@ -43,10 +43,13 @@ def pack(
 | `tool_result is not None` | `{"tool_result": ..., "tool_name": ..., ..., "task": False}` |
 | 其他 | `{"message": ..., "ai_uuid": ..., "ai_name": ..., "other": ..., "task": False}` |
 
-### 默认 `out`（AnthropicAgent）
+### 默认 `out`（Agent 工厂基类，所有协议一致）
 
 ```python
 def out(self, content: dict) -> None:
+    if content.get("tool_result") is not None:
+        print(f"\n[工具结果] {content.get('tool_name', '')} → {content.get('tool_result')}")
+        return
     if content.get("tool_name"):
         print(f"\n[工具] {content.get('tool_name')} 参数={content.get('tool_parameter')}")
         return
@@ -57,14 +60,16 @@ def out(self, content: dict) -> None:
         print(content.get("message"), end="")
 ```
 
-`BaseAgent.out` 实现略不同（中文版 `print("调用工具:", ...)`），但结构一致。
+> `Agent + protocol` 任意协议都走这份默认 `out`；想劫持输出就重写 `out`（推荐），
+> 不要覆写 `pack`。
 
 ### 自定义输出（流式 UI / 静默 / JSON 日志）
 
 ```python
 import json
 
-class MyAgent(tangyuanAI.BaseAgent):
+class MyAgent(tangyuanAI.Agent):                     # 推荐写法：Agent + protocol
+    protocol = "openai"                             # 一行切协议
     def out(self, content: dict) -> None:
         # 推到前端 WebSocket
         if hasattr(self, "_ws"):
@@ -77,7 +82,8 @@ class MyAgent(tangyuanAI.BaseAgent):
 ## 工具调用钩子
 
 ```python
-class MyAgent(tangyuanAI.BaseAgent):
+class MyAgent(tangyuanAI.Agent):
+    protocol = "openai"
     def __init__(self):
         super().__init__()
         self.register_tool_hook(self._audit)
@@ -92,7 +98,7 @@ class MyAgent(tangyuanAI.BaseAgent):
             logger.error(f"[{task_id}] {tool_name} 失败：{tool_result}")
 ```
 
-钩子在 `BaseAgent` / `AnthropicAgent` 同步+异步两条对话路径都生效（`conversation_with_tool` / `aconversation_with_tool`）。
+钩子在所有协议（`protocol = "openai" | "anthropic" | "openai-responses"`）的同步+异步两条对话路径都生效（`conversation_with_tool` / `aconversation_with_tool`）。
 
 ## 关键修复历史
 
@@ -101,3 +107,4 @@ class MyAgent(tangyuanAI.BaseAgent):
 | v0.3.0 | `AnthropicAgent.conversation_with_tool(stream=False)` 丢字（text 只入 `full_text` 不进 `assistant_blocks`） |
 | v0.3.0 | `BaseAgent.conversation_with_tool` 同步多轮吞掉 LLM 最终回复（`if tool: return work_history[-1]` 错把 tool_result 当答案） |
 | v0.3.1 | 上面两个 bug 都修了；`AnthropicAgent` 内部 `self.out({...})` 全部切到 `self.pack(...)` |
+| v1.1.1-rc1 | `Agent.out` 优先打印 `tool_result`（之前会被 `tool_name` 分支吞掉） |

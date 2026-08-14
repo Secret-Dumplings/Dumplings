@@ -116,7 +116,8 @@ def builtin_tool(name: Optional[str] = None,
 
     使用示例::
 
-        class MyAgent(AnthropicAgent):  # 或 BaseAgent
+        class MyAgent(tangyuanAI.Agent):                 # 推荐写法：Agent + protocol 字段
+            protocol = "anthropic"                        # 一行切协议
             @builtin_tool(
                 description="请求其他Agent帮助",
                 params={"agent_id": "目标Agent的UUID或名称", "message": "请求内容"},

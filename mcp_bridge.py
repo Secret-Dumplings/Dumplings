@@ -24,7 +24,17 @@ from .logging_config import logger
 # ==================== 全局会话池 ====================
 # 会话统一由 _global_session_pool（MCPSessionPool 实例）管理：
 # register_mcp_tools_async 初始化后 adopt 进池，wrapper / 健康检查 / 关闭都走同一个池。
-SESSION_LOCK = asyncio.Lock()  # 保护 register_mcp_tools_async 的初始化段（防并发重复初始化）
+
+# 懒初始化 asyncio.Lock：模块级不再创建（Python 3.10+ 不推荐 import 期建 lock）。
+SESSION_LOCK: Optional[asyncio.Lock] = None
+
+
+def _get_session_lock() -> asyncio.Lock:
+    global SESSION_LOCK
+    if SESSION_LOCK is None:
+        SESSION_LOCK = asyncio.Lock()
+    return SESSION_LOCK
+
 
 # 全局事件循环复用器
 _event_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -32,17 +42,22 @@ _event_loop: Optional[asyncio.AbstractEventLoop] = None
 
 def get_or_create_event_loop() -> asyncio.AbstractEventLoop:
     """
-    获取或创建全局事件循环
-    避免每次工具调用都创建新事件循环
+    获取或创建全局事件循环。
+    避免每次工具调用都创建新事件循环。
     """
     global _event_loop
     if _event_loop is None or _event_loop.is_closed():
         try:
-            _event_loop = asyncio.get_event_loop()
+            # 优先用 running loop（在 async 上下文里）
+            _event_loop = asyncio.get_running_loop()
         except RuntimeError:
-            # 如果没有当前线程的事件循环，创建一个新的
-            _event_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(_event_loop)
+            try:
+                _event_loop = asyncio.get_event_loop()
+                if _event_loop.is_closed():
+                    raise RuntimeError("closed")
+            except RuntimeError:
+                _event_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(_event_loop)
     return _event_loop
 
 
@@ -279,10 +294,14 @@ async def _initialize_mcp_session(server_path: str) -> Dict[str, Any]:
         tools = tools_response.tools
         logger.info(f"MCP 服务器 {server_path} 共有 {len(tools)} 个工具")
 
-        # 获取资源列表
-        resources_response = await session.list_resources()
-        resources = resources_response.resources
-        logger.info(f"MCP 服务器 {server_path} 共有 {len(resources)} 个资源")
+        # 获取资源列表（MCP 规范允许 server 不实现 resources，不能让整个 init 失败）
+        resources = []
+        try:
+            resources_response = await session.list_resources()
+            resources = resources_response.resources
+            logger.info(f"MCP 服务器 {server_path} 共有 {len(resources)} 个资源")
+        except Exception as e:
+            logger.debug(f"MCP 服务器 {server_path} 不支持 resources（{e}）；跳过")
 
         # 保存到会话池
         session_info = {
@@ -377,7 +396,7 @@ async def register_mcp_tools_async(
     """
     try:
         # 使用会话池初始化会话
-        async with SESSION_LOCK:
+        async with _get_session_lock():
             session_info = await _initialize_mcp_session(server_path)
             await _global_session_pool.adopt(session_info)
 
@@ -534,13 +553,19 @@ def start_health_check(interval: int = 300) -> None:
     Args:
         interval: 检查间隔（秒），默认 5 分钟
     """
-    loop = get_or_create_event_loop()
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = get_or_create_event_loop()
     loop.run_until_complete(_global_session_pool.start_health_check(interval))
 
 
 def stop_health_check() -> None:
     """停止健康检查任务"""
-    loop = get_or_create_event_loop()
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = get_or_create_event_loop()
     loop.run_until_complete(_global_session_pool.stop_health_check())
 
 

@@ -51,7 +51,8 @@ class _Task:
     future: Future
     tool_name: str
     arguments: Dict[str, Any]
-    submitted_at: float
+    args: tuple = ()
+    submitted_at: float = 0.0
     result: Any = None
     error: Optional[BaseException] = None
     done: bool = False
@@ -133,6 +134,7 @@ class ToolRunner:
             future=future,
             tool_name=tool_name,
             arguments=kwargs,
+            args=args,
             submitted_at=time.time(),
         )
         with self._lock:

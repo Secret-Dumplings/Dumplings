@@ -57,8 +57,9 @@ def multiply(a: float, b: float) -> str:
     uuid="002",
     description="计算器 Agent：可执行加法和乘法工具",
 )
-class CalculatorAgent(tangyuanAI.BaseAgent):
+class CalculatorAgent(tangyuanAI.Agent):
     """一个可以执行数学运算的计算器 Agent"""
+    protocol = "openai"  # 一行声明协议
     prompt = "你是一个计算器助手，可以使用 add 和 multiply 工具执行数学运算"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")

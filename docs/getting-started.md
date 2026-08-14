@@ -51,7 +51,8 @@ from tangyuanAI import template_agent
 from tangyuanAI.Agent_list import activate_template
 
 @template_agent("weather", uuid="weather-uuid", description="天气小助手")
-class WeatherAgent(tangyuanAI.BaseAgent):
+class WeatherAgent(tangyuanAI.Agent):                     # ← 推荐：协议无关工厂基类
+    protocol = "openai"                                  # ← 一行切 OpenAI 协议
     prompt = "你是天气助手，使用 get_weather 工具查询天气。"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")
@@ -74,7 +75,8 @@ from tangyuanAI import template_agent
 from tangyuanAI.Agent_list import activate_template
 
 @template_agent("reviewer", uuid="reviewer-uuid", description="评审 Agent")
-class ReviewerAgent(tangyuanAI.AnthropicAgent):
+class ReviewerAgent(tangyuanAI.Agent):                  # ← 同一基类，切协议即可
+    protocol = "anthropic"                              # ← 一行切 Anthropic 协议
     prompt = "你是评审助手。完成工作后用 attempt_completion 汇报。"
     api_provider = "https://api.anthropic.com"
     model_name = os.getenv("ANTHROPIC_MODEL")

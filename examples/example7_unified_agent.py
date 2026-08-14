@@ -1,13 +1,13 @@
 """
 示例：协议无关的 Agent 工厂
 
-从 v0.2.2 起，可以不直接选基类（BaseAgent / AnthropicAgent），
-而是继承统一的 ``tangyuanAI.Agent``，靠 ``protocol`` 字段决定实际协议。
+**推荐写法**：继承 ``tangyuanAI.Agent`` + 类属性 ``protocol = "openai" | "anthropic" | "openai-responses"``。
+不再需要 import `BaseAgent` / `AnthropicAgent`（这两个旧入口在 v1.3.0 删除）。
 
-本文件对比：
-1. 直接选基类（旧写法，仍兼容）
-2. 用 Agent + protocol 字段（新写法，可配置）
-3. 用 Agent + protocol 字段做动态切换
+本文件演示 3 种写法：
+1. 直接选基类（旧写法，已 deprecated 但仍兼容）
+2. 用 Agent + protocol 字段（推荐新写法）
+3. 动态按环境变量切协议
 """
 import os
 import uuid
@@ -15,19 +15,18 @@ import uuid
 import tangyuanAI
 from dotenv import load_dotenv
 from tangyuanAI.Agent_list import activate_template
-from tangyuanAI.anthropic_agent import AnthropicAgent
 
 load_dotenv()
 
 
-# ---------- 方式 1（旧写法，仍然兼容） ----------
+# ---------- 方式 1（已 deprecated 的旧写法，仅为对比保留） ----------
 @tangyuanAI.template_agent(
     "openai_legacy",
     uuid=uuid.uuid4().hex,
-    description="直接继承 BaseAgent（旧写法演示）",
+    description="直接继承 BaseAgent（已 deprecated 旧写法演示）",
 )
-class OpenAILegacy(tangyuanAI.BaseAgent):
-    """直接继承 BaseAgent —— OpenAI 协议"""
+class OpenAILegacy(tangyuanAI.BaseAgent):                      # noqa: F401  已 deprecated，v1.3.0 删除
+    """直接继承 BaseAgent —— OpenAI 协议（已 deprecated）"""
     prompt = "你是一个助手"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")
@@ -37,24 +36,25 @@ class OpenAILegacy(tangyuanAI.BaseAgent):
 @tangyuanAI.template_agent(
     "anthropic_legacy",
     uuid=uuid.uuid4().hex,
-    description="直接继承 AnthropicAgent（旧写法演示）",
+    description="直接继承 AnthropicAgent（已 deprecated 旧写法演示）",
 )
-class AnthropicLegacy(AnthropicAgent):
-    """直接继承 AnthropicAgent —— Anthropic 协议"""
+class AnthropicLegacy(tangyuanAI.Agent):                      # 推荐写法：Agent + protocol
+    """Anthropic 协议 + Agent 基类（推荐写法）"""
+    protocol = "anthropic"
     prompt = "你是一个助手"
     model_name = os.getenv("ANTHROPIC_MODEL")
     api_key = os.getenv("ANTHROPIC_API_KEY")
 
 
-# ---------- 方式 2（新写法，Agent + protocol 字段） ----------
+# ---------- 方式 2（推荐写法：Agent + protocol 字段） ----------
 @tangyuanAI.template_agent(
     "openai_factory",
     uuid=uuid.uuid4().hex,
-    description="用 Agent + protocol 字段选 OpenAI（新写法演示）",
+    description="用 Agent + protocol 字段选 OpenAI（推荐写法）",
 )
 class OpenAIViaFactory(tangyuanAI.Agent):
     """用 Agent + protocol 选 OpenAI"""
-    protocol = "openai"  # 这一行决定实际继承 BaseAgent
+    protocol = "openai"
     prompt = "你是一个助手"
     api_provider = "https://api.example.com/v1/chat/completions"
     model_name = os.getenv("OPENAI_MODEL")
@@ -64,11 +64,11 @@ class OpenAIViaFactory(tangyuanAI.Agent):
 @tangyuanAI.template_agent(
     "anthropic_factory",
     uuid=uuid.uuid4().hex,
-    description="用 Agent + protocol 字段选 Anthropic（新写法演示）",
+    description="用 Agent + protocol 字段选 Anthropic（推荐写法）",
 )
 class AnthropicViaFactory(tangyuanAI.Agent):
     """用 Agent + protocol 选 Anthropic"""
-    protocol = "anthropic"  # 这一行决定实际继承 AnthropicAgent
+    protocol = "anthropic"
     prompt = "你是一个助手"
     model_name = os.getenv("ANTHROPIC_MODEL")
     api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -103,7 +103,8 @@ DynamicAgentCls = _make_agent("dynamic_agent")
 
 if __name__ == "__main__":
     from tangyuanAI import BaseAgent
-    from tangyuanAI.anthropic_agent import AnthropicAgent
+    # 注：AnthropicAgent 仍可从 tangyuanAI.anthropic_agent 导入（v1.3.0 删），
+    # 但推荐用 tangyuanAI.AnthropicAgent（始终指向 _AnthropicBase）。
 
     # v0.3.0+ 模板池：全部激活后才能在 agent_list 里看到
     for n in ("openai_legacy", "anthropic_legacy",
@@ -114,9 +115,9 @@ if __name__ == "__main__":
     # 验证派发结果
     cases = [
         ("OpenAILegacy",       OpenAILegacy,       BaseAgent),
-        ("AnthropicLegacy",    AnthropicLegacy,    AnthropicAgent),
+        ("AnthropicLegacy",    AnthropicLegacy,    tangyuanAI.Agent),  # 现在也是 Agent + protocol
         ("OpenAIViaFactory",   OpenAIViaFactory,   BaseAgent),
-        ("AnthropicViaFactory",AnthropicViaFactory,AnthropicAgent),
+        ("AnthropicViaFactory",AnthropicViaFactory,tangyuanAI.Agent),
         ("DynamicAgentCls",    DynamicAgentCls,    None),  # 看环境变量
     ]
     for name, cls, expected_base in cases:
