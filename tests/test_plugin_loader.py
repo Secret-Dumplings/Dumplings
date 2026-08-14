@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """plugin_loader / plugin_api 测试（不依赖任何插件包）。"""
 from __future__ import annotations
 
@@ -78,14 +78,17 @@ class TestAlias:
         assert mod is sys.modules["tangyuanAI_fake_plus.lazy"]
 
 
-class TestBridgeMissing:
-    def test_kb_bridge_raises_helpful_error(self):
-        """未装 RAG 插件时，tangyuanAI.kb 取 API 应给安装提示。"""
+class TestBridgeFallback:
+    def test_kb_bridge_uses_vendored_when_no_plugin(self):
+        """没装 KB 插件时，tangyuanAI.kb 应走 vendored 默认（kb/__init__.py 的 fallback 分支）。"""
         import tangyuanAI.kb as kb
         from tangyuanAI import plugin_loader
 
         if plugin_loader.load_plugin_by_type("knowledge_base") is not None:
-            pytest.skip("RAG 插件已安装，跳过")
-        with pytest.raises(ImportError) as e:
-            kb.register_kb
-        assert "tangyuanAI[all]" in str(e.value) or "tangyuanai-rag-plus" in str(e.value)
+            pytest.skip("KB 插件已安装，跳过")
+        # vendored fallback：Knowledge 是 tangyuanAI.kb.knowledge.Knowledge（本地子模块）
+        from tangyuanAI.kb.knowledge import Knowledge as VendoredKnowledge
+        assert kb.Knowledge is VendoredKnowledge
+        # EmbedderConfig 同理
+        from tangyuanAI.kb.config import EmbedderConfig as VendoredConfig
+        assert kb.EmbedderConfig is VendoredConfig

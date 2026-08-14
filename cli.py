@@ -11,13 +11,14 @@ tangyuanai 命令行入口（Python 模块名 tangyuanAI）
 
 也可以通过 ``python -m tangyuanAI`` 进入。
 
-插件化（v1.1.0+）
------------------
-- ``tangyuanai plugin install <name>`` 从中央 config 仓库下载并启用插件
-- ``kb`` / ``image-gen`` 子命令由已安装的插件包提供：
-  - RAG 插件（``tangyuanai-rag-plus``）→ ``kb`` 子命令
-  - 图片插件（``tangyuanai-image-plus``）→ ``image-gen`` 子命令
-  - 未安装时子命令不可用（``--doctor`` 会提示安装方式）
+插件（v1.1.0+）
+--------------
+默认 ``pip install tangyuanai`` 自带完整 KB / 图片生成实现（vendored），开箱即用。
+``tangyuanai.kb`` 和 ``tangyuanai.imaging`` 命名空间同时支持第三方替换：
+
+- 第三方包通过 ``tangyuanai.plugins`` entry point 注册（``pip install <pkg>``）
+- 从 git URL 装第三方包：``tangyuanai plugin install-git <git-url>``
+- 装完用 ``tangyuanai plugin status`` 看 entry point 注册情况
 """
 from __future__ import annotations
 
@@ -80,7 +81,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _add_plugin_subparsers(subparsers) -> None:
     """plugin 管理子命令（核心自带，不依赖插件包）。"""
-    plug_p = subparsers.add_parser("plugin", help="plugin 管理（install / list / status）")
+    plug_p = subparsers.add_parser("plugin", help="plugin 管理（install / install-git / list / status）")
     plug_sub = plug_p.add_subparsers(dest="plugin_action", required=True)
 
     pi = plug_sub.add_parser("install", help="从中央仓库下载并启用 plugin config")
@@ -91,6 +92,26 @@ def _add_plugin_subparsers(subparsers) -> None:
     pi.add_argument("--repo", default=None, help="中央仓库 repo（默认按插件名自动匹配）")
     pi.add_argument("--branch", default="main", help="中央仓库 branch")
     pi.set_defaults(func=cmd_plugin_install)
+
+    pig = plug_sub.add_parser(
+        "install-git",
+        help="从 git URL 克隆并 pip 安装插件包（自动注册 entry point）",
+    )
+    pig.add_argument("git_url", help="插件仓 git URL（含 https:// 前缀，可带 .git 后缀）")
+    pig.add_argument(
+        "--branch", default="main",
+        help="git 分支（默认 main）",
+    )
+    pig.add_argument(
+        "--dir",
+        default=None,
+        help="指定仓内子目录作为 pip install 路径（plugin 是 monorepo 时用）",
+    )
+    pig.add_argument(
+        "--editable", "-e", action="store_true",
+        help="editable 安装（开发期常用）",
+    )
+    pig.set_defaults(func=cmd_plugin_install_git)
 
     pl = plug_sub.add_parser("list", help="列出本地 config 已启用的 plugin")
     pl.add_argument("--config", help="tangyuanai.config.json 路径")
@@ -147,6 +168,58 @@ def cmd_plugin_install(args) -> int:
     return 0
 
 
+def cmd_plugin_install_git(args) -> int:
+    """``tangyuanai plugin install-git <git-url>`` → git clone + pip install。
+
+    流程：
+    1. 克隆 git 仓到本地临时目录（或用 uv 直接装 git URL）
+    2. pip install（指定子目录用 --dir，可选 -e editable）
+    3. 装完提示用户 ``tangyuanai plugin status`` 验证 entry point 注册
+    """
+    import subprocess
+
+    git_url = args.git_url
+    branch = args.branch
+    subdir = args.dir
+    editable = args.editable
+
+    # 优先用 uv 装（用户多半在用 uv）。
+    # uv 支持 git URL 直接装：uv pip install "git+https://...@branch"
+    # 也支持 git+https://...#subdirectory=path
+    if not _command_exists("uv"):
+        print("未检测到 uv，请先安装 uv（https://docs.astral.sh/uv/）或改用 pip")
+        return 1
+
+    target = git_url
+    if branch and "@" not in git_url.split("/")[-1]:
+        # 加 @ 分支
+        target = f"{git_url}@{branch}"
+    if subdir:
+        target = f"{target}#subdirectory={subdir}"
+
+    cmd = ["uv", "pip", "install"]
+    if editable:
+        cmd.append("-e")
+    cmd.append(target)
+
+    print(f"→ {' '.join(cmd)}")
+    rc = subprocess.call(cmd)
+    if rc != 0:
+        print(f"安装失败（exit={rc}）")
+        return rc
+
+    print("\n✓ 插件已通过 git 安装。检查 entry point 注册：")
+    print("   tangyuanai plugin status")
+    return 0
+
+
+def _command_exists(cmd: str) -> bool:
+    """PATH 里能找到 cmd 吗。"""
+    import shutil
+
+    return shutil.which(cmd) is not None
+
+
 def cmd_plugin_list(args) -> int:
     """tangyuanai plugin list → 列出本地 config 已启用 features。"""
     from .plugin_store import list_installed
@@ -161,14 +234,11 @@ def cmd_plugin_list(args) -> int:
 
 
 def cmd_plugin_status(_args) -> int:
-    """tangyuanai plugin status → 已安装插件包 + 可用性自检。"""
-    from .plugin_loader import discover_plugins
+    """tangyuanai plugin status → 已安装插件包 + KB/Image 子系统状态。"""
+    from .plugin_api import PLUGIN_TYPE_IMAGE, PLUGIN_TYPE_KNOWLEDGE_BASE
+    from .plugin_loader import discover_plugins, resolve_plugin_for_namespace
 
     entries = discover_plugins()
-    if not entries:
-        print("未安装任何插件包。")
-        print("安装全部插件：pip install 'tangyuanAI[all]'")
-        return 0
     for name in sorted(entries):
         try:
             from .plugin_loader import load_plugin
@@ -185,6 +255,21 @@ def cmd_plugin_status(_args) -> int:
             ok, info = False, str(e)
         title = getattr(mod, "PLUGIN_TITLE", name) if "mod" in dir() else name
         print(f"  {'✓' if ok else '✗'} {name}  ({title}){(' — ' + info) if info else ''}")
+
+    print()
+    print("KB / Image 子系统:")
+    for label, ptype in (("KB  ", PLUGIN_TYPE_KNOWLEDGE_BASE), ("Image", PLUGIN_TYPE_IMAGE)):
+        third = resolve_plugin_for_namespace(ptype)
+        if third is not None:
+            print(f"  {label}: 第三方插件接管 ({third.__name__})")
+        else:
+            print(f"  {label}: vendored 默认实现（主包内置）")
+
+    if not entries:
+        print()
+        print("未安装任何第三方插件包。")
+        print("默认 KB / Image 已包含在 tangyuanai 主包，无需额外操作。")
+        print("装第三方：从 git URL 走 'tangyuanai plugin install-git <git-url>'")
     return 0
 
 

@@ -109,16 +109,27 @@ export ANTHROPIC_API_KEY="sk-ant-…"        # Anthropic 协议
 ```
 
 
-**可选插件（v1.1.0+）**：知识库（RAG）与图片生成已插件化，需要时一起装：
+**KB 与图片生成（v1.1.0+）**：默认已包含在主包，开箱即用：
 
 ```bash
-pip install "tangyuanAI[all]"              # RAG 知识库 + 图片生成
-# 或单独：pip install tangyuanai-rag-plus / tangyuanai-image-plus
-tangyuanai plugin status                   # 查看已安装插件
-tangyuanai kb --help                       # RAG 子命令（装插件后可用）
+pip install tangyuanAI                       # 含完整 KB（RAG）+ 图片生成实现（vendored）
+tangyuanai plugin status                     # 看 KB / Image 子系统状态（vendored vs 第三方）
 ```
 
-接口文档（如何写兼容插件替换官方实现）：[docs/plugin-dev.md](docs/plugin-dev.md)。
+要替换默认实现（第三方发布兼容包）：
+
+```bash
+# 方式 1：从 git URL 装（推荐，跨开发期都能用）
+tangyuanai plugin install-git https://github.com/your-fork/tangyuanai-kb-alt.git
+
+# 方式 2：标准 pip 装（包已发 PyPI）
+pip install tangyuanai-kb-alt
+```
+
+第三方包通过 `tangyuanai.plugins` entry point 注册（type=`knowledge_base` / `image_generation`），
+`tangyuanAI.kb` / `tangyuanAI.imaging` 自动优先用第三方，没装就走 vendored 默认。
+
+接口文档（如何写兼容插件）：[docs/plugin-dev.md](docs/plugin-dev.md)。
 
 ```python
 import os

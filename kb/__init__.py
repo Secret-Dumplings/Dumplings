@@ -1,43 +1,130 @@
 # -*- coding: utf-8 -*-
-"""tangyuanai.kb —— Knowledge Base 命名空间桥（实现由 RAG 插件提供）。
+"""tangyuanai.kb —— Knowledge Base 子系统。
 
-- 安装了 RAG 插件（``tangyuanai-rag-plus``，entry point ``rag``，type=knowledge_base）时：
-  本包整体别名到插件 API。``from tangyuanAI.kb.config import EmbedderConfig`` 等价于
-  ``from tangyuanAI_rag_plus.config import EmbedderConfig``（含深层子模块）。
-- 未安装时：``import tangyuanAI.kb`` 本身可导入，但取任何 API 会得到清晰的安装提示。
+**两种使用模式**：
 
-安装：
-    pip install "tangyuanAI[all]"            # 安装全部插件
-    pip install tangyuanai-rag-plus          # 只装 RAG 插件
+1. **默认（vendored）**：``pip install tangyuanai`` 自带完整 KB 实现，开箱即用。
+   本包对外 API 全部从同级 vendored 子模块直接 import。
 
-接口文档：docs/plugin-dev.md
+2. **第三方替换**：安装替代 KB 包（通过 ``tangyuanai plugin install <git-url>`` 或
+   ``pip install`` 任意含 ``tangyuanai.plugins`` entry point 的包）后，本包会
+   自动优先使用第三方实现，vendored 代码作为 fallback。
 """
 from __future__ import annotations
 
 from ..plugin_api import PLUGIN_TYPE_KNOWLEDGE_BASE
 from ..plugin_loader import install_module_alias, resolve_plugin_for_namespace
 
-_impl = resolve_plugin_for_namespace(PLUGIN_TYPE_KNOWLEDGE_BASE)
-if _impl is not None:
-    install_module_alias(__name__, _impl)
-    _SELF = _impl
+# ---------------------------------------------------------------------------
+# 1) 第三方插件（如有）→ 通过 install_module_alias 接管 tangyuanAI.kb 命名空间
+# ---------------------------------------------------------------------------
+
+_third_party = resolve_plugin_for_namespace(PLUGIN_TYPE_KNOWLEDGE_BASE)
+if _third_party is not None:
+    install_module_alias(__name__, _third_party)
+    _SELF = _third_party
 else:
     _SELF = None
 
 
-def __getattr__(name):
-    if _SELF is None:
-        raise ImportError(
-            "RAG 插件未安装，无法访问 tangyuanAI.kb API。"
-            "安装方式：pip install 'tangyuanAI[all]' 或 pip install tangyuanai-rag-plus"
-        )
-    return getattr(_SELF, name)
+# ---------------------------------------------------------------------------
+# 2) Fallback：本地 vendored 实现（直接 import 同级子模块）
+# ---------------------------------------------------------------------------
 
+if _SELF is None:
+    # 缓存（cache.py）
+    from .cache import (  # noqa: E402
+        LRUDiskCache,
+        NullCache,
+        get_global_cache,
+        set_global_cache,
+    )
 
-def __dir__():
-    if _SELF is not None:
-        return sorted(set(globals()) | set(dir(_SELF)))
-    return sorted(globals())
+    # 切分器
+    from .chunker_factory import create_chunker, list_chunkers  # noqa: E402
+
+    # 配置
+    from .config import EmbedderConfig, RerankerConfig  # noqa: E402
+
+    # 文档处理器
+    from .doc_processor_factory import (  # noqa: E402
+        get_processor_for,
+        list_doc_processors,
+    )
+
+    # Embedder 工厂
+    from .embedder_factory import (  # noqa: E402
+        create_embedder,
+        list_embedder_providers,
+    )
+
+    # 文档写入 / 资源清理
+    from .ingest import (  # noqa: E402
+        add_document,
+        add_document_sync,
+        add_documents,
+        add_documents_sync,
+        shutdown_kb,
+    )
+
+    # 核心类
+    from .knowledge import Knowledge  # noqa: E402
+
+    # Loader 工厂
+    from .loader_factory import create_loader, list_loaders  # noqa: E402
+
+    # 模型迁移
+    from .migrate import (  # noqa: E402
+        migrate_embedding_model,
+        migrate_embedding_model_sync,
+    )
+
+    # 协议
+    from .protocols import (  # noqa: E402
+        Chunker,
+        DocProcessor,
+        Embedder,
+        EmbeddingCache,
+        Loader,
+        Reranker,
+        VectorStore,
+    )
+
+    # KB CRUD
+    from .registry import (  # noqa: E402
+        delete_kb,
+        get_kb,
+        list_kbs,
+        register_kb,
+    )
+
+    # Reranker 工厂
+    from .reranker_factory import (  # noqa: E402
+        create_reranker,
+        list_reranker_providers,
+    )
+
+    # 检索
+    from .search import (  # noqa: E402
+        list_documents,
+        list_documents_sync,
+        search,
+        search_sync,
+    )
+
+    # 工具桥接
+    from .tool import register_kb_tools, unregister_kb_tools  # noqa: E402
+
+    # 数据模型
+    from .types import (  # noqa: E402
+        Chunk,
+        DocMeta,
+        Document,
+        KnowledgeBase,
+        ScoreKind,
+        SearchResult,
+        Visibility,
+    )
 
 
 __all__ = [
