@@ -35,26 +35,22 @@ class TangyuanError(Exception):
         super().__init__(*args, **kwargs)
 
 
-TangyuanError = TangyuanError  # noqa: F811
-_OLD_NAME_USED = {"__init__"}
-
-
 def __getattr__(name):
     """Handle legacy ``TangyuanConnectionError`` / ``TangyuanTimeoutError`` 别名。"""
-    if name in ("TangyuanConnectionError",):
-        from .http_utils import TangyuanConnectionError  # noqa: F401  local import 防止循环
+    if name == "TangyuanConnectionError":
+        from .http_utils import ConnectionError as _TangyuanConnectionError  # noqa: F401
         _warnings.warn(
-            "TangyuanConnectionError 已弃用；新代码请用 TangyuanConnectionError。",
+            "TangyuanConnectionError 已弃用；新代码请用 ConnectionError（继承 APIError）。",
             DeprecationWarning, stacklevel=2,
         )
-        return TangyuanConnectionError
-    if name in ("TangyuanTimeoutError",):
-        from .http_utils import TangyuanTimeoutError
+        return _TangyuanConnectionError
+    if name == "TangyuanTimeoutError":
+        from .http_utils import TimeoutError as _TangyuanTimeoutError
         _warnings.warn(
-            "TangyuanTimeoutError 已弃用；新代码请用 TangyuanTimeoutError。",
+            "TangyuanTimeoutError 已弃用；新代码请用 TimeoutError（继承 APIError）。",
             DeprecationWarning, stacklevel=2,
         )
-        return TangyuanTimeoutError
+        return _TangyuanTimeoutError
     raise AttributeError(f"module 'errors' has no attribute {name!r}")
 
 
