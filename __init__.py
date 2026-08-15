@@ -118,6 +118,7 @@ from .plugin_loader import (  # noqa: F401  (re-exported)
     get_plugin_api,
     get_plugin_api_by_type,
     install_module_alias,
+    load_external_plugin,
     load_plugin,
     plugin_available,
     plugin_installed,
@@ -257,6 +258,7 @@ __all__ = [
     "template_agent",       # 模板池装饰器（v0.3.0+ 推荐）
     # 插件协议 / 加载器（v1.1.0+）
     "discover_plugins", "plugin_installed", "plugin_available", "load_plugin",
+    "load_external_plugin",   # v1.1.1+ OpenAI / Anthropic plugin manifest 加载
     "get_plugin_api", "get_plugin_api_by_type", "install_module_alias",
     "PluginEntry", "PluginError",
     "activate_template",    # 模板池激活（v0.3.0+）

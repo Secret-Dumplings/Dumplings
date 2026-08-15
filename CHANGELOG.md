@@ -7,6 +7,60 @@ tangyuanAI 的所有显著变更记录。
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-08-15
+
+> 完整代码审查 + bug fixes + 兼容外部 Plugin 协议（OpenAI ChatGPT Plugin 1.0 + Anthropic Claude Code Plugin）。
+> v1.1.1-rc1 已发布（代码 fixes + deprecation 预告），本版新增 plugin 重构。
+
+### Added
+- **外部 Plugin 协议兼容**（`tangyuanai.plugin` 子包，约 500 行新代码）：
+  - `plugin/manifest.py`：统一的 `PluginManifest` pydantic 模型，覆盖 OpenAI ChatGPT Plugin 1.0（`name_for_model` / `api` / `auth`）+ Anthropic Claude Code Plugin（`name` / `version` / `skills_dir` / `hooks`）。`detect_protocol()` 自动识别协议。
+  - `plugin/fetcher.py`：
+    - `HTTPFetcher(base_url)`：拉 `https://<host>/.well-known/ai-plugin.json` + OpenAPI spec
+    - `LocalFetcher(path)`：读 `<plugin>/.claude-plugin/plugin.json`
+    - `GitHubSource(name)`：旧中央仓库 `<name>.json`（向后兼容，v1.3.0 删）
+  - `plugin/openapi.py`：OpenAPI 3.0 spec → tool schema 转换器，支持 `openai_chat` / `openai_responses` / `anthropic` 三种输出格式。`validate_spec=True` 触发 `openapi-spec-validator` 校验。
+  - `plugin/loader.py`：统一 `load_plugin(target)` 入口，sub-component 加载**复用既有模块**（skills → `skill.py`、MCP → `mcp_bridge.py`），不重写 SKILL.md / MCP 解析逻辑。
+  - 新 CLI 子命令：`tangyuanai plugin load <path|url> [--schema-format ...]`
+  - 新顶层 API：`load_external_plugin(target)`，`__init__.py` re-export
+- **新依赖**：`openapi-spec-validator>=0.7`（可选 OpenAPI 3.0 spec 完整性校验）
+- **新文档**：`docs/plugin-compat.md`（OpenAI / Anthropic 双协议详解）
+- **新测试**：`tests/test_external_plugin.py`（22 项）—— manifest 解析、HTTP / Local fetcher、OpenAPI 转换、端到端 Anthropic plugin 加载
+
+### Changed
+- **`Agent + protocol` 工厂基类正式成为推荐写法**：
+  - `docs/agent-registration.md`、`docs/getting-started.md`、`docs/protocols.md`、`docs/output-and-hooks.md` 默认示例全部 `Agent + protocol`
+  - `examples/example1-5` 改为 `class X(tangyuanAI.Agent): protocol = "openai"`
+  - `examples/example6_anthropic_custom_provider.py` 改为 `class X(tangyuanAI.Agent): protocol = "anthropic"`
+  - `examples/example7_unified_agent.py` 保留旧写法对比，但推荐路径用 `Agent + protocol`
+  - `agent_tool.py` docstring 示例同步
+
+### Fixed（完整列表见 v1.1.1-rc1 段）
+v1.1.1-rc1 已合并所有修复；本版（v1.1.1 final）无新增修复。
+
+### Deprecated
+- **`Agent_Base_.py` / `anthropic_agent.py`**：再 deprecate 一次，**计划在 v1.3.0 删除**（v1.0.0 起已 deprecation，本版升级文案）
+- **`BaseAgent` / `AnthropicAgent` 直继承**：仍兼容（v0.4.2+），但**强烈推荐**改用 `Agent + protocol`
+- **旧 plugin 格式**（`tangyuanai.plugins` entry point + `<name>.json` 中央仓库）：仍兼容，**计划 v1.3.0 删除**。新代码用 `tangyuanai plugin load <path|url>`。
+
+### Tests
+- `uv run ruff check .` → All checks passed
+- `uv run pytest -q` → **253 passed, 2 skipped**（v1.1.0: 232 + 新增 21）
+- rollback 锚点：commit `a03eaba`（v1.1.1 之前的最后状态），tag `rollback-pre-fix-v1.1.1`
+- 预发布 tag：`v1.1.1-rc1`（仍在 GitHub 可用）
+
+### Upgrade
+```bash
+pip install --upgrade tangyuanAI==1.1.1
+```
+
+旧 API 全部兼容；可直接升级：
+- `from tangyuanAI.BaseAgent` → 仍可用，但建议改 `from tangyuanAI.Agent` + `protocol = "openai"`
+- `from tangyuanAI.anthropic_agent import AnthropicAgent` → 仍可用（v1.3.0 删），建议改 `from tangyuanAI.AnthropicAgent`（始终指向 `_AnthropicBase`）+ `protocol = "anthropic"`
+- 旧 plugin entry point 仍可用（v1.3.0 删）；新代码用 `tangyuanai plugin load <path|url>` 识别 OpenAI / Anthropic 外部 manifest
+
+---
+
 ## [1.1.1-rc1] - 2026-08-14
 
 > 严格审查 + 兼容性补丁 + 弃用预告。`Agent + protocol` 工厂基类正式成为推荐写法。

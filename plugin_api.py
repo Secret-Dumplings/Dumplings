@@ -46,7 +46,8 @@ class PluginModule(Protocol):
     - ``PLUGIN_CONFIGS``: 该插件内置的 feature config 列表（与 ``tangyuanai.config.json`` 的
       feature schema 一致；``tangyuanai plugin install`` 可直接使用）
 
-    可选：
+    可选（v1.1.1+）：
+    - ``MANIFEST_PATH``: 指向外部 plugin manifest 路径（识别 OpenAI / Anthropic 标准）
     - ``get_api()``: 返回提供公开 API 的模块（默认返回插件模块自身）
     - ``add_cli_subparsers(subparsers)``: 注册 CLI 子命令
     - ``check()``: 环境自检，返回 (ok: bool, message: str)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tangyuanAI"
-version = "1.1.0"
+version = "1.1.1"
 description = "Lightweight multi-agent collaboration framework on top of LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,6 +29,7 @@ dependencies = [
     "loguru>=0.7.3",
     "lxml>=6.0.2",          # XML 解析（test_xml_protocol 用，BeautifulSoup 'xml' feature 依赖）
     "mcp>=1.14.1",
+    "openapi-spec-validator>=0.7",   # v1.1.1+ 验证 OpenAI ChatGPT Plugin 1.0 的 OpenAPI 3.0 spec
     "pydantic>=2.6",
     "python-dotenv>=1.0",  # mcp 间接依赖（pydantic_settings 需要）
     "pyyaml>=6.0",

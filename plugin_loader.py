@@ -71,6 +71,33 @@ def plugin_available(name: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# 新格式入口（v1.1.1+）：识别 OpenAI / Anthropic 外部 manifest
+# ---------------------------------------------------------------------------
+
+def load_external_plugin(target: str, *, schema_format: str = "openai_chat"):
+    """v1.1.1+ 新增：按 target 自动识别 OpenAI / Anthropic plugin manifest 并加载。
+
+    Args:
+        target: HTTP URL（OpenAI ChatGPT Plugin 1.0）或本地路径（Anthropic Claude Code Plugin）。
+        schema_format: OpenAPI → tool schema 转换的目标格式（`openai_chat` / `openai_responses` / `anthropic`）。
+
+    Returns:
+        ``PluginSpec``（含 manifest + skills + mcp_servers + openapi_tools + hooks）。
+
+    Raises:
+        PluginError: target 不是新格式 plugin，或加载失败。
+    """
+    from .plugin import FetcherError
+    from .plugin import load_plugin as _new_load_plugin
+    try:
+        return _new_load_plugin(target, schema_format=schema_format)
+    except FetcherError as e:
+        raise PluginError(f"加载外部 plugin 失败（{target}）：{e}") from e
+    except ValueError as e:
+        raise PluginError(f"target 不是新格式 plugin（{target}）：{e}") from e
+
+
+# ---------------------------------------------------------------------------
 # 加载
 # ---------------------------------------------------------------------------
 

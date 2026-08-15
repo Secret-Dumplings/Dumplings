@@ -93,6 +93,20 @@ def _add_plugin_subparsers(subparsers) -> None:
     pi.add_argument("--branch", default="main", help="中央仓库 branch")
     pi.set_defaults(func=cmd_plugin_install)
 
+    # v1.1.1+ 新格式：加载本地 / HTTP plugin manifest（OpenAI / Anthropic）
+    pl = plug_sub.add_parser(
+        "load",
+        help="v1.1.1+ 加载外部 plugin manifest（本地路径或 HTTP URL）",
+    )
+    pl.add_argument("target", help="本地 plugin 路径（含 .claude-plugin/plugin.json）或 HTTP URL")
+    pl.add_argument(
+        "--schema-format",
+        default="openai_chat",
+        choices=["openai_chat", "openai_responses", "anthropic"],
+        help="OpenAPI → tool schema 转换的目标格式",
+    )
+    pl.set_defaults(func=cmd_plugin_load)
+
     pig = plug_sub.add_parser(
         "install-git",
         help="从 git URL 克隆并 pip 安装插件包（自动注册 entry point）",
@@ -142,6 +156,29 @@ def _add_plugin_command_subparsers(subparsers) -> None:
 # ---------------------------------------------------------------------------
 # plugin 命令
 # ---------------------------------------------------------------------------
+
+
+def cmd_plugin_load(args) -> int:
+    """v1.1.1+ 新增：`tangyuanai plugin load <path|url>` → 加载外部 plugin manifest。
+
+    识别两种外部格式：
+    - 本地路径（含 `.claude-plugin/plugin.json`）→ Anthropic Claude Code Plugin
+    - HTTP URL（`/.well-known/ai-plugin.json`）→ OpenAI ChatGPT Plugin 1.0
+    """
+    from .plugin_store import install_external_plugin
+
+    try:
+        spec = install_external_plugin(args.target, schema_format=args.schema_format)
+    except Exception as e:
+        print(f"加载 plugin 失败：{e}")
+        return 1
+    m = spec.manifest
+    print(f"plugin loaded: {m.display_name} (source={m.source})")
+    print(f"  manifest: {m.manifest_path}")
+    print(f"  skills: {len(spec.skills)} 个")
+    print(f"  mcp_servers: {len(spec.mcp_servers)} 个")
+    print(f"  openapi_tools: {len(spec.openapi_tools)} 个")
+    return 0
 
 
 def cmd_plugin_install(args) -> int:

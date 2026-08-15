@@ -143,3 +143,30 @@ def list_installed(config_path: Optional[str] = None) -> list[dict[str, Any]]:
     """列出本地 config 里所有 enabled features。"""
     config = load_config(config_path)
     return [f for f in config.get("features", []) if f.get("enabled")]
+
+
+# ---------------------------------------------------------------------------
+# v1.1.1+ 新格式入口：识别 OpenAI ChatGPT Plugin 1.0 / Anthropic Claude Code Plugin
+# ---------------------------------------------------------------------------
+
+async def fetch_external_plugin(target: str, *, schema_format: str = "openai_chat"):
+    """v1.1.1+ 新增：从 HTTP URL（OpenAI 协议）或本地路径（Anthropic 协议）加载 plugin manifest。
+
+    返回 ``PluginSpec``（含 manifest + skills + mcp_servers + openapi_tools + hooks）。
+    """
+    from .plugin import load_plugin as _load
+    return _load(target, schema_format=schema_format)
+
+
+def install_external_plugin(target: str, *, schema_format: str = "openai_chat"):
+    """v1.1.1+ 同步便捷：``fetch_external_plugin`` 的 sync 版。"""
+    import asyncio as _aio
+    try:
+        loop = _aio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop is None:
+        return _aio.run(fetch_external_plugin(target, schema_format=schema_format))
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        return ex.submit(_aio.run, fetch_external_plugin(target, schema_format=schema_format)).result()
