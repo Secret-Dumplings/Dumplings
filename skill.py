@@ -582,3 +582,16 @@ class _SkillChangeHandler(FileSystemEventHandler):
 
 skill_registry = SkillRegistry()
 logger.trace("skill_registry 全局实例已创建")
+
+
+# ==================== reload 钩子 ====================
+# agent.reload() 会触发 reload_hooks.fire_reload()；这里让 skill 跟着自刷新。
+
+from .reload_hooks import register_reload_hook  # noqa: E402
+
+
+@register_reload_hook
+def _on_reload_skill():
+    """reload 时让 skill 重新拉取磁盘上变更过的 SKILL.md（不依赖 watchdog）。"""
+    skill_registry.reload_if_changed()
+

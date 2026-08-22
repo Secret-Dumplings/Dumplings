@@ -175,3 +175,35 @@ def register_a2a_agent(
     _register(name, proxy, source=f"a2a:{url}")
     logger.info(f"A2A agent 已注册到 agent_list: {name} (source=a2a:{url})")
     return proxy
+
+
+# ==================== reload 钩子 ====================
+# agent.reload() 触发时，刷新所有已注册 A2A 代理的 Agent Card（description / skills）。
+# 单个远端不可达不会影响其它代理；失败的代理保留旧 metadata。
+
+from .reload_hooks import register_reload_hook  # noqa: E402
+
+
+def _refresh_a2a_proxies() -> None:
+    """遍历 agent_list，重新拉取所有 A2A 代理的 Agent Card。"""
+    try:
+        from tangyuanAI.Agent_list import agent_list
+    except ImportError:
+        return
+
+    seen: set[int] = set()
+    for entry in list(agent_list.values()):
+        if not isinstance(entry, A2AAgentProxy) or id(entry) in seen:
+            continue
+        seen.add(id(entry))
+        try:
+            card = asyncio.run(discover(entry.url))
+        except Exception:  # noqa: BLE001 — 单个远端不可达不影响其它代理
+            continue
+        if card.get("description"):
+            entry.description = card["description"]
+        if card.get("skills"):
+            entry.skills = card["skills"]
+
+
+register_reload_hook(_refresh_a2a_proxies)

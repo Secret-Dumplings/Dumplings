@@ -572,3 +572,23 @@ def stop_health_check() -> None:
 # ==================== 兼容性接口 ====================
 # 保留旧接口名，向后兼容
 connect_and_register = register_mcp_tools
+
+
+# ==================== reload 钩子 ====================
+# agent.reload() 触发时，回收 MCP 会话池中的空闲会话；下次工具调用会自动重新初始化。
+# 不在这里重新注册工具（避免重复注册），只清理会话即可。
+
+from .reload_hooks import register_reload_hook  # noqa: E402
+
+
+@register_reload_hook
+def _on_reload_mcp():
+    """回收空闲 MCP 会话（async 上下文里安全跳过）。"""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # 在 async 上下文里调用 sync reload：避免阻塞事件循环
+            return
+        loop.run_until_complete(_global_session_pool.health_check())
+    except Exception:  # noqa: BLE001
+        return
