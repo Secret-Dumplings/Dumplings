@@ -738,24 +738,12 @@ class AnthropicAgent:
                     return m
             if messages and isinstance(messages[-1], dict):
                 return messages[-1]
-        # str：拼 content blocks
+        # str：拼 content blocks（image 走 image_input 归一化）
         content: list = []
         if images:
+            from .image_input import to_anthropic_block
             for img in images:
-                if isinstance(img, str) and img.startswith(("http://", "https://")):
-                    content.append({
-                        "type": "image",
-                        "source": {"type": "url", "url": img},
-                    })
-                else:
-                    content.append({
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/png",
-                            "data": str(img),
-                        },
-                    })
+                content.append(to_anthropic_block(img))
         content.append({"type": "text", "text": str(messages)})
         return {"role": "user", "content": content}
 

@@ -502,15 +502,13 @@ class _AgentCommon:
         return tools_schema
 
     def _build_user_message(self, messages, images) -> dict:
-        """构造 OpenAI 风格 user message（含多模态图）。"""
+        """构造 OpenAI 风格 user message（支持多模态）。"""
         if not images:
             return {"role": "user", "content": messages}
+        from .image_input import to_openai_block
         content_list = [{"type": "text", "text": messages}]
         for img in images:
-            if isinstance(img, str) and img.startswith("http"):
-                content_list.append({"type": "image_url", "image_url": {"url": img}})
-            else:
-                content_list.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img}"}})
+            content_list.append(to_openai_block(img))
         return {"role": "user", "content": content_list}
 
     def _connectivity(self):
@@ -987,18 +985,13 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
         return super()._collect_tools_schema()
 
     def _build_user_message(self, messages, images) -> dict:
-        """构建 Anthropic user message（支持多模态）"""
+        """构造 Anthropic user message（支持多模态）。"""
         if not images:
             return {"role": "user", "content": messages}
+        from .image_input import to_anthropic_block
         content_list = [{"type": "text", "text": messages}]
         for img in images:
-            if isinstance(img, str) and img.startswith("http"):
-                content_list.append({"type": "image", "source": {"type": "url", "url": img}})
-            else:
-                content_list.append({
-                    "type": "image",
-                    "source": {"type": "base64", "media_type": "image/png", "data": str(img)},
-                })
+            content_list.append(to_anthropic_block(img))
         return {"role": "user", "content": content_list}
 
     # ---- Anthropic 对话循环的共享助手（sync/async 共用） ----
@@ -1196,6 +1189,20 @@ class _OpenAIResponsesBase(_AgentCommon, metaclass=_ProtocolMeta):
             "input": "ping",
             "max_output_tokens": 1,
         }
+
+    def _build_user_message(self, messages, images) -> dict:
+        """OpenAI Responses API：使用 ``input_text`` / ``input_image`` / ``input_file`` 块。
+
+        注意：Responses transport（``llm_transport.py``）会把 ``content`` 为 list 的
+        message 直接展开为 ``input`` items，所以多模态块数组在 wire 上完整保留。
+        """
+        if not images:
+            return {"role": "user", "content": messages}
+        from .image_input import to_responses_block
+        content_list = [{"type": "input_text", "text": messages}]
+        for img in images:
+            content_list.append(to_responses_block(img))
+        return {"role": "user", "content": content_list}
 
 
 # ============================================================================
