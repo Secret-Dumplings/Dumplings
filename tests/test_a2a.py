@@ -65,21 +65,23 @@ class TestProtocol:
 # ---------------------------------------------------------------------------
 
 class TestClient:
-    @patch("tangyuanAI.a2a_client.httpx.AsyncClient")
+    @patch("tangyuanAI.a2a_client.AsyncHTTPClient")
     async def test_discover(self, MockClient):
         fake_resp = MagicMock()
         fake_resp.json.return_value = {"name": "remote", "description": "远端"}
-        # mock __aenter__（async context manager）
-        mock_ctx = MagicMock()
-        mock_ctx.get = AsyncMock(return_value=fake_resp)
-        mock_client = MagicMock()
-        mock_client.__aenter__ = AsyncMock(return_value=mock_ctx)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-        MockClient.return_value = mock_client
+        mock_instance = MagicMock()
+        mock_instance.aget = AsyncMock(return_value=fake_resp)
+        mock_instance.__aenter__ = AsyncMock(return_value=mock_instance)
+        mock_instance.__aexit__ = AsyncMock(return_value=None)
+        MockClient.return_value = mock_instance
 
         from tangyuanAI.a2a_client import discover
         got = await discover("http://host:9000")
         assert got["name"] == "remote"
+        # 验证走了 aget（不再走 httpx raw）
+        mock_instance.aget.assert_awaited_once()
+        called_url = mock_instance.aget.await_args.args[0]
+        assert called_url == "http://host:9000/.well-known/agent.json"
 
     def test_proxy_conversation(self):
         """A2AAgentProxy.conversation_with_tool 转发到远端（mock send_task_sync）。"""

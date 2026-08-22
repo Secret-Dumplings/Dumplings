@@ -56,7 +56,9 @@ agent.conversation_with_tool(
 )
 ```
 
-> Anthropic 用 Files API 需要在 transport 层加请求头 `anthropic-beta: files-api-2025-04-14`；当前框架未自动注入，需要用户在外层 transport 上自行添加。
+> **Anthropic Files API 提示**：用 Anthropic 协议 + `file_id` 时，框架会自动注入请求头
+> `anthropic-beta: files-api-2025-04-14`（通过 `_messages_use_files_api` 检测）。
+> 用户无需手动加 header。
 
 ---
 

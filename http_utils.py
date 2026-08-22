@@ -333,6 +333,71 @@ class AsyncHTTPClient:
         assert last_exc is not None
         raise last_exc
 
+    async def aget(
+        self,
+        url: str,
+        *,
+        headers: Optional[dict] = None,
+        params: Any = None,
+        timeout: Optional[float] = None,
+        max_retries: Optional[int] = None,
+    ) -> httpx.Response:
+        """异步 GET（:meth:`apost` 的对称版本）：复用同一套 retry + 错误分类。"""
+        attempts = self.max_retries if max_retries is None else max(0, int(max_retries))
+        eff_timeout = self.default_timeout if timeout is None else float(timeout)
+
+        last_exc: Optional[BaseException] = None
+        for attempt in range(attempts + 1):
+            try:
+                rsp = await self.client.send(
+                    self.client.build_request(
+                        "GET",
+                        url,
+                        headers=headers or {},
+                        params=params,
+                    ),
+                )
+            except httpx.TimeoutException as e:
+                last_exc = TangyuanTimeoutError(
+                    f"HTTP timeout after {eff_timeout}s: {e}",
+                    status_code=None,
+                )
+                logger.warning(
+                    f"http_utils[async]: GET timeout (attempt {attempt+1}/{attempts+1}) url={url}"
+                )
+            except httpx.ConnectError as e:
+                last_exc = TangyuanConnectionError(
+                    f"HTTP connection error: {e}",
+                    status_code=None,
+                )
+                logger.warning(
+                    f"http_utils[async]: GET connect error (attempt {attempt+1}/{attempts+1}) url={url}"
+                )
+            except httpx.HTTPError as e:
+                raise APIError(f"HTTP request failed: {e}") from e
+            else:
+                if 200 <= rsp.status_code < 300:
+                    return rsp
+                if rsp.status_code in RETRYABLE_STATUS_CODES and attempt < attempts:
+                    body_preview = _safe_body_preview(rsp)
+                    last_exc = classify(rsp.status_code, body_preview, dict(rsp.headers))
+                    logger.warning(
+                        f"http_utils[async]: GET status {rsp.status_code} "
+                        f"(attempt {attempt+1}/{attempts+1}) url={url} body={body_preview}"
+                    )
+                else:
+                    raise classify(
+                        rsp.status_code,
+                        _safe_body_preview(rsp),
+                        dict(rsp.headers),
+                    )
+
+            if attempt < attempts:
+                await self._asleep_backoff(attempt)
+
+        assert last_exc is not None
+        raise last_exc
+
     async def _asleep_backoff(self, attempt: int) -> None:
         delay = _compute_backoff_seconds(attempt, self.backoff_base, self.backoff_cap, self.jitter)
         await asyncio.sleep(delay)

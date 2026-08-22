@@ -31,7 +31,7 @@ import re
 import threading
 import time
 import uuid as _uuid
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 try:
     from .agent_queue import get_call_chain, get_default_queue
@@ -48,6 +48,29 @@ try:
     from .tool_runner import ToolRunner
 except ImportError:
     raise ImportError("不可单独执行")
+
+
+# ============================================================================
+# 模块级 helper
+# ============================================================================
+
+
+def _messages_use_files_api(messages: list) -> bool:
+    """检查 messages 列表里是否含 Anthropic Files API 内容块。
+
+    匹配的 block 结构：``{"type": "image", "source": {"type": "file", "file_id": "..."}}``。
+    """
+    for msg in messages:
+        content = msg.get("content") if isinstance(msg, dict) else None
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            src = block.get("source")
+            if isinstance(src, dict) and src.get("type") == "file":
+                return True
+    return False
 
 
 # ============================================================================
@@ -1008,11 +1031,17 @@ class _AnthropicBase(_AgentCommon, metaclass=_ProtocolMeta):
             stream=self.stream,
             max_tokens=self.max_tokens,
         )
+        extra_headers: Dict[str, str] = {}
+        if _messages_use_files_api(rest_messages):
+            # Anthropic Files API（``{"type": "image", "source": {"type": "file", "file_id": ...}}``）
+            # 需要 beta header；多次用逗号分隔累加。
+            extra_headers["anthropic-beta"] = "files-api-2025-04-14"
         transport = HttpxAnthropicTransport(
             endpoint=self._endpoint(),
             api_key=self.api_key,
             anthropic_version=self.anthropic_version,
             max_tokens=self.max_tokens,
+            extra_headers=extra_headers,
         )
         return req, transport
 

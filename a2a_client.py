@@ -13,21 +13,22 @@ A2A Client（kb/a2a_client.py）
 `ask_for_help(agent_id="a2a_xxx", message=...)` 就能调远端 —— 走 proxy 的
 `conversation_with_tool` → HTTP 调远端 A2A。
 
-**依赖**：`httpx`（required dep）。
+**HTTP**：所有调用走框架内 :mod:`tangyuanAI.http_utils.AsyncHTTPClient`
+（指数退避重试 + 错误分类 + follow_redirects）。``httpx`` 不再直接 import。
 """
 from __future__ import annotations
 
 import asyncio
 from typing import Any, Optional
 
-import httpx
-
+from tangyuanAI.http_utils import AsyncHTTPClient
 from tangyuanAI.logging_config import logger
 
 __all__ = ["discover", "send_task", "send_task_sync", "register_a2a_agent", "A2AAgentProxy"]
 
 
 _DEFAULT_TIMEOUT = 30.0
+_DEFAULT_MAX_RETRIES = 2
 
 
 def _normalize_base(url: str) -> str:
@@ -35,20 +36,24 @@ def _normalize_base(url: str) -> str:
     return url.rstrip("/")
 
 
-async def discover(url: str, *, timeout: float = _DEFAULT_TIMEOUT) -> dict[str, Any]:
+async def discover(
+    url: str,
+    *,
+    timeout: float = _DEFAULT_TIMEOUT,
+    max_retries: int = _DEFAULT_MAX_RETRIES,
+) -> dict[str, Any]:
     """发现远端 A2A agent，返回 Agent Card。
 
     GET `{url}/.well-known/agent.json`
 
     Raises:
-        httpx.HTTPStatusError: 非 200
-        ValueError: card 缺 name
+            tangyuanAI.errors.APIError: 非 2xx（已分类的 APIError 子类）
+            ValueError: card 缺 name
     """
     base = _normalize_base(url)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.get(f"{base}/.well-known/agent.json")
-        resp.raise_for_status()
-        card = resp.json()
+    async with AsyncHTTPClient(default_timeout=timeout, max_retries=max_retries) as client:
+        resp = await client.aget(f"{base}/.well-known/agent.json")
+    card = resp.json()
     if not isinstance(card, dict) or not card.get("name"):
         raise ValueError(f"Agent Card 缺 name: {card}")
     logger.info(f"A2A 发现远端 agent: {card['name']} @ {base}")
@@ -61,12 +66,17 @@ async def send_task(
     *,
     task_id: str | None = None,
     timeout: float = _DEFAULT_TIMEOUT,
+    max_retries: int = _DEFAULT_MAX_RETRIES,
 ) -> dict[str, Any]:
     """调远端 A2A agent 的 tasks/send。
 
     POST `{url}/a2a/v1/tasks/send`（JSON-RPC 2.0）
 
     Returns: JSON-RPC result（含 status / artifacts）。
+
+    Raises:
+            tangyuanAI.errors.APIError: HTTP 失败（已分类）
+            RuntimeError: JSON-RPC 错误响应
     """
     from .a2a_protocol import make_json_rpc_request, make_text_message
 
@@ -78,10 +88,9 @@ async def send_task(
             "message": make_text_message(message, role="user"),
         },
     )
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(f"{base}/a2a/v1/tasks/send", json=request)
-        resp.raise_for_status()
-        data = resp.json()
+    async with AsyncHTTPClient(default_timeout=timeout, max_retries=max_retries) as client:
+        resp = await client.apost(f"{base}/a2a/v1/tasks/send", json=request)
+    data = resp.json()
     if "error" in data:
         raise RuntimeError(f"A2A 远端返回错误: {data['error']}")
     logger.debug(f"A2A send 完成: task_id={data.get('result', {}).get('id')}")
@@ -185,25 +194,55 @@ from .reload_hooks import register_reload_hook  # noqa: E402
 
 
 def _refresh_a2a_proxies() -> None:
-    """遍历 agent_list，重新拉取所有 A2A 代理的 Agent Card。"""
+    """遍历 agent_list，并发重新拉取所有 A2A 代理的 Agent Card。
+
+    使用 ``asyncio.gather(return_exceptions=True)`` 批量跑，单个远端不可达
+    只跳过自己，不影响其它代理；失败的代理保留旧 metadata。
+    """
     try:
         from tangyuanAI.Agent_list import agent_list
     except ImportError:
         return
 
     seen: set[int] = set()
+    proxies: list[A2AAgentProxy] = []
     for entry in list(agent_list.values()):
         if not isinstance(entry, A2AAgentProxy) or id(entry) in seen:
             continue
         seen.add(id(entry))
-        try:
-            card = asyncio.run(discover(entry.url))
-        except Exception:  # noqa: BLE001 — 单个远端不可达不影响其它代理
+        proxies.append(entry)
+
+    if not proxies:
+        return
+
+    async def _gather_all() -> list[Any]:
+        return await asyncio.gather(
+            *(discover(p.url, max_retries=1) for p in proxies),
+            return_exceptions=True,
+        )
+
+    try:
+        asyncio.get_running_loop()
+        # 在 async 上下文里；asyncio.run 会 RuntimeError。直接放弃本轮。
+        logger.debug("A2A 刷新跳过：在 event loop 中无法用 asyncio.run")
+        return
+    except RuntimeError:
+        pass  # 没在 event loop 里，可以用 asyncio.run
+
+    try:
+        results = asyncio.run(_gather_all())
+    except RuntimeError:
+        logger.debug("A2A 刷新跳过：asyncio.run 创建新 event loop 失败")
+        return
+
+    for proxy, result in zip(proxies, results):
+        if isinstance(result, BaseException):
+            logger.warning(f"A2A 刷新失败 {proxy.name} ({proxy.url}): {result}")
             continue
-        if card.get("description"):
-            entry.description = card["description"]
-        if card.get("skills"):
-            entry.skills = card["skills"]
+        if result.get("description"):
+            proxy.description = result["description"]
+        if result.get("skills"):
+            proxy.skills = result["skills"]
 
 
 register_reload_hook(_refresh_a2a_proxies)

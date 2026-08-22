@@ -669,6 +669,7 @@ class HttpxAnthropicTransport(LLMTransport):
         anthropic_version: str = "2023-06-01",
         max_tokens: int = 4096,
         client: Optional[HTTPClient] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
     ):
         self.endpoint = endpoint
         self.headers = {
@@ -676,6 +677,8 @@ class HttpxAnthropicTransport(LLMTransport):
             "anthropic-version": anthropic_version,
             "Content-Type": "application/json",
         }
+        if extra_headers:
+            self.headers.update(extra_headers)
         self.max_tokens = max_tokens
         self._client = client or HTTPClient(default_timeout=60.0)
 
