@@ -12,12 +12,20 @@ name: Publish Python Package
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+.post*'
-      # pre-release（PEP 440：1.2.0rc1 / 1.2.0a1 / 1.2.0b1；Git tag 习惯：1.2.0-rc1 / 1.2.0.rc1）
-      - 'v[0-9]+.[0-9]+.[0-9]+[-.]rc*'
-      - 'v[0-9]+.[0-9]+.[0-9]+[-.]alpha*'
-      - 'v[0-9]+.[0-9]+.[0-9]+[-.]beta*'
+      # final release
+      - 'v*.*.*'
+      # post-release
+      - 'v*.*.*.post*'
+      # pre-release（PEP 440 无分隔符 / Git tag 用 `-` 或 `.`）
+      - 'v*.*.*rc*'
+      - 'v*.*.*-rc*'
+      - 'v*.*.*.rc*'
+      - 'v*.*.*alpha*'
+      - 'v*.*.*-alpha*'
+      - 'v*.*.*.alpha*'
+      - 'v*.*.*beta*'
+      - 'v*.*.*-beta*'
+      - 'v*.*.*.beta*'
   workflow_dispatch:
     inputs:
       dry_run:
