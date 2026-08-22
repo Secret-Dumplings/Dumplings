@@ -911,12 +911,13 @@ class AnthropicAgent:
         return report_content or ""
 
     @builtin_tool(
-        description="重新拉取你自己当前可用的工具/技能列表，重置系统提示词；当你认为环境已变、想刷新时调用。",
+        description="重新拉取你自己当前可用的工具/技能列表，刷新系统提示词（保留对话历史）；已注册 reload 钩子的外置依赖（skill/MCP/A2A 等）会各自刷新。",
     )
     def reload(self) -> str:
-        """重新拼装 system_prompt 并清空 history"""
+        """通知所有 reload 钩子并重新拼装 system_prompt（保留对话历史）。"""
+        from .reload_hooks import fire_reload
+        fire_reload()
         self._build_system_prompt()
-        self.history = []
         logger.info(f"{self.name} 已 reload")
         return "reloaded"
 

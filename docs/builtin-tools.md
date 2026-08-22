@@ -19,7 +19,7 @@ icon: INVENTORY_2_OUTLINED
 | `ask_for_help(agent_id, message)` | 委派任务给其他 Agent | Agent 间协作；走全局 `agent_queue` 防超限递归 |
 | `list_agents()` | 列出所有已注册 Agent | 探索协作对象 |
 | `attempt_completion(report_content="")` | 标记任务完成并退出对话循环 | 任务收尾 |
-| `reload()` | 重新拉取工具/技能列表 + 清空 history | 环境变更后想刷新 |
+| `reload()` | 重新拉取工具/技能列表 + 刷新系统提示词（**保留对话历史**）+ 通知所有 reload 钩子 | 环境变更后想刷新；或自己改了 SKILL.md 想立即生效 |
 
 ### `ask_for_help` 队列机制
 
